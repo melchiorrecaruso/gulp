@@ -463,6 +463,13 @@ begin
         end;
     end;
 
+    Message := 'Fatal error on showing changes.';
+    writeln('Listed ', GulpList.CleanCount,     ' Cleans');
+    writeln('Listed ', GulpList.FileCount,      ' Files');
+    writeln('Listed ', GulpList.LinkCount,      ' Links');
+    writeln('Listed ', GulpList.SymLinkCount,   ' Symbolic Links');
+    writeln('Listed ', GulpList.DirectoryCount, ' Directories');
+
     writeln('Finished.');
   except
     writeln;

@@ -155,6 +155,12 @@ type
     procedure Delete(Index: longint);
     procedure BinInsert(Rec: TGulpRec);
     function BinSearch(const Filename: string): longint;
+
+    function GetCleanCount: longint;
+    function GetFileCount: longint;
+    function GetLinkCount: longint;
+    function GetSymLinkCount: longint;
+    function GetDirectoryCount: longint;
   public
     constructor Create(Stream: TStream);
     destructor Destroy; override;
@@ -162,6 +168,13 @@ type
     procedure Load;
     procedure LoadAt(StoredTime: TDateTime);
     function Find(const FileName: string): longint;
+  public
+    property CleanCount     : longint read GetCleanCount;
+    property FileCount      : longint read GetFileCount;
+    property LinkCount      : longint read GetLinkCount;
+    property SymLinkCount   : longint read GetSymLinkCount;
+    property DirectoryCount : longint read getDirectoryCount;
+
     property Items[Index: longint]: TGulpRec read Get;
     property Count: longint read GetCount;
   end;
@@ -980,6 +993,31 @@ begin
   end;
   Rec.Destroy;
   FBinaryMode := FALSE;
+end;
+
+function TGulpList.GetCleanCount: longint;
+begin
+  Result := FReader.CleanCount;
+end;
+
+function TGulpList.GetFileCount: longint;
+begin
+  Result := FReader.FileCount;
+end;
+
+function TGulpList.GetLinkCount: longint;
+begin
+  Result := FReader.LinkCount;
+end;
+
+function TGulpList.GetSymLinkCount: longint;
+begin
+  Result := FReader.FSymLinkCount;
+end;
+
+function TGulpList.GetDirectoryCount: longint;
+begin
+  Result := FReader.DirectoryCount;
 end;
 
 end.
