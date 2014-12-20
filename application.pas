@@ -156,6 +156,7 @@ end;
 procedure TGulpApplication.Synch;
 var
   I, J: longint;
+  LastFlag: boolean;
   GulpWriter: TGulpWriter = nil;
   GulpList: TGulpList = nil;
   Rec: TGulpRec;
@@ -201,14 +202,19 @@ begin
     begin
       Rec   := GulpList.Items[I];
       Message := 'Fatal error on delete ' + Rec.Name + '.';
+
+      LastFlag := FALSE;
+      if Scanner.Count = 0 then
+        LastFlag := GulpList.Count -1 = I;
+
       J := Scanner.Find(Rec.Name);
       if J = -1 then
-        GulpWriter.WriteClean(Rec.Name, Start)
+        GulpWriter.WriteClean(Rec.Name, LastFlag)
       else
         if (CompareFileAttr(Scanner.Items[J], Rec) <> 0) or
            (CompareFileTime(Scanner.Items[J], Rec) <> 0) or
            (CompareFileSize(Scanner.Items[J], Rec) <> 0) then
-          GulpWriter.WriteClean(Rec.Name, Start)
+          GulpWriter.WriteClean(Rec.Name, LastFlag)
         else
           Scanner.Delete(J);
       Progress.Show;
@@ -220,11 +226,13 @@ begin
     for I := 0 to Scanner.Count - 1 do
     begin
       Message := 'Fatal error on adding ' + Scanner.Items[I] + '.';
+
+      LastFlag := Scanner.Count -1 = I;
       case GetFileFlag(Scanner.Items[I]) of
-        gfFile:         GulpWriter.WriteFile      (Scanner.Items[I], Start);
-        gfLink:         GulpWriter.WriteLink      (Scanner.Items[I], Start);
-        gfSymbolicLink: GulpWriter.WriteSymLink   (Scanner.Items[I], Start);
-        gfDirectory:    GulpWriter.WriteDirectory (Scanner.Items[I], Start);
+        gfFile:         GulpWriter.WriteFile      (Scanner.Items[I], LastFlag);
+        gfLink:         GulpWriter.WriteLink      (Scanner.Items[I], LastFlag);
+        gfSymbolicLink: GulpWriter.WriteSymLink   (Scanner.Items[I], LastFlag);
+        gfDirectory:    GulpWriter.WriteDirectory (Scanner.Items[I], LastFlag);
       end;
       Progress.Show;
     end;
@@ -253,11 +261,9 @@ end;
 
 procedure TGulpApplication.Fix;
 var
-  I: longint;
-  Rec: TGulpRec;
+  Rec: TGulpRec = nil;
   GulpReader: TGulpReader = nil;
-  StoredTime: TDateTime;
-  StoredSize: int64;
+  FixSize: int64 = 0;
 begin
   writeln('Fix the contents of ' + GetOptionValue('f', 'fix'));
   try
@@ -267,29 +273,33 @@ begin
     writeln(' done');
 
     Message := 'Fatal error on reading records.';
-    write('Read records...');
+    writeln('Read records...');
     GulpReader := TGulpReader.Create(Stream);
     GulpReader.Reset;
 
-    StoredTime := 0.0;
-    StoredSize := 0;
-
     Rec := TGulpRec.Create;
-    while GulpReader.FindNext(Rec) do
-    begin
-      if StoredTime <> Rec.StoredTime then
-      begin
-        StoredTime := Rec.StoredTime;
-
-
-
-      end;
-
+    try
+      while GulpReader.FindNext(Rec) do
+        if Rec.Flags and gfLast <> 0 then
+        begin
+          FixSize := Stream.Position;
+          writeln('Found job at ',
+            FormatDateTime(
+              DefaultFormatSettings.LongDateFormat + ' ' +
+              DefaultFormatSettings.LongTimeFormat, Rec.StoredTime));
+        end;
+    except
+      // noting to do
     end;
 
+    if FixSize <> Stream.Size then
+    begin
+      writeln('Fix at ', FixSize, '/', Stream.Size);
 
-
-
+      FreeAndNil(Stream);
+      Stream := TFileStream.Create (GetOptionValue('f', 'fix'), fmOpenWrite);
+      Stream.Size := FixSize;
+    end;
     writeln('Everything ok.');
   except
     writeln;
@@ -297,6 +307,7 @@ begin
   end;
   if Assigned(GulpReader) then FreeAndNil(GulpReader);
   if Assigned(Stream)     then FreeAndNil(Stream);
+  if Assigned(Rec)        then FreeAndNil(Rec);
 end;
 
 procedure TGulpApplication.Purge;

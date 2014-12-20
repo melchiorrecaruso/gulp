@@ -17,6 +17,7 @@ const
   gfSymbolicLink   = $00000008; // Symbolic link
   gfDirectory      = $00000010; // Directory entry
 
+  gfLast           = $00010000; // Last record
   gfModifiedTime   = $00020000; // Last modification date and time
   gfAttributes     = $00040000; // File Attributes
   gfSize           = $00080000; // File size in bytes
@@ -27,6 +28,7 @@ const
   gfGroupName      = $01000000; // Group Name
   gfSeek           = $02000000; // Record seek
   gfChecksum       = $04000000; // Rec SHA checksum
+
   gfReserved       = $80000000; // Extra flags
 
   // --- Gulp Attributes
@@ -102,6 +104,7 @@ type
   TGulpWriter = class(TObject)
   protected
     FStream         : TStream;
+    FStoredTime     : TDateTime;
     FCleanCount     : longint;
     FFileCount      : longint;
     FLinkCount      : longint;
@@ -111,11 +114,11 @@ type
   public
     constructor Create  (Stream: TStream);
     destructor Destroy; override;
-    procedure WriteClean     (const FileName: string; StoredTime: TDateTime);
-    procedure WriteFile      (const FileName: string; StoredTime: TDateTime);
-    procedure WriteLink      (const FileName: string; StoredTime: TDateTime);
-    procedure WriteSymLink   (const FileName: string; StoredTime: TDateTime);
-    procedure WriteDirectory (const FileName: string; StoredTime: TDateTime);
+    procedure WriteClean     (const FileName: string; LastFlag: boolean);
+    procedure WriteFile      (const FileName: string; LastFlag: boolean);
+    procedure WriteLink      (const FileName: string; LastFlag: boolean);
+    procedure WriteSymLink   (const FileName: string; LastFlag: boolean);
+    procedure WriteDirectory (const FileName: string; LastFlag: boolean);
   public
     property CleanCount     : longint read FCleanCount;
     property FileCount      : longint read FFileCount;
@@ -480,13 +483,12 @@ end;
 
 procedure TGulpReader.Reset;
 begin
+  FStream.Seek (0, soBeginning);
   FCleanCount     := 0;
   FFileCount      := 0;
   FLinkCount      := 0;
   FSymLinkCount   := 0;
   FDirectoryCount := 0;
-
-  FStream.Seek (0, soBeginning);
 end;
 
 function TGulpReader.FindNext (var Rec: TGulpRec): boolean;
@@ -561,13 +563,13 @@ constructor TGulpWriter.Create (Stream: TStream);
 begin
   inherited Create;
   FStream         := Stream;
+  FStream.Seek(0, soFromEnd);
+  FStoredTime     := Now;
   FCleanCount     := 0;
   FFileCount      := 0;
   FLinkCount      := 0;
   FSymLinkCount   := 0;
   FDirectoryCount := 0;
-
-  FStream.Seek(0, soFromEnd);
 end;
 
 destructor TGulpWriter.Destroy;
@@ -634,7 +636,7 @@ begin
     FStream.WriteAnsiString(Rec.Checksum);
 end;
 
-procedure TGulpWriter.WriteClean (const FileName: string; StoredTime: TDateTime);
+procedure TGulpWriter.WriteClean (const FileName: string; LastFlag: boolean);
 var
   Rec: TGulpRec;
 begin
@@ -642,7 +644,10 @@ begin
   ClearRec(Rec);
   Rec.Name       := FileName;
   Rec.Flags      := gfClean;
-  Rec.StoredTime := StoredTime;
+  if LastFlag then
+    Rec.Flags := Rec.Flags or gfLast;
+
+  Rec.StoredTime := FStoredTime;
 
   WriteStream (Rec, nil);
   FreeAndNil(Rec);
@@ -650,7 +655,7 @@ begin
   Inc(FCleanCount);
 end;
 
-procedure TGulpWriter.WriteFile (const FileName: string; StoredTime: TDateTime);
+procedure TGulpWriter.WriteFile (const FileName: string; LastFlag: boolean);
 var
   Rec: TGulpRec;
   SR: TSearchRec;
@@ -670,7 +675,11 @@ begin
       gfGID          or
       gfSeek         or
       gfChecksum;
-    Rec.StoredTime   := StoredTime;
+
+    if LastFlag then
+      Rec.Flags := Rec.Flags or gfLast;
+
+    Rec.StoredTime   := FStoredTime;
     Rec.ModifiedTime := FileDateToDateTime(SR.Time);
     Rec.Attributes   := GetFileAttributes(FileName);
     Rec.Size         := SR.Size;
@@ -688,7 +697,7 @@ begin
   FindClose(SR);
 end;
 
-procedure TGulpWriter.WriteLink (const FileName: string; StoredTime: TDateTime);
+procedure TGulpWriter.WriteLink (const FileName: string; LastFlag: boolean);
 var
   Rec: TGulpRec;
   SR: TSearchRec;
@@ -705,7 +714,11 @@ begin
       gfLinkName     or
       gfUID          or
       gfGID;
-    Rec.StoredTime   := StoredTime;
+
+    if LastFlag then
+      Rec.Flags := Rec.Flags or gfLast;
+
+    Rec.StoredTime   := FStoredTime;
     Rec.ModifiedTime := FileDateToDateTime(SR.Time);
     Rec.Attributes   := GetFileAttributes(FileName);
     Rec.LinkName     := fpReadLink(FileName);
@@ -720,7 +733,7 @@ begin
   FindClose(SR);
 end;
 
-procedure TGulpWriter.WriteSymLink (const FileName: string; StoredTime: TDateTime);
+procedure TGulpWriter.WriteSymLink (const FileName: string; LastFlag: boolean);
 var
   Rec: TGulpRec;
   SR: TSearchRec;
@@ -737,7 +750,11 @@ begin
       gfLinkName     or
       gfUID          or
       gfGID;
-    Rec.StoredTime   := StoredTime;
+
+    if LastFlag then
+      Rec.Flags := Rec.Flags or gfLast;
+
+    Rec.StoredTime   := FStoredTime;
     Rec.ModifiedTime := FileDateToDateTime(SR.Time);
     Rec.Attributes   := GetFileAttributes(FileName);
     Rec.LinkName     := fpReadLink(FileName);
@@ -752,7 +769,7 @@ begin
   FindClose(SR);
 end;
 
-procedure TGulpWriter.WriteDirectory (const FileName: string; StoredTime: TDateTime);
+procedure TGulpWriter.WriteDirectory (const FileName: string; LastFlag: boolean);
 var
   Rec: TGulpRec;
   SR: TSearchRec;
@@ -768,7 +785,11 @@ begin
       gfAttributes   or
       gfUID          or
       gfGID;
-    Rec.StoredTime   := StoredTime;
+
+    if LastFlag then
+      Rec.Flags := Rec.Flags or gfLast;
+
+    Rec.StoredTime   := FStoredTime;
     Rec.ModifiedTime := FileDateToDateTime(SR.Time);
     Rec.Attributes   := GetFileAttributes(FileName);
     Rec.UID          := GetFileUID(FileName);
