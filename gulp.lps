@@ -3,14 +3,14 @@
   <ProjectSession>
     <Version Value="9"/>
     <BuildModes Active="Default"/>
-    <Units Count="31">
+    <Units Count="35">
       <Unit0>
         <Filename Value="gulp.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Gulp"/>
         <TopLine Value="53"/>
         <CursorPos X="28" Y="64"/>
-        <UsageCount Value="137"/>
+        <UsageCount Value="147"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit0>
@@ -18,10 +18,10 @@
         <Filename Value="libgulp.pas"/>
         <UnitName Value="LibGulp"/>
         <EditorIndex Value="2"/>
-        <TopLine Value="468"/>
-        <CursorPos X="18" Y="483"/>
-        <FoldState Value=" T3rf042)"/>
-        <UsageCount Value="65"/>
+        <TopLine Value="485"/>
+        <CursorPos X="36" Y="504"/>
+        <FoldState Value=" T3lP084 piXj80O016]BYk804251D7[O4sF0H32"/>
+        <UsageCount Value="71"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit1>
@@ -30,10 +30,10 @@
         <UnitName Value="Application"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="249"/>
-        <CursorPos Y="294"/>
-        <FoldState Value=" T3ie08511U"/>
-        <UsageCount Value="66"/>
+        <TopLine Value="357"/>
+        <CursorPos X="22" Y="250"/>
+        <FoldState Value=" T3pH0p12"/>
+        <UsageCount Value="72"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit2>
@@ -43,14 +43,14 @@
         <EditorIndex Value="4"/>
         <TopLine Value="66"/>
         <CursorPos X="25" Y="67"/>
-        <UsageCount Value="61"/>
+        <UsageCount Value="67"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit3>
       <Unit4>
         <Filename Value="../fpc/source/rtl/palmos/api/common.pp"/>
         <EditorIndex Value="-1"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="2"/>
       </Unit4>
       <Unit5>
         <Filename Value="common.pas"/>
@@ -58,7 +58,7 @@
         <EditorIndex Value="3"/>
         <TopLine Value="321"/>
         <CursorPos X="13" Y="332"/>
-        <UsageCount Value="66"/>
+        <UsageCount Value="72"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit5>
@@ -67,117 +67,119 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="827"/>
         <CursorPos X="18" Y="845"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit6>
       <Unit7>
         <Filename Value="../fpc/source/rtl/objpas/classes/stringl.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="1325"/>
         <CursorPos X="3" Y="1328"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="2"/>
       </Unit7>
       <Unit8>
         <Filename Value="../fpc/source/rtl/objpas/sysutils/filutilh.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="40"/>
         <CursorPos X="32" Y="48"/>
-        <UsageCount Value="11"/>
+        <UsageCount Value="10"/>
       </Unit8>
       <Unit9>
         <Filename Value="../fpc/source/rtl/linux/ptypes.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="36"/>
         <CursorPos X="5" Y="55"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="2"/>
       </Unit9>
       <Unit10>
         <Filename Value="../fpc/source/rtl/linux/x86_64/stat.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="42"/>
         <CursorPos X="9" Y="46"/>
-        <UsageCount Value="4"/>
+        <UsageCount Value="3"/>
       </Unit10>
       <Unit11>
         <Filename Value="../fpc/source/rtl/unix/ctypes.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="19"/>
         <CursorPos X="3" Y="38"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="2"/>
       </Unit11>
       <Unit12>
         <Filename Value="../fpc/source/rtl/objpas/sysutils/datih.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="125"/>
         <CursorPos X="24" Y="141"/>
-        <UsageCount Value="11"/>
+        <UsageCount Value="10"/>
       </Unit12>
       <Unit13>
         <Filename Value="../fpc/source/rtl/unix/bunxovlh.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="63"/>
         <CursorPos X="10" Y="99"/>
-        <UsageCount Value="4"/>
+        <UsageCount Value="3"/>
       </Unit13>
       <Unit14>
         <Filename Value="../fpc/source/rtl/inc/objpash.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="174"/>
         <CursorPos X="23" Y="192"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="7"/>
       </Unit14>
       <Unit15>
         <Filename Value="../fpc/source/packages/fcl-base/src/custapp.pp"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="290"/>
         <CursorPos X="3" Y="301"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit15>
       <Unit16>
         <Filename Value="../lazarus/components/debuggerintf/dbgintfdebuggerbase.pp"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="20"/>
         <CursorPos X="3" Y="39"/>
-        <UsageCount Value="4"/>
+        <UsageCount Value="3"/>
       </Unit16>
       <Unit17>
         <Filename Value="../fpc/source/rtl/unix/crt.pp"/>
         <EditorIndex Value="-1"/>
-        <UsageCount Value="6"/>
+        <UsageCount Value="5"/>
       </Unit17>
       <Unit18>
         <Filename Value="../fpc/source/rtl/objpas/sysutils/sysstrh.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="199"/>
         <CursorPos X="10" Y="218"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="7"/>
       </Unit18>
       <Unit19>
         <Filename Value="../fpc/source/rtl/inc/systemh.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="472"/>
         <CursorPos X="3" Y="491"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit19>
       <Unit20>
         <Filename Value="../fpc/source/rtl/objpas/sysutils/sysinth.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="75"/>
         <CursorPos X="20" Y="86"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="7"/>
       </Unit20>
       <Unit21>
         <Filename Value="../fpc/source/rtl/objpas/sysutils/dati.inc"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="797"/>
         <CursorPos X="10" Y="817"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit21>
       <Unit22>
         <Filename Value="streams.pas"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="147"/>
-        <CursorPos X="48" Y="57"/>
-        <UsageCount Value="14"/>
+        <UnitName Value="Streams"/>
+        <EditorIndex Value="5"/>
+        <TopLine Value="36"/>
+        <CursorPos X="3" Y="54"/>
+        <UsageCount Value="19"/>
+        <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit22>
       <Unit23>
@@ -185,7 +187,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="19"/>
         <CursorPos X="11" Y="25"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit23>
       <Unit24>
@@ -193,38 +195,38 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="27"/>
         <CursorPos X="3" Y="29"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit24>
       <Unit25>
         <Filename Value="../fpc/source/rtl/unix/classes.pp"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="27" Y="23"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit25>
       <Unit26>
         <Filename Value="gulp.inc"/>
         <EditorIndex Value="-1"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit26>
       <Unit27>
         <Filename Value="../fpc/source/rtl/unix/sysutils.pp"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="58"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit27>
       <Unit28>
         <Filename Value="../fpc/source/utils/instantfpc/examples/exitcode.pas"/>
         <EditorIndex Value="-1"/>
         <CursorPos X="18" Y="12"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit28>
       <Unit29>
         <Filename Value="status.pas"/>
         <EditorIndex Value="-1"/>
         <TopLine Value="17"/>
         <CursorPos X="22" Y="34"/>
-        <UsageCount Value="13"/>
+        <UsageCount Value="12"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit29>
       <Unit30>
@@ -232,130 +234,158 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="129"/>
         <CursorPos X="4" Y="147"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit30>
+      <Unit31>
+        <Filename Value="../../fpc/source/rtl/objpas/classes/classesh.inc"/>
+        <EditorIndex Value="6"/>
+        <TopLine Value="824"/>
+        <CursorPos X="33" Y="842"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit31>
+      <Unit32>
+        <Filename Value="../../fpc/source/packages/hash/src/sha1.pp"/>
+        <UnitName Value="sha1"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="64"/>
+        <CursorPos X="3" Y="66"/>
+        <UsageCount Value="13"/>
+      </Unit32>
+      <Unit33>
+        <Filename Value="../../fpc/source/rtl/objpas/classes/streams.inc"/>
+        <EditorIndex Value="7"/>
+        <TopLine Value="14"/>
+        <CursorPos X="36" Y="19"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit33>
+      <Unit34>
+        <Filename Value="../../fpc/source/rtl/objpas/rtlconst.inc"/>
+        <EditorIndex Value="8"/>
+        <TopLine Value="247"/>
+        <CursorPos X="69" Y="265"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit34>
     </Units>
-    <JumpHistory Count="30" HistoryIndex="29">
+    <JumpHistory Count="29" HistoryIndex="28">
       <Position1>
         <Filename Value="libgulp.pas"/>
-        <Caret Line="642" Column="41" TopLine="634"/>
+        <Caret Line="916" Column="39" TopLine="898"/>
       </Position1>
       <Position2>
         <Filename Value="libgulp.pas"/>
-        <Caret Line="648" Column="32" TopLine="631"/>
+        <Caret Line="472" Column="37" TopLine="454"/>
       </Position2>
       <Position3>
-        <Filename Value="libgulp.pas"/>
-        <Caret Line="655" Column="14" TopLine="635"/>
+        <Filename Value="application.pas"/>
+        <Caret Line="370" Column="5" TopLine="351"/>
       </Position3>
       <Position4>
-        <Filename Value="libgulp.pas"/>
-        <Caret Line="679" Column="26" TopLine="662"/>
+        <Filename Value="application.pas"/>
+        <Caret Line="72" Column="20" TopLine="54"/>
       </Position4>
       <Position5>
-        <Filename Value="libgulp.pas"/>
-        <Caret Line="653" Column="19" TopLine="710"/>
+        <Filename Value="application.pas"/>
+        <Caret Line="318" Column="14" TopLine="301"/>
       </Position5>
       <Position6>
-        <Filename Value="libgulp.pas"/>
-        <Caret Line="723" Column="26" TopLine="705"/>
+        <Filename Value="application.pas"/>
+        <Caret Line="336" Column="8" TopLine="313"/>
       </Position6>
       <Position7>
-        <Filename Value="libgulp.pas"/>
-        <Caret Line="759" Column="26" TopLine="736"/>
+        <Filename Value="application.pas"/>
+        <Caret Line="332" Column="28" TopLine="322"/>
       </Position7>
       <Position8>
         <Filename Value="application.pas"/>
-        <Caret Line="137" TopLine="84"/>
+        <Caret Line="337" Column="44" TopLine="323"/>
       </Position8>
       <Position9>
         <Filename Value="application.pas"/>
-        <Caret Line="162" Column="17" TopLine="169"/>
+        <Caret Line="339" Column="10" TopLine="326"/>
       </Position9>
       <Position10>
-        <Filename Value="application.pas"/>
-        <Caret Line="205" Column="27" TopLine="195"/>
+        <Filename Value="streams.pas"/>
+        <Caret Line="73" Column="3" TopLine="46"/>
       </Position10>
       <Position11>
         <Filename Value="application.pas"/>
-        <Caret Line="206" Column="17" TopLine="189"/>
+        <Caret Line="318" Column="12" TopLine="302"/>
       </Position11>
       <Position12>
-        <Filename Value="application.pas"/>
-        <Caret Line="217" Column="51" TopLine="200"/>
+        <Filename Value="streams.pas"/>
+        <Caret Line="73" Column="11" TopLine="46"/>
       </Position12>
       <Position13>
-        <Filename Value="application.pas"/>
-        <Caret Line="228" Column="21" TopLine="211"/>
+        <Filename Value="../../fpc/source/rtl/objpas/classes/classesh.inc"/>
+        <Caret Line="924" Column="3" TopLine="912"/>
       </Position13>
       <Position14>
-        <Filename Value="application.pas"/>
-        <Caret Line="266" Column="21" TopLine="245"/>
+        <Filename Value="streams.pas"/>
+        <Caret Line="73" Column="11" TopLine="46"/>
       </Position14>
       <Position15>
         <Filename Value="application.pas"/>
-        <Caret Line="288" Column="38" TopLine="276"/>
+        <Caret Line="318" Column="8" TopLine="300"/>
       </Position15>
       <Position16>
-        <Filename Value="application.pas"/>
-        <Caret Line="277" Column="27" TopLine="262"/>
+        <Filename Value="streams.pas"/>
+        <Caret Line="219" TopLine="187"/>
       </Position16>
       <Position17>
         <Filename Value="application.pas"/>
-        <Caret Line="66" Column="11" TopLine="49"/>
+        <Caret Line="83" Column="11" TopLine="64"/>
       </Position17>
       <Position18>
         <Filename Value="application.pas"/>
-        <Caret Line="144" Column="9" TopLine="124"/>
+        <Caret Line="349" Column="41" TopLine="328"/>
       </Position18>
       <Position19>
-        <Filename Value="application.pas"/>
-        <Caret Line="185" Column="29" TopLine="168"/>
+        <Filename Value="libgulp.pas"/>
+        <Caret Line="587" Column="37" TopLine="599"/>
       </Position19>
       <Position20>
-        <Filename Value="application.pas"/>
-        <Caret Line="326" Column="27" TopLine="306"/>
+        <Filename Value="libgulp.pas"/>
+        <Caret Line="656" Column="18" TopLine="644"/>
       </Position20>
       <Position21>
-        <Filename Value="application.pas"/>
-        <Caret Line="66" Column="10" TopLine="57"/>
+        <Filename Value="streams.pas"/>
+        <Caret Line="55" Column="10" TopLine="185"/>
       </Position21>
       <Position22>
-        <Filename Value="application.pas"/>
-        <Caret Line="144" Column="8" TopLine="124"/>
+        <Filename Value="streams.pas"/>
+        <Caret Line="54" Column="3" TopLine="36"/>
       </Position22>
       <Position23>
-        <Filename Value="application.pas"/>
-        <Caret Line="185" Column="28" TopLine="168"/>
+        <Filename Value="../../fpc/source/rtl/objpas/classes/classesh.inc"/>
+        <Caret Line="924" Column="3" TopLine="906"/>
       </Position23>
       <Position24>
-        <Filename Value="libgulp.pas"/>
-        <Caret Line="790" Column="39" TopLine="788"/>
+        <Filename Value="../../fpc/source/rtl/objpas/classes/classesh.inc"/>
+        <Caret Line="908" Column="3" TopLine="890"/>
       </Position24>
       <Position25>
-        <Filename Value="libgulp.pas"/>
-        <Caret Line="648" Column="27" TopLine="631"/>
+        <Filename Value="../../fpc/source/rtl/objpas/classes/streams.inc"/>
+        <Caret Line="29" Column="3" TopLine="27"/>
       </Position25>
       <Position26>
-        <Filename Value="libgulp.pas"/>
-        <Caret Line="680" Column="29" TopLine="663"/>
+        <Filename Value="application.pas"/>
+        <Caret Line="340" Column="18" TopLine="322"/>
       </Position26>
       <Position27>
-        <Filename Value="libgulp.pas"/>
-        <Caret Line="719" Column="29" TopLine="703"/>
+        <Filename Value="../../fpc/source/rtl/objpas/classes/streams.inc"/>
+        <Caret Line="19" Column="36" TopLine="14"/>
       </Position27>
       <Position28>
-        <Filename Value="libgulp.pas"/>
-        <Caret Line="755" Column="29" TopLine="739"/>
+        <Filename Value="application.pas"/>
+        <Caret Line="340" Column="102" TopLine="326"/>
       </Position28>
       <Position29>
-        <Filename Value="libgulp.pas"/>
-        <Caret Line="509" Column="8" TopLine="467"/>
-      </Position29>
-      <Position30>
         <Filename Value="application.pas"/>
-        <Caret Line="293" Column="14" TopLine="277"/>
-      </Position30>
+        <Caret Line="319" Column="31" TopLine="310"/>
+      </Position29>
     </JumpHistory>
   </ProjectSession>
 </CONFIG>

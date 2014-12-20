@@ -7,15 +7,18 @@ uses
   {$IFDEF MSWINDOWS} Windows, {$ENDIF}
   {$IFDEF LIBCUNIT} Libc, {$ENDIF}
   SysUtils,
-  Classes;
+  Classes,
+  SHA1;
 
 const
   // --- Gulp Flags
-  gfClean          = $00000001; // Clean
-  gfFile           = $00000002; // Regular file
-  gfLink           = $00000004; // Link
-  gfSymbolicLink   = $00000008; // Symbolic link
-  gfDirectory      = $00000010; // Directory entry
+  gfAdd            = $00000001; // Add record
+  gfDelete         = $00000002; // Delete record
+
+  gfFile           = $00000100; // Regular file
+  gfLink           = $00000200; // Link
+  gfSymbolicLink   = $00000400; // Symbolic link
+  gfDirectory      = $00000800; // Directory entry
 
   gfLast           = $00010000; // Last record
   gfModifiedTime   = $00020000; // Last modification date and time
@@ -70,25 +73,36 @@ type
     GID          : longint;          // Group ID
     GroupName    : ansistring;       // Group Name
     Seek         : qword;            // Record seek
-    Checksum     : ansistring;       // Rec SHA checksum
+    // ---                           // Record data
+    Checksum     : ansistring;       // Record SHA checksum
+    ChecksumAux  : ansistring;       // Record SHA checksum aux (reserved)
   end;
 
   // --- The Gulp Reader CLASS
   TGulpReader = class(TObject)
   protected
+    FCTX            : TSHA1Context;
     FStream         : TStream;
     FCleanCount     : longint;
     FFileCount      : longint;
     FLinkCount      : longint;
     FSymLinkCount   : longint;
     FDirectoryCount : longint;
+
+    function  ReadString (var Buffer: string): longint;
+    function  Read (var Buffer; Count: longint): longint;
   public
     constructor Create  (Stream: TStream);
     destructor Destroy; override;
-    procedure Reset; 
-    function  FindNext   (var Rec: TGulpRec): boolean;
-    procedure ReadStream (var Rec: TGulpRec; Stream: TStream);
-    procedure ReadFile   (var Rec: TGulpRec);
+    procedure Reset;
+
+    function  ReadStream (var Rec: TGulpRec; Stream: TStream): boolean;
+
+    function  FindNext  (var Rec: TGulpRec): boolean;
+    procedure ReadRec   (var Rec: TGulpRec);
+    function  CheckRec  (var Rec: TGulpRec): boolean;
+
+
     function GetFileSize: int64;
     function GetFilePos: int64;
     procedure SetFilePos (const NewPos : int64);
@@ -103,6 +117,7 @@ type
   // --- The Gulp Writer CLASS
   TGulpWriter = class(TObject)
   protected
+    FCTX            : TSHA1Context;
     FStream         : TStream;
     FStoredTime     : TDateTime;
     FCleanCount     : longint;
@@ -111,6 +126,8 @@ type
     FSymLinkCount   : longint;
     FDirectoryCount : longint;
     procedure WriteStream (Rec: TGulpRec; Stream: TStream);
+    procedure WriteString (const Buffer: string);
+    procedure Write (const Buffer; Count: longint);
   public
     constructor Create  (Stream: TStream);
     destructor Destroy; override;
@@ -169,14 +186,10 @@ function GetFileFlag(const FileName: string): longword;
 implementation
 
 uses
-  Sha1;
+  Math;
 
 const
-  HexaDecimals: array [0..15] of char = '0123456789ABCDEF';
-  HexValues: array ['0'..'F'] of byte = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-    0, 0, 0, 0, 0, 0, 0, 10, 11, 12, 13, 14, 15);
-
-  GulpMarker: TGulpMarker = ('G', 'U','L','P','-', '1','0','0');
+  GulpMarker: TGulpMarker = ('G', 'U','L','P','/', '0','0','2');
 
 // =============================================================================
 // GULP Lib Routines
@@ -267,7 +280,7 @@ begin
   FindClose(SR);
 end;
 
-function SizeToString(Rec: TGulpRec): string;
+function SizeToString (Rec: TGulpRec): string;
 begin
   Result := ' ';
   if Rec.Flags and gfSize <> 0 then
@@ -278,7 +291,7 @@ end;
 
 function AttrToString (Rec: TGulpRec): string;
 begin
-  if Rec.Flags and gfclean = 0 then
+  if Rec.Flags and gfDelete = 0 then
   begin
     Result := 'ADD ....... .........';
     if Rec.Attributes and faReadOnly       <> 0 then Result[5]  := 'R';
@@ -304,47 +317,12 @@ end;
 
 function TimeToString (Rec: TGulpRec): string;
 begin
-  if Rec.Flags and gfclean = 0 then
+  if Rec.Flags and gfDelete = 0 then
     Result := FormatDateTime(
       DefaultFormatSettings.LongDateFormat + ' ' +
       DefaultFormatSettings.LongTimeFormat, Rec.ModifiedTime)
   else
     Result := '.......... ........';
-end;
-
-function Hex(const Data; Count: longint): string;
-var
-  I, J: longint;
-  K:    longword;
-begin
-  SetLength(Result, Count shl 1);
-  J := 1;
-  for I := 0 to Count - 1 do
-  begin
-    K := TByteArray(Data) [I];
-    Result[J] := HexaDecimals[K shr 4];
-    Inc(J);
-    Result[J] := HexaDecimals[K and $f];
-    Inc(J);
-  end;
-end;
-
-function HexToData(const S: string; var Data; Count: longint): boolean;
-var
-  I: longint;
-begin
-  Result := FALSE;
-  if Length(S) < Count * 2 then Exit;
-
-  for I := 0 to Count - 1 do
-  begin
-    if (S[I * 2 + 1] in ['0'..'9', 'A'..'F']) and (S[I * 2 + 2] in ['0'..'9', 'A'..'F']) then
-    begin
-      TByteArray(Data)[I] := HexValues[S[I * 2 + 1]] shl 4 + HexValues[S[I * 2 + 2]]
-    end else
-      Exit;
-  end;
-  Result := TRUE;
 end;
 
 // =============================================================================
@@ -366,28 +344,7 @@ begin
   Rec.GroupName    := '';
   Rec.Seek         := 0;
   Rec.Checksum     := '';
-end;
-
-
-procedure ReadGulpRec (Stream: TStream; var Rec: TGulpRec);
-begin
-  Rec.Name := Stream.ReadAnsiString;
-  Stream.Read (Rec.Flags, SizeOf (Rec.Flags));
-  Stream.Read (Rec.StoredTime, SizeOf (Rec.StoredTime));
-
-  if gfModifiedTime and Rec.Flags <> 0 then Stream.Read(Rec.ModifiedTime, SizeOf (Rec.ModifiedTime));
-  if gfAttributes   and Rec.Flags <> 0 then Stream.Read(Rec.Attributes, SizeOf (Rec.Attributes));
-  if gfSize         and Rec.Flags <> 0 then Stream.Read(Rec.Size, SizeOf (Rec.Size));
-  if gfLinkName     and Rec.Flags <> 0 then Rec.LinkName := Stream.ReadAnsiString;
-  if gfUID          and Rec.Flags <> 0 then Stream.Read(Rec.UID, SizeOf (Rec.UID));
-  if gfUserName     and Rec.Flags <> 0 then Rec.UserName := Stream.ReadAnsiString;
-  if gfGID          and Rec.Flags <> 0 then Stream.Read(Rec.GID, SizeOf (Rec.GID));
-  if gfGroupName    and Rec.Flags <> 0 then Rec.GroupName := Stream.ReadAnsiString;
-  if gfSeek         and Rec.Flags <> 0 then Stream.Read(Rec.Seek, SizeOf (Rec.Seek));
-  // ---
-  Stream.Seek (Rec.Size, soCurrent);
-  // ---
-  if gfChecksum     and Rec.Flags <> 0 then Rec.Checksum := Stream.ReadAnsiString;
+  Rec.ChecksumAux  := '';
 end;
 
 // =============================================================================
@@ -398,7 +355,7 @@ function GetFileFlag(const FileName: string): longword;
 var
   SR: TSearchRec;
 begin
-  Result := gfClean;
+  Result := gfDelete;
   if FindFirst(FileName, faAnyFile, SR) = 0 then
   begin
     if SR.Attr and faDirectory <> 0 then Result := gfDirectory else
@@ -491,6 +448,71 @@ begin
   FDirectoryCount := 0;
 end;
 
+function TGulpReader.Read(var Buffer; Count: longint): longint;
+begin
+  Result := FStream.Read(Buffer, Count);
+  SHA1Update(FCTX, Buffer, Result);
+end;
+
+function TGulpReader.ReadString (var Buffer: string): longint;
+begin
+  Read(Result, SizeOf(Result));
+  SetLength(Buffer, Result);
+  Read(Pointer(Buffer)^, Result);
+end;
+
+function TGulpReader.ReadStream (var Rec: TGulpRec; Stream: TStream): boolean;
+var
+  Count: int64;
+  Readed: longint;
+  Digest: TSHA1Digest;
+  Buffer: array[0..$FFFF] of byte;
+  Marker: TGulpMarker;
+begin
+  SHA1Init (FCTX);
+  FillChar (Marker, SizeOf (Marker), 0);
+  Read     (Marker, SizeOf (Marker));
+  Result := Marker = GulpMarker;
+  if Result then
+  begin
+    ClearRec   (Rec);
+    ReadString (Rec.Name);
+    Read       (Rec.Flags, SizeOf (Rec.Flags));
+    Read       (Rec.StoredTime, SizeOf (Rec.StoredTime));
+
+    if gfModifiedTime and Rec.Flags <> 0 then Read      (Rec.ModifiedTime, SizeOf (Rec.ModifiedTime));
+    if gfAttributes   and Rec.Flags <> 0 then Read      (Rec.Attributes,   SizeOf (Rec.Attributes));
+    if gfSize         and Rec.Flags <> 0 then Read      (Rec.Size,         SizeOf (Rec.Size));
+    if gfLinkName     and Rec.Flags <> 0 then ReadString(Rec.LinkName);
+    if gfUID          and Rec.Flags <> 0 then Read      (Rec.UID,          SizeOf (Rec.UID));
+    if gfUserName     and Rec.Flags <> 0 then ReadString(Rec.UserName);
+    if gfGID          and Rec.Flags <> 0 then Read      (Rec.GID,          SizeOf (Rec.GID));
+    if gfGroupName    and Rec.Flags <> 0 then ReadString(Rec.GroupName);
+    if gfSeek         and Rec.Flags <> 0 then Read      (Rec.Seek,         SizeOf (Rec.Seek));
+
+    if Assigned(Stream) then
+    begin
+      Count := Rec.Size;
+      while Count <> 0 do
+      begin
+          Readed := Read(Buffer, Min(SizeOf(Buffer), Count));
+            Stream.Write(Buffer, Readed);
+        SHA1Update(FCTX, Buffer, Readed);
+        Dec(Count, Readed);
+      end;
+    end else
+    begin
+
+      FStream.Seek(Rec.Size, soCurrent);
+    end;
+
+    SHA1Final(FCTX, Digest);
+    Rec.ChecksumAux := SHA1Print(Digest);
+    if gfChecksum and Rec.Flags <> 0 then
+      Rec.Checksum := FStream.ReadAnsiString;
+  end;
+end;
+
 function TGulpReader.FindNext (var Rec: TGulpRec): boolean;
 var
   Marker: TGulpMarker;
@@ -498,13 +520,10 @@ begin
   Result := FALSE;
   if FStream.Position < FStream.Size then
   begin
-    FStream.Read(Marker, SizeOf (Marker));
-    Result := Marker = GulpMarker;
+    Result := ReadStream (Rec, nil);
     if Result then
     begin
-      ClearRec (Rec);
-      ReadGulpRec (FStream, Rec);
-      if gfClean        and Rec.Flags <> 0 then Inc(FCleanCount)     else
+      if gfDelete       and Rec.Flags <> 0 then Inc(FCleanCount)     else
       if gfFile         and Rec.Flags <> 0 then Inc(FFileCount)      else
       if gfLink         and Rec.Flags <> 0 then Inc(FLinkCount)      else
       if gfSymbolicLink and Rec.Flags <> 0 then Inc(FSymLinkCount)   else
@@ -513,17 +532,12 @@ begin
   end;
 end;
 
-procedure TGulpReader.ReadStream (var Rec: TGulpRec; Stream: TStream);
+function TGulpReader.CheckRec(var Rec: TGulpRec): boolean;
 begin
-  if Rec.Flags and gfSize <> 0 then
-    if Rec.Size <> 0 then
-    begin
-      FStream.Seek (Rec.Seek, soBeginning);
-      Stream.CopyFrom (FStream, Rec.Size);
-    end;
+  Result := Rec.Checksum = Rec.ChecksumAux;
 end;
 
-procedure TGulpReader.ReadFile (var Rec: TGulpRec);
+procedure TGulpReader.ReadRec (var Rec: TGulpRec);
 var
   S: TFileStream;
 begin
@@ -578,61 +592,58 @@ begin
   inherited Destroy;
 end;
 
-procedure TGulpWriter.WriteStream (Rec: TGulpRec; Stream: TStream);
+procedure TGulpWriter.Write(const Buffer; Count: longint);
+begin
+  FStream.Write(Buffer, Count);
+  SHA1Update(FCTX, Buffer, Count);
+end;
+
+procedure TGulpWriter.WriteString(const Buffer: string);
 var
   Count: longint;
-  CTX: TSHA1Context;
+begin
+  Count := Length(Buffer);
+  Write(Count, SizeOf(Count));
+  Write(Pointer(Buffer)^, Count);
+end;
+
+procedure TGulpWriter.WriteStream (Rec: TGulpRec; Stream: TStream);
+var
+  Count: int64;
+  Readed: longint;
   Digest: TSHA1Digest;
   Buffer: array[0..$FFFF] of byte;
 begin
-  FStream.Write(GulpMarker, SizeOf (TGulpMarker));
+  SHA1Init    (FCTX);
+  Write       (GulpMarker, SizeOf (GulpMarker));
+  WriteString (Rec.Name);
+  Write       (Rec.Flags, SizeOf (Rec.Flags));
+  Write       (Rec.StoredTime, SizeOf (Rec.StoredTime));
 
-  FStream.WriteAnsiString(Rec.Name);
-  FStream.Write (Rec.Flags, SizeOf (Rec.Flags));
-  FStream.Write (Rec.StoredTime, SizeOf (Rec.StoredTime));
+  if gfModifiedTime and Rec.Flags <> 0 then Write      (Rec.ModifiedTime, SizeOf (Rec.ModifiedTime));
+  if gfAttributes   and Rec.Flags <> 0 then Write      (Rec.Attributes,   SizeOf (Rec.Attributes));
+  if gfSize         and Rec.Flags <> 0 then Write      (Rec.Size,         SizeOf (Rec.Size));
+  if gfLinkName     and Rec.Flags <> 0 then WriteString(Rec.LinkName);
+  if gfUID          and Rec.Flags <> 0 then Write      (Rec.UID,          SizeOf (Rec.UID));
+  if gfUserName     and Rec.Flags <> 0 then WriteString(Rec.UserName);
+  if gfGID          and Rec.Flags <> 0 then Write      (Rec.GID,          SizeOf (Rec.GID));
+  if gfGroupName    and Rec.Flags <> 0 then WriteString(Rec.GroupName);
+  if gfSeek         and Rec.Flags <> 0 then Write      (Rec.Seek,         SizeOf (Rec.Seek));
 
-  if gfModifiedTime and Rec.Flags <> 0 then
-    FStream.Write(Rec.ModifiedTime, SizeOf (Rec.ModifiedTime));
-
-  if gfAttributes   and Rec.Flags <> 0 then
-    FStream.Write(Rec.Attributes, SizeOf (Rec.Attributes));
-
-  if gfSize         and Rec.Flags <> 0 then
-    FStream.Write(Rec.Size, SizeOf (Rec.Size));
-
-  if gfLinkName     and Rec.Flags <> 0 then
-    FStream.WriteAnsiString(Rec.LinkName);
-
-  if gfUID          and Rec.Flags <> 0 then
-    FStream.Write(Rec.UID, SizeOf (Rec.UID));
-
-  if gfUserName     and Rec.Flags <> 0 then
-    FStream.WriteAnsiString(Rec.UserName);
-
-  if gfGID          and Rec.Flags <> 0 then
-    FStream.Write(Rec.GID, SizeOf (Rec.GID));
-
-  if gfGroupName    and Rec.Flags <> 0 then
-    FStream.WriteAnsiString(Rec.GroupName);
-
-  if gfSeek         and Rec.Flags <> 0 then
-    FStream.Write(Rec.Seek, SizeOf (Rec.Seek));
-
-  if Rec.Flags and gfSize <> 0 then
+  if Assigned(Stream) then
   begin
-    SHA1Init(CTX);
-    Count := Stream.Read (Buffer[0], SizeOf(Buffer));
+    Count := Rec.Size;
     while Count <> 0 do
     begin
-            SHA1Update(CTX, Buffer[0], Count);
-             FStream.Write (Buffer[0], Count);
-      Count := Stream.Read (Buffer[0], SizeOf(Buffer));
+      Readed := Stream.Read (Buffer, Min(SizeOf(Buffer), Count));
+                      Write (Buffer, Readed);
+            SHA1Update(FCTX, Buffer, Readed);
+      Dec(Count, Readed);
     end;
-    SHA1Final(CTX, Digest);
-    Rec.Checksum := SHA1Print(Digest);
   end;
-
-  if gfChecksum  and Rec.Flags <> 0 then
+  SHA1Final(FCTX, Digest);
+  Rec.Checksum := SHA1Print(Digest);
+  if gfChecksum and Rec.Flags <> 0 then
     FStream.WriteAnsiString(Rec.Checksum);
 end;
 
@@ -642,8 +653,11 @@ var
 begin
   Rec := TGulpRec.Create;
   ClearRec(Rec);
-  Rec.Name       := FileName;
-  Rec.Flags      := gfClean;
+  Rec.Name  := FileName;
+  Rec.Flags :=
+    gfDelete or
+    gfChecksum;
+
   if LastFlag then
     Rec.Flags := Rec.Flags or gfLast;
 
@@ -713,7 +727,8 @@ begin
       gfAttributes   or
       gfLinkName     or
       gfUID          or
-      gfGID;
+      gfGID          or
+      gfChecksum;
 
     if LastFlag then
       Rec.Flags := Rec.Flags or gfLast;
@@ -749,7 +764,8 @@ begin
       gfAttributes   or
       gfLinkName     or
       gfUID          or
-      gfGID;
+      gfGID          or
+      gfChecksum;
 
     if LastFlag then
       Rec.Flags := Rec.Flags or gfLast;
@@ -784,7 +800,8 @@ begin
       gfModifiedTime or
       gfAttributes   or
       gfUID          or
-      gfGID;
+      gfGID          or
+      gfChecksum;
 
     if LastFlag then
       Rec.Flags := Rec.Flags or gfLast;
@@ -907,7 +924,7 @@ begin
     for I := FList.Count - 1 downto 0 do
       if AnsiCompareFileName(FileName, Items[I].Name) = 0 then
       begin
-        if Items[I].Flags and gfClean <> 0 then
+        if Items[I].Flags and gfDelete <> 0 then
           Result := I
         else
           Break;
@@ -934,7 +951,7 @@ begin
   begin
     if Rec.StoredTime < StoredTime + 0.00002 then
     begin
-      if Rec.Flags and gfClean = 0 then
+      if Rec.Flags and gfDelete = 0 then
       begin
         BinInsert(Rec);
         Rec := TGulpRec.Create;

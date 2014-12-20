@@ -41,9 +41,9 @@ uses
   Scanner;
 
 const
-  ShortSwitches = 's:r:p:l:t:f:';
-  LongSwitches: array[1..6] of string = (
-    'synch:', 'restore:', 'purge:', 'list:', 'time:', 'fix:');
+  ShortSwitches = 's:r:p:l:t:f:c:';
+  LongSwitches: array[1..7] of string = (
+    'synch:', 'restore:', 'purge:', 'list:', 'time:', 'fix:', 'check:');
 
 type
   TGulpProgress =class(TObject)
@@ -69,6 +69,7 @@ type
     procedure Purge;
     procedure List;
     procedure Fix;
+    procedure Check;
     procedure DoRun; override;
   public
     constructor Create(AOwner: TComponent); override;
@@ -79,6 +80,7 @@ implementation
 
 uses
   SysUtils,
+  Streams,
   Common;
 
 function SetIdlePriority: boolean;
@@ -245,7 +247,7 @@ begin
     writeln('Added ', GulpWriter.SymLinkCount,   ' Symbolic Links');
     writeln('Added ', GulpWriter.DirectoryCount, ' Directories');
 
-    writeln('Everything ok.');
+    writeln('Finished.');
   except
     writeln;
     writeln(Message);
@@ -273,7 +275,6 @@ begin
     writeln(' done');
 
     Message := 'Fatal error on reading records.';
-    writeln('Read records...');
     GulpReader := TGulpReader.Create(Stream);
     GulpReader.Reset;
 
@@ -300,7 +301,7 @@ begin
       Stream := TFileStream.Create (GetOptionValue('f', 'fix'), fmOpenWrite);
       Stream.Size := FixSize;
     end;
-    writeln('Everything ok.');
+    writeln('Finished.');
   except
     writeln;
     writeln(Message);
@@ -308,6 +309,54 @@ begin
   if Assigned(GulpReader) then FreeAndNil(GulpReader);
   if Assigned(Stream)     then FreeAndNil(Stream);
   if Assigned(Rec)        then FreeAndNil(Rec);
+end;
+
+procedure TGulpApplication.Check;
+var
+  Nul: TNulStream;
+  Rec: TGulpRec = nil;
+  GulpReader: TGulpReader = nil;
+  StoredTime: TDateTime = 0.0;
+begin
+  writeln('Check the contents of ' + GetOptionValue('c', 'check'));
+   try
+     Message := 'Fatal error on opening archive.';
+     write('Opening archive...');
+     Stream := TFileStream.Create (GetOptionValue('c', 'check'), fmOpenRead);
+     writeln(' done');
+
+     Message := 'Fatal error on reading records.';
+     GulpReader := TGulpReader.Create(Stream);
+     GulpReader.Reset;
+
+
+     Rec := TGulpRec.Create;
+     Nul := TNulStream.Create;
+     while GulpReader.ReadStream(Rec, Nul) do
+     begin
+
+       if StoredTime <> Rec.StoredTime then
+       begin
+         StoredTime := Rec.StoredTime;
+         writeln('Found job at ' + DateTimeToStr(StoredTime));
+       end;
+
+       if Rec.Flags and gfChecksum <> 0 then
+         if Rec.Checksum <> Rec.ChecksumAux then
+         begin
+           Writeln (Rec.Name + ' CHECKSUM MISMATCHED');
+         end
+     end;
+
+     writeln('Finished.');
+   except
+     writeln;
+     writeln(Message);
+   end;
+   if Assigned(GulpReader) then FreeAndNil(GulpReader);
+   if Assigned(Stream)     then FreeAndNil(Stream);
+   if Assigned(Nul)        then FreeAndNil(Nul);
+   if Assigned(Rec)        then FreeAndNil(Rec);
 end;
 
 procedure TGulpApplication.Purge;
@@ -369,7 +418,7 @@ var
   Rec: TGulpRec;
   GulpList: TGulpList = nil;
   HistoryMode: boolean;
-  StoredTime: TDateTime;
+  StoredTime: TDateTime = 0.0;
 begin
   writeln('List the contents of ' + GetOptionValue('l', 'list'));
   try
@@ -379,7 +428,6 @@ begin
     writeln(' done');
 
     Message := 'Fatal error on reading records.';
-    write('Read records...');
     GulpList := TGulpList.Create(Stream);
     if FileNames.Count = 0 then
       FileNames.Add('*');
@@ -389,10 +437,8 @@ begin
       GulpList.LoadAt(StrToDateTime(GetOptionValue('t', 'time')))
     else
       GulpList.Load;
-    writeln(' done');
 
     Message := 'Fatal error on showing records.';
-    StoredTime := 0.0;
     for J := 0 to GulpList.Count - 1 do
     begin
       Rec   := GulpList.Items[J];
@@ -405,7 +451,7 @@ begin
             if StoredTime <> Rec.StoredTime then
             begin
               StoredTime := Rec.StoredTime;
-              writeln('At ' + DateTimeToStr(StoredTime));
+              writeln('Found job at ' + DateTimeToStr(StoredTime));
             end;
 
           writeln(Format('%9s %19s %12s %s', [
@@ -417,7 +463,7 @@ begin
         end;
     end;
 
-    writeln('Everything ok.');
+    writeln('Finished.');
   except
     writeln;
     writeln(Message);
@@ -442,6 +488,7 @@ begin
     if HasOption('r', 'restore') then Restore else
     if HasOption('p', 'purge'  ) then Purge   else
     if HasOption('f', 'fix'    ) then Fix     else
+    if HasOption('c', 'check'  ) then Check   else
     if HasOption('l', 'list'   ) then List;
 
     writeln('Elapsed ', TimeDifference(Start), ' sec');

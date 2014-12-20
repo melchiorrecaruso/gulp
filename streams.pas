@@ -65,6 +65,15 @@ type
     function Seek(const Offset: Int64; Origin: TSeekOrigin): Int64; override;
   end;
 
+  { TNulStream class }
+
+  TNulStream = class(TStream)
+  public
+    function Read(var Buffer; Count: Longint): Longint; override;
+    function Write(const Buffer; Count: Longint): Longint; override;
+  end;
+
+
 implementation
 
 uses
@@ -194,6 +203,18 @@ begin
     Result := inherited Seek (Offset, Origin);
   end else
     Result := inherited Seek (Offset, Origin) + FBufferIndex;
+end;
+
+{ TNulStream class }
+
+function TNulStream.Read(var Buffer; Count: Longint): Longint;
+begin
+  Result := Count;
+end;
+
+function TNulStream.Write(const Buffer; Count: Longint): Longint;
+begin
+  Result := Count;
 end;
 
 end.
