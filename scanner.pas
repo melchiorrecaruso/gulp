@@ -30,8 +30,7 @@ unit Scanner;
 interface
 
 uses
-  Classes,
-  SysUtils;
+  Classes;
 
 type
   { TSysScanner }
@@ -61,7 +60,7 @@ type
 implementation
 
 uses
-  DateUtils,
+  SysUtils,
   Masks;
 
 function FileNameMatch(const FileName, FileMask: string): boolean;

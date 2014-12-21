@@ -41,20 +41,10 @@ uses
   Scanner;
 
 type
-  TGulpProgress =class(TObject)
-  private
-    FIndex: cardinal;
-  public
-    procedure Start(const Message: string);
-    procedure Stop (const Message: string);
-    procedure Show;
-  end;
-
   TGulpApplication = class(TCustomApplication)
   protected
     Message:   string;
     FileNames: TStringList;
-    Progress:  TGulpProgress;
     Switches:  TStringList;
     Scanner:   TSysScanner;
     Stream:    TFileStream;
@@ -76,8 +66,10 @@ implementation
 
 uses
   SysUtils,
-  Streams,
-  Common;
+  Streams;
+
+const
+  ClrLine = #8#8#8#8#8#8#8#8#8#8#8#8#8#8#8#8#8#8#8#8;
 
 function SetIdlePriority: boolean;
 begin
@@ -105,30 +97,6 @@ begin
 end;
 
 // =============================================================================
-// TGulpProgress
-// =============================================================================
-
-procedure TGulpProgress.Start(const Message: string);
-begin
-  write(Message);
-  FIndex := 0;
-end;
-
-procedure TGulpProgress.Stop(const Message: string);
-begin
-  writeln(Message);
-end;
-
-procedure TGulpProgress.Show;
-const
-  Spin: array[0..3] of char = ('-','\','|','/');
-begin
-  if FIndex = SizeOf(Spin) then FIndex := 0;
-  write(Spin[FIndex], #8);
-  Inc(FIndex);
-end;
-
-// =============================================================================
 // TGulpApplication
 // =============================================================================
 
@@ -136,7 +104,6 @@ constructor TGulpApplication.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   FileNames := TStringList.Create;
-  Progress  := TGulpProgress.Create;
   Switches  := TStringList.Create;
   Scanner   := TSysScanner.Create;
   Start     := Now;
@@ -145,7 +112,6 @@ end;
 destructor TGulpApplication.Destroy;
 begin
   FileNames.Destroy;
-  Progress.Destroy;
   Switches.Destroy;
   Scanner.Destroy;
   inherited Destroy;
@@ -162,49 +128,44 @@ begin
   writeln('Synchronize ' + GetOptionValue('s', 'synch'));
   try
     Message := 'Fatal error on scanning.';
-    write('Scanning...');
+    write(#13, #13: 80, 'Scanning... ');
     for I := 0 to FileNames.Count - 1 do
       Scanner.Add(FileNames[I]);
-    writeln(' done ', Scanner.Count);
 
     Message := 'Fatal error on opening archive.';
-    write('Opening archive...');
+    write(#13, #13: 80, 'Opening archive... ');
     if FileExists(GetOptionValue('s', 'synch')) then
       Stream := TFileStream.Create (GetOptionValue('s', 'synch'), fmOpenRead)
     else
       Stream := nil;
-    writeln(' done');
 
     Message := 'Fatal error on reading records.';
-    write('Read records...');
+    write(#13, #13: 80, 'Read records... ');
     GulpList := TGulpList.Create(Stream);
     if Assigned(Stream) then
     begin
       GulpList.LoadAt(Start);
       FreeAndNil(Stream);
     end;
-    writeln(' done');
 
     Message := 'Fatal error on opening/creating archive.';
-    write('Opening archive...');
+    write(#13, #13: 80, 'Opening archive... ');
     if FileExists(GetOptionValue('s', 'synch')) then
       Stream := TFileStream.Create (GetOptionValue('s', 'synch'), fmOpenWrite)
     else
       Stream := TFileStream.Create (GetOptionValue('s', 'synch'), fmCreate);
-    writeln(' done');
 
     Message := 'Fatal error on delete records.';
+    write(#13, #13: 80, 'Deleting recors... ');
     GulpWriter := TGulpWriter.Create(Stream);
-    Progress.Start('Deleting recors...');
     for I := 0 to GulpList.Count - 1 do
     begin
-      Rec   := GulpList.Items[I];
-      Message := 'Fatal error on delete ' + Rec.Name + '.';
-
       LastFlag := FALSE;
       if Scanner.Count = 0 then
         LastFlag := GulpList.Count -1 = I;
 
+      Rec     := GulpList.Items[I];
+      Message := 'Fatal error on delete ' + Rec.Name + '.';
       J := Scanner.Find(Rec.Name);
       if J = -1 then
         GulpWriter.Delete(Rec.Name, LastFlag)
@@ -215,34 +176,30 @@ begin
           GulpWriter.Delete(Rec.Name, LastFlag)
         else
           Scanner.Delete(J);
-      Progress.Show;
     end;
-    Progress.Stop(' done');
 
     Message := 'Fatal error on adding records.';
-    Progress.Start('Adding recors...');
+    write(#13, #13: 80, 'Adding recors... ');
     for I := 0 to Scanner.Count - 1 do
     begin
-      Message := 'Fatal error on adding ' + Scanner.Items[I] + '.';
-
       LastFlag := Scanner.Count -1 = I;
+
+      Message := 'Fatal error on adding ' + Scanner.Items[I] + '.';
       case GetFileType(Scanner.Items[I]) of
         gfFile:         GulpWriter.AddFile      (Scanner.Items[I], LastFlag);
         gfLink:         GulpWriter.AddLink      (Scanner.Items[I], LastFlag);
         gfSymbolicLink: GulpWriter.AddSymLink   (Scanner.Items[I], LastFlag);
         gfDirectory:    GulpWriter.AddDirectory (Scanner.Items[I], LastFlag);
-      //gfUnknow:
       end;
-      Progress.Show;
     end;
-    Progress.Stop(' done');
 
     Message := 'Fatal error on showing changes.';
-    writeln('Added ', GulpWriter.FileCount,      ' Files');
-    writeln('Added ', GulpWriter.LinkCount,      ' Links');
+    write  (#13, #13: 80);
+    writeln('Added ', GulpWriter.FileCount,      ' Files         ');
+    writeln('Added ', GulpWriter.LinkCount,      ' Links         ');
     writeln('Added ', GulpWriter.SymLinkCount,   ' Symbolic Links');
-    writeln('Added ', GulpWriter.DirectoryCount, ' Directories');
-    writeln('Added ', GulpWriter.DeletionCount,  ' Deletions');
+    writeln('Added ', GulpWriter.DirectoryCount, ' Directories   ');
+    writeln('Added ', GulpWriter.DeletionCount,  ' Deletions     ');
     writeln('Finished.');
   except
     writeln;
@@ -398,7 +355,7 @@ begin
   Stream.Seek(0, soFromEnd);
   GulpWriter := TGulpWriter.Create(Stream);
   // delete old records ...
-  Progress.Start('Deleting old recors...');
+
 
 
 
