@@ -40,11 +40,6 @@ uses
   LibGulp,
   Scanner;
 
-const
-  ShortSwitches = 's:r:p:l:t:f:c:';
-  LongSwitches: array[1..7] of string = (
-    'synch:', 'restore:', 'purge:', 'list:', 'time:', 'fix:', 'check:');
-
 type
   TGulpProgress =class(TObject)
   private
@@ -70,6 +65,7 @@ type
     procedure List;
     procedure Fix;
     procedure Check;
+    procedure Help;
     procedure DoRun; override;
   public
     constructor Create(AOwner: TComponent); override;
@@ -169,7 +165,7 @@ begin
     write('Scanning...');
     for I := 0 to FileNames.Count - 1 do
       Scanner.Add(FileNames[I]);
-    writeln(' done');
+    writeln(' done ', Scanner.Count);
 
     Message := 'Fatal error on opening archive.';
     write('Opening archive...');
@@ -479,14 +475,32 @@ begin
   if Assigned(Stream)   then FreeAndNil(Stream);
 end;
 
+procedure TGulpApplication.Help;
+begin
+  writeln('HELP-FILE');
+end;
+
 procedure TGulpApplication.DoRun;
 var
   Error: string;
+  ShortSwitches: string;
+  LongSwitches: TStrings;
 begin
   writeln('GULP 0.0.2 archiver utility, Copyright (c) 2014 Melchiorre Caruso.');
 
   DefaultFormatSettings.LongDateFormat  := 'yyyy-mm-dd';
   DefaultFormatSettings.ShortDateFormat := 'yyyy-mm-dd';
+
+  ShortSwitches := 's:r:p:l:t:f:c:h';
+  LongSwitches  :=  TStringList.Create;
+  LongSwitches.Add('synch:');
+  LongSwitches.Add('restore:');
+  LongSwitches.Add('purge:');
+  LongSwitches.Add('list:');
+  LongSwitches.Add('time:');
+  LongSwitches.Add('fix:');
+  LongSwitches.Add('check:');
+  LongSwitches.Add('help');
 
   Error := CheckOptions(ShortSwitches, LongSwitches, Switches, FileNames);
   if Error = '' then
@@ -496,12 +510,14 @@ begin
     if HasOption('p', 'purge'  ) then Purge   else
     if HasOption('f', 'fix'    ) then Fix     else
     if HasOption('c', 'check'  ) then Check   else
-    if HasOption('l', 'list'   ) then List;
+    if HasOption('h', 'help'   ) then Help    else
+    if HasOption('l', 'list'   ) then List    else Help;
 
     writeln('Elapsed ', TimeDifference(Start), ' sec');
   end else
     writeln(Error);
 
+  FreeAndNil(LongSwitches);
   Terminate;
 end;
 

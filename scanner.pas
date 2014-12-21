@@ -56,22 +56,17 @@ type
     property Items[Index: longint]: string read GetItem;
   end;
 
-function FileNameMatching(const FileName, FileMask: string; Recursive: boolean): boolean;
+  function FileNameMatch(const FileName, FileMask: string): boolean;
 
 implementation
 
 uses
   DateUtils,
-  Common;
+  Masks;
 
-function FileNameMatching(const FileName, FileMask: string; Recursive: boolean): boolean;
+function FileNameMatch(const FileName, FileMask: string): boolean;
 begin
-  Result := FALSE;
-
-
-
-
-
+  Result := MatchesMask(FileName, FileMask, FileNameCaseSensitive);
 end;
 
 { TSysScanner class }
@@ -117,10 +112,7 @@ begin
   ScanPath := ExtractFilePath(FileMask);
   ScanMask := ExtractFileName(FileMask);
   // search filemask ...
-  Error := SysUtils.FindFirst(ScanPath + '*',
-    faReadOnly  or faHidden  or faSysFile or faVolumeId or
-    faDirectory or faArchive or faSymLink or faAnyFile, Rec);
-
+  Error := SysUtils.FindFirst(ScanPath + '*', faAnyFile, Rec);
   while Error = 0 do
   begin
     if (Rec.Attr and faDirectory) = faDirectory then
