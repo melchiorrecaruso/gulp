@@ -77,8 +77,7 @@ type
 implementation
 
 uses
-  Math,
-  Status;
+  Math;
 
 { TFileReader methods }
 

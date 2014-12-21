@@ -11,9 +11,11 @@ uses
   SHA1;
 
 const
-  // --- Gulp Flags
-  gfAdd            = $00000001; // Add record
-  gfDelete         = $00000002; // Delete record
+  // --- Gulp Flags ---
+  gfUnknow         = $00000000;
+  gfAdd            = $00000001; // Add command
+  gfDelete         = $00000002; // Delete command
+  gfUpdate         = $00000004; // Update command
 
   gfFile           = $00000100; // Regular file
   gfLink           = $00000200; // Link
@@ -34,7 +36,7 @@ const
 
   gfReserved       = $80000000; // Extra flags
 
-  // --- Gulp Attributes
+  // --- Gulp Attributes ---
   gaReadOnly       = $00000001; //
   gaHidden         = $00000002; //
   gaSysFile        = $00000004; //
@@ -56,10 +58,10 @@ const
 type
   {$IFNDEF UNICODE} rawbytestring = string; {$ENDIF}
 
-  // --- Gulp Marker
+  // --- Gulp Marker ---
   TGulpMarker = array [0..7] of char;
 
-  // --- Gulp Record CLASS
+  // --- Gulp Record CLASS ---
   TGulpRec = class(TObject)
     Name         : ansistring;       // File path and name
     Flags        : cardinal;         // Flags
@@ -78,17 +80,16 @@ type
     ChecksumAux  : ansistring;       // Record SHA checksum aux (reserved)
   end;
 
-  // --- The Gulp Reader CLASS
+  // --- The Gulp Reader CLASS ---
   TGulpReader = class(TObject)
   protected
     FCTX            : TSHA1Context;
     FStream         : TStream;
-    FCleanCount     : longint;
     FFileCount      : longint;
     FLinkCount      : longint;
     FSymLinkCount   : longint;
     FDirectoryCount : longint;
-
+    FDeletionCount  : longint;
     function  ReadString (var Buffer: string): longint;
     function  Read (var Buffer; Count: longint): longint;
   public
@@ -107,44 +108,44 @@ type
     function GetFilePos: int64;
     procedure SetFilePos (const NewPos : int64);
   public
-    property CleanCount     : longint read FCleanCount;
     property FileCount      : longint read FFileCount;
     property LinkCount      : longint read FLinkCount;
     property SymLinkCount   : longint read FSymLinkCount;
     property DirectoryCount : longint read FDirectoryCount;
+    property DeletionCount  : longint read FDeletionCount;
   end;
 
-  // --- The Gulp Writer CLASS
+  // --- The Gulp Writer CLASS ---
   TGulpWriter = class(TObject)
   protected
     FCTX            : TSHA1Context;
-    FStream         : TStream;
     FStoredTime     : TDateTime;
-    FCleanCount     : longint;
+    FStream         : TStream;
     FFileCount      : longint;
     FLinkCount      : longint;
     FSymLinkCount   : longint;
     FDirectoryCount : longint;
+    FDeletionCount   : longint;
     procedure WriteStream (Rec: TGulpRec; Stream: TStream);
     procedure WriteString (const Buffer: string);
     procedure Write (const Buffer; Count: longint);
   public
     constructor Create  (Stream: TStream);
     destructor Destroy; override;
-    procedure WriteClean     (const FileName: string; LastFlag: boolean);
-    procedure WriteFile      (const FileName: string; LastFlag: boolean);
-    procedure WriteLink      (const FileName: string; LastFlag: boolean);
-    procedure WriteSymLink   (const FileName: string; LastFlag: boolean);
-    procedure WriteDirectory (const FileName: string; LastFlag: boolean);
+    procedure Delete       (const FileName: string; LastFlag: boolean);
+    procedure AddFile      (const FileName: string; LastFlag: boolean);
+    procedure AddLink      (const FileName: string; LastFlag: boolean);
+    procedure AddSymLink   (const FileName: string; LastFlag: boolean);
+    procedure AddDirectory (const FileName: string; LastFlag: boolean);
   public
-    property CleanCount     : longint read FCleanCount;
     property FileCount      : longint read FFileCount;
     property LinkCount      : longint read FLinkCount;
     property SymLinkCount   : longint read FSymLinkCount;
     property DirectoryCount : longint read FDirectoryCount;
+    property DeletionCount  : longint read FDeletionCount;
   end;
 
-  // --- The Gulp List CLASS
+  // --- The Gulp List CLASS ---
   TGulpList = class(TObject)
   private
     FList: TList;
@@ -156,7 +157,7 @@ type
     procedure BinInsert(Rec: TGulpRec);
     function BinSearch(const Filename: string): longint;
 
-    function GetCleanCount: longint;
+    function GetDeletionCount: longint;
     function GetFileCount: longint;
     function GetLinkCount: longint;
     function GetSymLinkCount: longint;
@@ -169,11 +170,11 @@ type
     procedure LoadAt(StoredTime: TDateTime);
     function Find(const FileName: string): longint;
   public
-    property CleanCount     : longint read GetCleanCount;
     property FileCount      : longint read GetFileCount;
     property LinkCount      : longint read GetLinkCount;
     property SymLinkCount   : longint read GetSymLinkCount;
     property DirectoryCount : longint read getDirectoryCount;
+    property DeletionCount  : longint read GetDeletionCount;
 
     property Items[Index: longint]: TGulpRec read Get;
     property Count: longint read GetCount;
@@ -186,11 +187,12 @@ function CompareFileTime(const FileName: string; var Rec: TGulpRec): longint;
 function CompareFileSize(const FileName: string; var Rec: TGulpRec): longint;
 function CompareFileAttr(const FileName: string; var Rec: TGulpRec): longint;
 
+function CommToString(Rec: TGulpRec): string;
 function AttrToString(Rec: TGulpRec): string;
 function SizeToString(Rec: TGulpRec): string;
 function TimeToString(Rec: TGulpRec): string;
 
-function GetFileFlag(const FileName: string): longword;
+function GetFileType(const FileName: string): longword;
 
 // =============================================================================
 // IMPLEMENTATION
@@ -293,82 +295,11 @@ begin
   FindClose(SR);
 end;
 
-function SizeToString (Rec: TGulpRec): string;
-begin
-  Result := ' ';
-  if Rec.Flags and gfSize <> 0 then
-  begin
-    Result := Format('%u', [Rec.Size])
-  end;
-end;
-
-function AttrToString (Rec: TGulpRec): string;
-begin
-  if Rec.Flags and gfDelete = 0 then
-  begin
-    Result := 'ADD ....... .........';
-    if Rec.Attributes and faReadOnly       <> 0 then Result[5]  := 'R';
-    if Rec.Attributes and faHidden         <> 0 then Result[6]  := 'H';
-    if Rec.Attributes and faSysFile        <> 0 then Result[7]  := 'S';
-    if Rec.Attributes and faVolumeId       <> 0 then Result[8]  := 'V';
-    if Rec.Attributes and faDirectory      <> 0 then Result[9]  := 'D';
-    if Rec.Attributes and faArchive        <> 0 then Result[10] := 'A';
-    if Rec.Attributes and faSymLink        <> 0 then Result[11] := 'L';
-
-    if Rec.Attributes and gaExecuteByOwner <> 0 then Result[13] := 'X';
-    if Rec.Attributes and gaReadByOwner    <> 0 then Result[14] := 'R';
-    if Rec.Attributes and gaWriteByOwner   <> 0 then Result[15] := 'W';
-    if Rec.Attributes and gaExecuteByGroup <> 0 then Result[16] := 'X';
-    if Rec.Attributes and gaReadByGroup    <> 0 then Result[17] := 'R';
-    if Rec.Attributes and gaWriteByGroup   <> 0 then Result[18] := 'W';
-    if Rec.Attributes and gaExecuteByOther <> 0 then Result[19] := 'X';
-    if Rec.Attributes and gaReadByOther    <> 0 then Result[20] := 'R';
-    if Rec.Attributes and gaWriteByOther   <> 0 then Result[21] := 'W';
-  end else
-    Result := 'DEL ....... .........';
-end;
-
-function TimeToString (Rec: TGulpRec): string;
-begin
-  if Rec.Flags and gfDelete = 0 then
-    Result := FormatDateTime(
-      DefaultFormatSettings.LongDateFormat + ' ' +
-      DefaultFormatSettings.LongTimeFormat, Rec.ModifiedTime)
-  else
-    Result := '.......... ........';
-end;
-
-// =============================================================================
-// GULP Format
-// =============================================================================
-
-procedure ClearRec(var Rec: TGulpRec);
-begin
-  Rec.Name         := '';
-  Rec.Flags        := 0;
-  Rec.StoredTime   := 0.0;
-  Rec.ModifiedTime := 0.0;
-  Rec.Attributes   := 0;
-  Rec.Size         := 0;
-  Rec.LinkName     := '';
-  Rec.UID          := 0;
-  Rec.UserName     := '';
-  Rec.GID          := 0;
-  Rec.GroupName    := '';
-  Rec.Seek         := 0;
-  Rec.Checksum     := '';
-  Rec.ChecksumAux  := '';
-end;
-
-// =============================================================================
-// TGulpRec
-// =============================================================================
-
-function GetFileFlag(const FileName: string): longword;
+function GetFileType(const FileName: string): longword;
 var
   SR: TSearchRec;
 begin
-  Result := gfDelete;
+  Result := gfUnknow;
   if FindFirst(FileName, faAnyFile, SR) = 0 then
   begin
     if SR.Attr and faDirectory <> 0 then Result := gfDirectory else
@@ -435,6 +366,108 @@ begin
     Result := info.st_gid;
 end;
 
+function GetFileUserName(const FileName: string): string;
+begin
+  Result := '';
+end;
+
+function GetFileGroupName(const FileName: string): string;
+begin
+  Result := '';
+end;
+
+function CommToString(Rec: TGulpRec): string;
+begin
+  case Rec.Flags and $FF of
+    gfAdd:    Result := 'ADD';
+    gfDelete: Result := 'DEL';
+    gfUpdate: Result := 'UPD';
+    else      Result := '???';
+  end;
+end;
+
+function SizeToString (Rec: TGulpRec): string;
+begin
+  Result := ' ';
+  if Rec.Flags and gfSize <> 0 then
+  begin
+    Result := Format('%u', [Rec.Size])
+  end;
+end;
+
+function AttrToString (Rec: TGulpRec): string;
+begin
+  if Rec.Flags and $FF <> gfDelete then
+  begin
+    Result := '....... .........';
+    if Rec.Attributes and faReadOnly       <> 0 then Result[1]  := 'R';
+    if Rec.Attributes and faHidden         <> 0 then Result[2]  := 'H';
+    if Rec.Attributes and faSysFile        <> 0 then Result[3]  := 'S';
+    if Rec.Attributes and faVolumeId       <> 0 then Result[4]  := 'V';
+    if Rec.Attributes and faDirectory      <> 0 then Result[5]  := 'D';
+    if Rec.Attributes and faArchive        <> 0 then Result[6]  := 'A';
+    if Rec.Attributes and faSymLink        <> 0 then Result[7]  := 'L';
+
+    if Rec.Attributes and gaExecuteByOwner <> 0 then Result[9]  := 'X';
+    if Rec.Attributes and gaReadByOwner    <> 0 then Result[10] := 'R';
+    if Rec.Attributes and gaWriteByOwner   <> 0 then Result[11] := 'W';
+    if Rec.Attributes and gaExecuteByGroup <> 0 then Result[12] := 'X';
+    if Rec.Attributes and gaReadByGroup    <> 0 then Result[13] := 'R';
+    if Rec.Attributes and gaWriteByGroup   <> 0 then Result[14] := 'W';
+    if Rec.Attributes and gaExecuteByOther <> 0 then Result[15] := 'X';
+    if Rec.Attributes and gaReadByOther    <> 0 then Result[16] := 'R';
+    if Rec.Attributes and gaWriteByOther   <> 0 then Result[17] := 'W';
+  end else
+    Result := '....... .........';
+end;
+
+function TimeToString (Rec: TGulpRec): string;
+begin
+  if Rec.Flags and gfDelete = 0 then
+    Result := FormatDateTime(
+      DefaultFormatSettings.LongDateFormat + ' ' +
+      DefaultFormatSettings.LongTimeFormat, Rec.ModifiedTime)
+  else
+    Result := '.......... ........';
+end;
+
+// =============================================================================
+// GULP Format
+// =============================================================================
+
+
+// =============================================================================
+// TGulpRec routines
+// =============================================================================
+
+procedure ClearRec(var Rec: TGulpRec);
+begin
+  Rec.Name         := '';
+  Rec.Flags        := 0;
+  Rec.StoredTime   := 0.0;
+  Rec.ModifiedTime := 0.0;
+  Rec.Attributes   := 0;
+  Rec.Size         := 0;
+  Rec.LinkName     := '';
+  Rec.UID          := 0;
+  Rec.UserName     := '';
+  Rec.GID          := 0;
+  Rec.GroupName    := '';
+  Rec.Seek         := 0;
+  Rec.Checksum     := '';
+  Rec.ChecksumAux  := '';
+end;
+
+procedure IncludeFlag(var Flags: longword; Flag: longword);
+begin
+  Flags := Flags or Flag;
+end;
+
+procedure ExcludeFlag(var Flags: longword; Flag: longword);
+begin
+  Flags := Flags and (Flag xor $FFFFFFFF);
+end;
+
 // =============================================================================
 // TGulpReader
 // =============================================================================
@@ -454,7 +487,8 @@ end;
 procedure TGulpReader.Reset;
 begin
   FStream.Seek (0, soBeginning);
-  FCleanCount     := 0;
+
+  FDeletionCount     := 0;
   FFileCount      := 0;
   FLinkCount      := 0;
   FSymLinkCount   := 0;
@@ -514,10 +548,7 @@ begin
         Dec(Count, Readed);
       end;
     end else
-    begin
-
       FStream.Seek(Rec.Size, soCurrent);
-    end;
 
     SHA1Final(FCTX, Digest);
     Rec.ChecksumAux := SHA1Print(Digest);
@@ -527,20 +558,23 @@ begin
 end;
 
 function TGulpReader.FindNext (var Rec: TGulpRec): boolean;
-var
-  Marker: TGulpMarker;
 begin
   Result := FALSE;
   if FStream.Position < FStream.Size then
   begin
-    Result := ReadStream (Rec, nil);
+    Result := ReadStream(Rec, nil);
     if Result then
     begin
-      if gfDelete       and Rec.Flags <> 0 then Inc(FCleanCount)     else
-      if gfFile         and Rec.Flags <> 0 then Inc(FFileCount)      else
-      if gfLink         and Rec.Flags <> 0 then Inc(FLinkCount)      else
-      if gfSymbolicLink and Rec.Flags <> 0 then Inc(FSymLinkCount)   else
-      if gfDirectory    and Rec.Flags <> 0 then Inc(FDirectoryCount);
+      case Rec.Flags and $FF of
+      //gfUpdate:
+        gfDelete: Inc(FDeletionCount);
+        gfAdd: case Rec.Flags and $FF00 of
+                 gfFile:         Inc(FFileCount);
+                 gfLink:         Inc(FLinkCount);
+                 gfSymbolicLink: Inc(FSymLinkCount);
+                 gfDirectory:    Inc(FDirectoryCount);
+               end;
+      end;
     end;
   end;
 end;
@@ -589,10 +623,11 @@ end;
 constructor TGulpWriter.Create (Stream: TStream);
 begin
   inherited Create;
+  FStoredTime     := Now;
   FStream         := Stream;
   FStream.Seek(0, soFromEnd);
-  FStoredTime     := Now;
-  FCleanCount     := 0;
+
+  FDeletionCount  := 0;
   FFileCount      := 0;
   FLinkCount      := 0;
   FSymLinkCount   := 0;
@@ -660,52 +695,50 @@ begin
     FStream.WriteAnsiString(Rec.Checksum);
 end;
 
-procedure TGulpWriter.WriteClean (const FileName: string; LastFlag: boolean);
+procedure TGulpWriter.Delete (const FileName: string; LastFlag: boolean);
 var
   Rec: TGulpRec;
 begin
   Rec := TGulpRec.Create;
+  // ---
   ClearRec(Rec);
-  Rec.Name  := FileName;
-  Rec.Flags :=
-    gfDelete or
-    gfChecksum;
-
+  IncludeFlag(Rec.Flags, gfDelete);
+  IncludeFlag(Rec.Flags, gfChecksum);
   if LastFlag then
-    Rec.Flags := Rec.Flags or gfLast;
+    IncludeFlag(Rec.Flags, gfLast);
 
+  Rec.Name       := FileName;
   Rec.StoredTime := FStoredTime;
 
   WriteStream (Rec, nil);
+  Inc(FDeletionCount);
+  // ---
   FreeAndNil(Rec);
-
-  Inc(FCleanCount);
 end;
 
-procedure TGulpWriter.WriteFile (const FileName: string; LastFlag: boolean);
+procedure TGulpWriter.AddFile (const FileName: string; LastFlag: boolean);
 var
   Rec: TGulpRec;
   SR: TSearchRec;
   Stream: TFileStream;
 begin
+  Rec := TGulpRec.Create;
   if FindFirst(FileName, faAnyFile, SR) = 0 then
   begin
-    Rec := TGulpRec.Create;
     ClearRec(Rec);
-    Rec.Name  := FileName;
-    Rec.Flags :=
-      gfFile         or
-      gfModifiedTime or
-      gfAttributes   or
-      gfSize         or
-      gfUID          or
-      gfGID          or
-      gfSeek         or
-      gfChecksum;
-
+    IncludeFlag(Rec.Flags, gfAdd);
+    IncludeFlag(Rec.Flags, gfFile);
+    IncludeFlag(Rec.Flags, gfModifiedTime);
+    IncludeFlag(Rec.Flags, gfAttributes);
+    IncludeFlag(Rec.Flags, gfSize);
+    IncludeFlag(Rec.Flags, gfUID);
+    IncludeFlag(Rec.Flags, gfGID);
+    IncludeFlag(Rec.Flags, gfSeek);
+    IncludeFlag(Rec.Flags, gfChecksum);
     if LastFlag then
-      Rec.Flags := Rec.Flags or gfLast;
+      IncludeFlag(Rec.Flags, gfLast);
 
+    Rec.Name         := FileName;
     Rec.StoredTime   := FStoredTime;
     Rec.ModifiedTime := FileDateToDateTime(SR.Time);
     Rec.Attributes   := GetFileAttributes(FileName);
@@ -714,38 +747,42 @@ begin
     Rec.GID          := GetFileGID(FileName);
     Rec.Seek         := FStream.Seek(0, soCurrent);
 
-    Stream := TFileStream.Create (FileName, fmOpenRead or fmShareDenyWrite);
+    try
+      Stream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
+    except
+      ExcludeFlag(Rec.Flags, gfSize);
+      Stream := nil;
+    end;
     WriteStream(Rec, Stream);
-    FreeAndNil(Stream);
-    FreeAndNil(Rec);
-
+    if Assigned(Stream) then
+      FreeAndNil(Stream);
     Inc(FFileCount);
   end;
   FindClose(SR);
+  FreeAndNil(Rec);
 end;
 
-procedure TGulpWriter.WriteLink (const FileName: string; LastFlag: boolean);
+procedure TGulpWriter.AddLink (const FileName: string; LastFlag: boolean);
 var
   Rec: TGulpRec;
   SR: TSearchRec;
 begin
+  Rec := TGulpRec.Create;
   if FindFirst(FileName, faAnyFile, SR) = 0 then
   begin
-    Rec := TGulpRec.Create;
     ClearRec(Rec);
-    Rec.Name  := FileName;
-    Rec.Flags :=
-      gfLink         or
-      gfModifiedTime or
-      gfAttributes   or
-      gfLinkName     or
-      gfUID          or
-      gfGID          or
-      gfChecksum;
-
+    IncludeFlag(Rec.Flags, gfAdd);
+    IncludeFlag(Rec.Flags, gfLink);
+    IncludeFlag(Rec.Flags, gfModifiedTime);
+    IncludeFlag(Rec.Flags, gfAttributes);
+    IncludeFlag(Rec.Flags, gfLinkName);
+    IncludeFlag(Rec.Flags, gfUID);
+    IncludeFlag(Rec.Flags, gfGID);
+    IncludeFlag(Rec.Flags, gfChecksum);
     if LastFlag then
-      Rec.Flags := Rec.Flags or gfLast;
+      IncludeFlag(Rec.Flags, gfLast);
 
+    Rec.Name         := FileName;
     Rec.StoredTime   := FStoredTime;
     Rec.ModifiedTime := FileDateToDateTime(SR.Time);
     Rec.Attributes   := GetFileAttributes(FileName);
@@ -753,36 +790,34 @@ begin
     Rec.UID          := GetFileUID(FileName);
     Rec.GID          := GetFileGID(FileName);
 
-    WriteStream (Rec, nil);
-    FreeAndNil(Rec);
-
+    WriteStream(Rec, nil);
     Inc(FLinkCount);
   end;
   FindClose(SR);
+  FreeAndNil(Rec);
 end;
 
-procedure TGulpWriter.WriteSymLink (const FileName: string; LastFlag: boolean);
+procedure TGulpWriter.AddSymLink (const FileName: string; LastFlag: boolean);
 var
   Rec: TGulpRec;
   SR: TSearchRec;
 begin
+  Rec := TGulpRec.Create;
   if FindFirst(FileName, faAnyFile, SR) = 0 then
   begin
-    Rec := TGulpRec.Create;
     ClearRec(Rec);
-    Rec.Name  := FileName;
-    Rec.Flags :=
-      gfSymbolicLink or
-      gfModifiedTime or
-      gfAttributes   or
-      gfLinkName     or
-      gfUID          or
-      gfGID          or
-      gfChecksum;
-
+    IncludeFlag(Rec.Flags, gfAdd);
+    IncludeFlag(Rec.Flags, gfSymbolicLink);
+    IncludeFlag(Rec.Flags, gfModifiedTime);
+    IncludeFlag(Rec.Flags, gfAttributes);
+    IncludeFlag(Rec.Flags, gfLinkName);
+    IncludeFlag(Rec.Flags, gfUID);
+    IncludeFlag(Rec.Flags, gfGID);
+    IncludeFlag(Rec.Flags, gfChecksum);
     if LastFlag then
-      Rec.Flags := Rec.Flags or gfLast;
+      IncludeFlag(Rec.Flags, gfLast);
 
+    Rec.Name         := FileName;
     Rec.StoredTime   := FStoredTime;
     Rec.ModifiedTime := FileDateToDateTime(SR.Time);
     Rec.Attributes   := GetFileAttributes(FileName);
@@ -790,47 +825,44 @@ begin
     Rec.UID          := GetFileUID(FileName);
     Rec.GID          := GetFileGID(FileName);
 
-    WriteStream (Rec, nil);
-    FreeAndNil (Rec);
-
+    WriteStream(Rec, nil);
     Inc(FSymLinkCount);
   end;
   FindClose(SR);
+  FreeAndNil(Rec);
 end;
 
-procedure TGulpWriter.WriteDirectory (const FileName: string; LastFlag: boolean);
+procedure TGulpWriter.AddDirectory (const FileName: string; LastFlag: boolean);
 var
   Rec: TGulpRec;
   SR: TSearchRec;
 begin
+  Rec := TGulpRec.Create;
   if FindFirst(FileName, faAnyFile, SR) = 0 then
   begin
-    Rec := TGulpRec.Create;
     ClearRec(Rec);
-    Rec.Name  := FileName;
-    Rec.Flags :=
-      gfDirectory    or
-      gfModifiedTime or
-      gfAttributes   or
-      gfUID          or
-      gfGID          or
-      gfChecksum;
-
+    IncludeFlag(Rec.Flags, gfAdd);
+    IncludeFlag(Rec.Flags, gfDirectory);
+    IncludeFlag(Rec.Flags, gfModifiedTime);
+    IncludeFlag(Rec.Flags, gfAttributes);
+    IncludeFlag(Rec.Flags, gfUID);
+    IncludeFlag(Rec.Flags, gfGID);
+    IncludeFlag(Rec.Flags, gfChecksum);
     if LastFlag then
-      Rec.Flags := Rec.Flags or gfLast;
+      IncludeFlag(Rec.Flags, gfLast);
 
+    Rec.Name         := FileName;
     Rec.StoredTime   := FStoredTime;
     Rec.ModifiedTime := FileDateToDateTime(SR.Time);
     Rec.Attributes   := GetFileAttributes(FileName);
     Rec.UID          := GetFileUID(FileName);
     Rec.GID          := GetFileGID(FileName);
 
-    WriteStream (Rec, nil);
-    FreeAndNil(Rec);
-
+    WriteStream(Rec, nil);
     Inc(FDirectoryCount);
   end;
   FindClose(SR);
+  FreeAndNil(Rec);
 end;
 
 // =============================================================================
@@ -858,18 +890,8 @@ var
   I: longint;
 begin
   for I := 0 to FList.Count - 1 do
-    TGulpRec(FList[I]).Destroy;
+    Items[I].Destroy;
   FList.Clear;
-end;
-
-function TGulpList.GetCount: longint;
-begin
-  Result := FList.Count;
-end;
-
-function TGulpList.Get(Index: longint): TGulpRec;
-begin
-  Result := TGulpRec(FList[Index]);
 end;
 
 procedure TGulpList.BinInsert(Rec: TGulpRec);
@@ -995,9 +1017,19 @@ begin
   FBinaryMode := FALSE;
 end;
 
-function TGulpList.GetCleanCount: longint;
+function TGulpList.Get(Index: longint): TGulpRec;
 begin
-  Result := FReader.CleanCount;
+  Result := TGulpRec(FList[Index]);
+end;
+
+function TGulpList.GetCount: longint;
+begin
+  Result := FList.Count;
+end;
+
+function TGulpList.GetDeletionCount: longint;
+begin
+  Result := FReader.DeletionCount;
 end;
 
 function TGulpList.GetFileCount: longint;

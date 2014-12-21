@@ -211,12 +211,12 @@ begin
 
       J := Scanner.Find(Rec.Name);
       if J = -1 then
-        GulpWriter.WriteClean(Rec.Name, LastFlag)
+        GulpWriter.Delete(Rec.Name, LastFlag)
       else
         if (CompareFileAttr(Scanner.Items[J], Rec) <> 0) or
            (CompareFileTime(Scanner.Items[J], Rec) <> 0) or
            (CompareFileSize(Scanner.Items[J], Rec) <> 0) then
-          GulpWriter.WriteClean(Rec.Name, LastFlag)
+          GulpWriter.Delete(Rec.Name, LastFlag)
         else
           Scanner.Delete(J);
       Progress.Show;
@@ -230,23 +230,23 @@ begin
       Message := 'Fatal error on adding ' + Scanner.Items[I] + '.';
 
       LastFlag := Scanner.Count -1 = I;
-      case GetFileFlag(Scanner.Items[I]) of
-        gfFile:         GulpWriter.WriteFile      (Scanner.Items[I], LastFlag);
-        gfLink:         GulpWriter.WriteLink      (Scanner.Items[I], LastFlag);
-        gfSymbolicLink: GulpWriter.WriteSymLink   (Scanner.Items[I], LastFlag);
-        gfDirectory:    GulpWriter.WriteDirectory (Scanner.Items[I], LastFlag);
+      case GetFileType(Scanner.Items[I]) of
+        gfFile:         GulpWriter.AddFile      (Scanner.Items[I], LastFlag);
+        gfLink:         GulpWriter.AddLink      (Scanner.Items[I], LastFlag);
+        gfSymbolicLink: GulpWriter.AddSymLink   (Scanner.Items[I], LastFlag);
+        gfDirectory:    GulpWriter.AddDirectory (Scanner.Items[I], LastFlag);
+      //gfUnknow:
       end;
       Progress.Show;
     end;
     Progress.Stop(' done');
 
     Message := 'Fatal error on showing changes.';
-    writeln('Added ', GulpWriter.CleanCount,     ' Cleans');
     writeln('Added ', GulpWriter.FileCount,      ' Files');
     writeln('Added ', GulpWriter.LinkCount,      ' Links');
     writeln('Added ', GulpWriter.SymLinkCount,   ' Symbolic Links');
     writeln('Added ', GulpWriter.DirectoryCount, ' Directories');
-
+    writeln('Added ', GulpWriter.DeletionCount,  ' Deletions');
     writeln('Finished.');
   except
     writeln;
@@ -284,7 +284,7 @@ begin
         if Rec.Flags and gfLast <> 0 then
         begin
           FixSize := Stream.Position;
-          writeln('Found job at ',
+          writeln('Founded a job at ',
             FormatDateTime(
               DefaultFormatSettings.LongDateFormat + ' ' +
               DefaultFormatSettings.LongTimeFormat, Rec.StoredTime));
@@ -338,7 +338,7 @@ begin
        if StoredTime <> Rec.StoredTime then
        begin
          StoredTime := Rec.StoredTime;
-         writeln('Found job at ' + DateTimeToStr(StoredTime));
+         writeln('Founded a job at ' + DateTimeToStr(StoredTime));
        end;
 
        if Rec.Flags and gfChecksum <> 0 then
@@ -451,10 +451,11 @@ begin
             if StoredTime <> Rec.StoredTime then
             begin
               StoredTime := Rec.StoredTime;
-              writeln('Found job at ' + DateTimeToStr(StoredTime));
+              writeln('Founded a job at ' + DateTimeToStr(StoredTime));
             end;
 
-          writeln(Format('%9s %19s %12s %s', [
+          writeln(Format('%3s %17s %19s %12s %s', [
+            CommToString(Rec),
             AttrToString(Rec),
             TimeToString(Rec),
             SizeToString(Rec),
@@ -464,12 +465,11 @@ begin
     end;
 
     Message := 'Fatal error on showing changes.';
-    writeln('Listed ', GulpList.CleanCount,     ' Cleans');
     writeln('Listed ', GulpList.FileCount,      ' Files');
     writeln('Listed ', GulpList.LinkCount,      ' Links');
     writeln('Listed ', GulpList.SymLinkCount,   ' Symbolic Links');
     writeln('Listed ', GulpList.DirectoryCount, ' Directories');
-
+    writeln('Listed ', GulpList.DeletionCount,  ' Deletions');
     writeln('Finished.');
   except
     writeln;
