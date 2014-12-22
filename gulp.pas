@@ -83,7 +83,7 @@ begin
 end;
 
 begin
-  SetCtrlCHandler(@CtrlHandler);
+  // SetCtrlCHandler(@CtrlHandler);
   App := TGulpApplication.Create(nil);
   App.Run;
   App.Destroy;

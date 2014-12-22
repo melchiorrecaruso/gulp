@@ -748,7 +748,7 @@ begin
     Rec.Seek         := FStream.Seek(0, soCurrent);
 
     try
-      Stream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
+      Stream := TFileStream.Create(FileName, fmOpenRead);
     except
       ExcludeFlag(Rec.Flags, gfSize);
       Stream := nil;
