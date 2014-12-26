@@ -40,6 +40,7 @@
       <Unit0>
         <Filename Value="gulp.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="Gulp"/>
       </Unit0>
     </Units>
   </ProjectOptions>

@@ -33,7 +33,6 @@ uses
   {$IFDEF UNIX}
   BaseUnix,
   Unix,
-  UnixType,
   {$ENDIF}
   SysUtils,
   Classes,
@@ -44,7 +43,6 @@ uses
 type
   TGulpApplication = class(TCustomApplication)
   private
-    Message:   string;
     FileNames: TStringList;
     Switches:  TStringList;
     Scanner:   TSysScanner;
@@ -57,8 +55,8 @@ type
     procedure Fix;
     procedure Check;
     procedure Help;
+  protected
     procedure DoRun; override;
-    procedure IsKilled;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -89,11 +87,6 @@ begin
   {$ENDIF}
 end;
 
-function TimeDifference(X: TDateTime): string;
-begin
-  Result := Format('%0.2f', [(Now - X) * (24 * 60 * 60)]);
-end;
-
 // =============================================================================
 // TGulpApplication
 // =============================================================================
@@ -119,10 +112,10 @@ end;
 procedure TGulpApplication.Synch;
 var
   I, J: longint;
-  LastFlag: boolean;
   GulpWriter: TGulpWriter = nil;
   GulpList: TGulpList = nil;
-  Rec: TGulpRec;
+  Rec: TGulpRec = nil;
+  LastFlag: boolean;
 begin
   writeln(#13, #13: 80, 'Synchronize ' + GetOptionValue('s', 'synch'));
   write  (#13, #13: 80, 'Scanning... ');
@@ -164,23 +157,14 @@ begin
   for I := 0 to Scanner.Count - 1 do
   begin
     LastFlag := Scanner.Count -1 = I;
-    case GetFileType(Scanner.Items[I]) of
-      gfFile:         GulpWriter.AddFile      (Scanner.Items[I], LastFlag);
-      gfLink:         GulpWriter.AddLink      (Scanner.Items[I], LastFlag);
-      gfSymbolicLink: GulpWriter.AddSymLink   (Scanner.Items[I], LastFlag);
-      gfDirectory:    GulpWriter.AddDirectory (Scanner.Items[I], LastFlag);
-    end;
+    GulpWriter.Add(Scanner.Items[I], LastFlag);
   end;
 
-  writeln(#13, #13: 80, 'Deleted ', GulpWriter.DeletionCount,  ' Records       ');
-  writeln(#13, #13: 80, 'Added   ', GulpWriter.FileCount,      ' Files         ');
-  writeln(#13, #13: 80, 'Added   ', GulpWriter.LinkCount,      ' Links         ');
-  writeln(#13, #13: 80, 'Added   ', GulpWriter.SymLinkCount,   ' Symbolic Links');
-  writeln(#13, #13: 80, 'Added   ', GulpWriter.DirectoryCount, ' Directories   ');
+
+  FreeAndNil(GulpWriter);
+  FreeAndNil(GulpList);
+  FreeAndNil(Stream);
   writeln(#13, #13: 80, 'Finished.');
-  if Assigned(GulpWriter) then FreeAndNil(GulpWriter);
-  if Assigned(GulpList)   then FreeAndNil(GulpList);
-  if Assigned(Stream)     then FreeAndNil(Stream);
 end;
 
 procedure TGulpApplication.Restore;
@@ -190,9 +174,9 @@ end;
 
 procedure TGulpApplication.Fix;
 var
-  FixSize: int64 = 0;
   GulpReader: TGulpReader = nil;
   Rec: TGulpRec = nil;
+  FixSize: int64 = 0;
 begin
   writeln(#13, #13: 80, 'Fix the contents of ' + GetOptionValue('f', 'fix'));
   write  (#13, #13: 80, 'Opening archive... ');
@@ -204,7 +188,7 @@ begin
 
   Rec := TGulpRec.Create;
   try
-    while GulpReader.FindNext(Rec) do
+    while GulpReader.FindNext(Rec ,nil) do
       if Rec.Flags and gfLast <> 0 then
       begin
         FixSize := Stream.Position;
@@ -218,109 +202,79 @@ begin
     // noting to do
   end;
 
-  writeln(#13, #13: 80, 'Fixed size at ', FixSize, '/', Stream.Size);
   if FixSize < Stream.Size then
+  begin
+    writeln(#13, #13: 80, 'Fixed size at ', FixSize, '/', Stream.Size);
     Stream.Size := FixSize;
-
+  end;
+  FreeAndNil(Rec);
+  FreeAndNil(GulpReader);
+  FreeAndNil(Stream);
   writeln(#13, #13: 80, 'Finished.');
-  if Assigned(GulpReader) then FreeAndNil(GulpReader);
-  if Assigned(Stream)     then FreeAndNil(Stream);
-  if Assigned(Rec)        then FreeAndNil(Rec);
 end;
 
 procedure TGulpApplication.Check;
 var
-  Nul: TNulStream;
-  Rec: TGulpRec = nil;
+  Nul: TNulStream = nil;
   GulpReader: TGulpReader = nil;
+  Rec: TGulpRec = nil;
   StoredTime: TDateTime = 0.0;
 begin
   writeln(#13, #13: 80, 'Check the contents of ' + GetOptionValue('c', 'check'));
   write  (#13, #13: 80, 'Opening archive...');
   Stream := TFileStream.Create (GetOptionValue('c', 'check'), fmOpenRead);
 
+  GulpReader := TGulpReader.Create(Stream);
+  GulpReader.Reset;
 
-     Message := 'Fatal error on reading records.';
-     GulpReader := TGulpReader.Create(Stream);
-     GulpReader.Reset;
+  Rec := TGulpRec.Create;
+  Nul := TNulStream.Create;
+  while GulpReader.FindNext(Rec, Nul) do
+  begin
+    if StoredTime <> Rec.StoredTime then
+    begin
+      StoredTime := Rec.StoredTime;
+      writeln(#13, #13: 80, 'Founded a job at ' + DateTimeToStr(StoredTime));
+    end;
 
-
-     Rec := TGulpRec.Create;
-     Nul := TNulStream.Create;
-     while GulpReader.ReadStream(Rec, Nul) do
-     begin
-
-       if StoredTime <> Rec.StoredTime then
-       begin
-         StoredTime := Rec.StoredTime;
-         writeln('Founded a job at ' + DateTimeToStr(StoredTime));
-       end;
-
-       if Rec.Flags and gfChecksum <> 0 then
-         if Rec.Checksum <> Rec.ChecksumAux then
-         begin
-           Writeln (Rec.Name + ' CHECKSUM MISMATCHED');
-         end
-     end;
-
-   writeln(#13, #13: 80, 'Finished.');
-   if Assigned(GulpReader) then FreeAndNil(GulpReader);
-   if Assigned(Stream)     then FreeAndNil(Stream);
-   if Assigned(Nul)        then FreeAndNil(Nul);
-   if Assigned(Rec)        then FreeAndNil(Rec);
+    if Rec.ChecksumOK = FALSE then
+      raise Exception.Create(Rec.Name + ' checksum mismatched');
+  end;
+  FreeAndNil(Nul);
+  FreeAndNil(Rec);
+  FreeAndNil(GulpReader);
+  FreeAndNil(Stream);
+  writeln(#13, #13: 80, 'Finished.');
 end;
 
 procedure TGulpApplication.Purge;
 var
+  I: longint;
   GulpReader: TGulpReader;
   GulpWriter: TGulpWriter;
   GulpList: TGulpList;
+  Rec: TGulpRec;
   New: TStream;
 begin
-  writeln('Purge ' + GetOptionValue('p', 'purge'));
-  // open and read archive ...
-  write('Opening archive...');
-  if FileExists(GetOptionValue('s', 'synch')) then
-  begin
-    Stream := TFileStream.Create(GetOptionValue('s', 'synch'), fmOpenRead);
-  end else
-    Stream := nil;
+  writeln(#13, #13: 80, 'Purge ' + GetOptionValue('p', 'purge'));
+  write  (#13, #13: 80, 'Opening archive... ');
+  Stream := TFileStream.Create(GetOptionValue('p', 'purge'), fmOpenRead);
 
+  write(#13, #13: 80, 'Read records... ');
   GulpList := TGulpList.Create(Stream);
-    GulpList.LoadAt(Start);
-    FreeAndNil(Stream);
+  GulpList.LoadAt(Start);
 
+  write(#13, #13: 80, 'Move records... ');
+  New := TFileStream.Create('pippo', fmCreate);
+  GulpWriter := TGulpWriter.Create(New);
+  for I := 0 to GulpList.Count - 1 do
+    GulpWriter.CopyFrom(GulpList.Items[I], Stream);
 
-
-
-    GulpList := TGulpList.Create(nil);
-  writeln(' done');
-
-
-
-
-
-
-
-
-
-
-  // re-open/create and update archive ...
-  if FileExists(GetOptionValue('s', 'synch')) then
-    Stream := TFileStream.Create(GetOptionValue('s', 'synch'), fmOpenWrite)
-  else
-    Stream := TFileStream.Create(GetOptionValue('s', 'synch'), fmCreate);
-  Stream.Seek(0, soFromEnd);
-  GulpWriter := TGulpWriter.Create(Stream);
-  // delete old records ...
-
-
-
-
-
-
-
-
+  FreeAndNil(New);
+  FreeAndNil(GulpWriter);
+  FreeAndNil(GulpList);
+  FreeAndNil(Stream);
+  writeln(#13, #13: 80, 'Finished.');
 end;
 
 procedure TGulpApplication.List;
@@ -328,66 +282,55 @@ var
   I, J: longint;
   Rec: TGulpRec;
   GulpList: TGulpList = nil;
-  HistoryMode: boolean;
   StoredTime: TDateTime = 0.0;
+  HistoryMode: boolean;
 begin
-  writeln('List the contents of ' + GetOptionValue('l', 'list'));
-  try
-    Message := 'Fatal error on opening archive.';
-    write('Opening archive...');
-    Stream := TFileStream.Create (GetOptionValue('l', 'list'), fmOpenRead);
-    writeln(' done');
+  writeln(#13, #13: 80, 'List the contents of ' + GetOptionValue('l', 'list'));
+  write  (#13, #13: 80, 'Opening archive... ');
+  Stream := TFileStream.Create (GetOptionValue('l', 'list'), fmOpenRead);
 
-    Message := 'Fatal error on reading records.';
-    GulpList := TGulpList.Create(Stream);
-    if FileNames.Count = 0 then
-      FileNames.Add('*');
+  write  (#13, #13: 80, 'Read records... ');
+  GulpList := TGulpList.Create(Stream);
+  if FileNames.Count = 0 then
+    FileNames.Add('*');
 
-    HistoryMode := GetOptionValue('t', 'time') = '';
-    if HistoryMode = FALSE then
-      GulpList.LoadAt(StrToDateTime(GetOptionValue('t', 'time')))
+  HistoryMode := GetOptionValue('t', 'time') = '';
+  if HistoryMode = FALSE then
+  begin
+    if lowercase(GetOptionValue('t', 'time')) = 'now' then
+      GulpList.LoadAt(Start)
     else
-      GulpList.Load;
+      GulpList.LoadAt(StrToDateTime(GetOptionValue('t', 'time')))
+  end else
+    GulpList.Load;
 
-    Message := 'Fatal error on showing records.';
-    for J := 0 to GulpList.Count - 1 do
-    begin
-      Rec   := GulpList.Items[J];
-      Message := 'Fatal error on showing ' + Rec.Name + '.';
-      for I := 0 to FileNames.Count - 1 do
-        if FileNameMatch(Rec.Name, FileNames[I])  then
-        begin
+  for J := 0 to GulpList.Count - 1 do
+  begin
+    Rec   := GulpList.Items[J];
+    for I := 0 to FileNames.Count - 1 do
+      if FileNameMatch(Rec.Name, FileNames[I])  then
+      begin
+        if HistoryMode = TRUE then
+          if StoredTime <> Rec.StoredTime then
+          begin
+            StoredTime := Rec.StoredTime;
+            writeln(#13, #13: 80, 'Founded a job at ' + DateTimeToStr(StoredTime));
+          end;
 
-          if HistoryMode = TRUE then
-            if StoredTime <> Rec.StoredTime then
-            begin
-              StoredTime := Rec.StoredTime;
-              writeln('Founded a job at ' + DateTimeToStr(StoredTime));
-            end;
-
-          writeln(Format('%3s %17s %19s %12s %s', [
-            CommToString(Rec),
-            AttrToString(Rec),
-            TimeToString(Rec),
-            SizeToString(Rec),
-            Rec.Name]));
-          Break;
-        end;
-    end;
-
-    Message := 'Fatal error on showing changes.';
-    writeln('Listed ', GulpList.DeletionCount,  ' Deletions');
-    writeln('Listed ', GulpList.FileCount,      ' Files');
-    writeln('Listed ', GulpList.LinkCount,      ' Links');
-    writeln('Listed ', GulpList.SymLinkCount,   ' Symbolic Links');
-    writeln('Listed ', GulpList.DirectoryCount, ' Directories');
-    writeln('Finished.');
-  except
-    writeln;
-    writeln(Message);
+        writeln(#13, #13: 80, Format('%3s %17s %19s %12s %s', [
+          CommToString(Rec),
+          AttrToString(Rec),
+          TimeToString(Rec),
+          SizeToString(Rec),
+          Rec.Name]));
+        Break;
+      end;
   end;
-  if Assigned(GulpList) then FreeAndNil(GulpList);
-  if Assigned(Stream)   then FreeAndNil(Stream);
+
+
+  FreeAndNil(GulpList);
+  FreeAndNil(Stream);
+  writeln(#13, #13: 80, 'Finished.');
 end;
 
 procedure TGulpApplication.Help;
@@ -406,15 +349,15 @@ begin
   DefaultFormatSettings.LongDateFormat  := 'yyyy-mm-dd';
   DefaultFormatSettings.ShortDateFormat := 'yyyy-mm-dd';
 
-  ShortSwitches := 's:r:p:l:t:f:c:h';
+  ShortSwitches := 's:r:p:l:c:f:t:h';
   LongSwitches  :=  TStringList.Create;
   LongSwitches.Add('synch:');
   LongSwitches.Add('restore:');
   LongSwitches.Add('purge:');
   LongSwitches.Add('list:');
-  LongSwitches.Add('time:');
-  LongSwitches.Add('fix:');
   LongSwitches.Add('check:');
+  LongSwitches.Add('fix:');
+  LongSwitches.Add('time:');
   LongSwitches.Add('help');
 
   try
@@ -424,25 +367,20 @@ begin
       if HasOption('s', 'synch'  ) then Synch   else
       if HasOption('r', 'restore') then Restore else
       if HasOption('p', 'purge'  ) then Purge   else
-      if HasOption('f', 'fix'    ) then Fix     else
+      if HasOption('l', 'list'   ) then List    else
       if HasOption('c', 'check'  ) then Check   else
-      if HasOption('h', 'help'   ) then Help    else
-      if HasOption('l', 'list'   ) then List    else Help;
+      if HasOption('f', 'fix'    ) then Fix     else
+      if HasOption('h', 'help'   ) then Help    else  Help;
     end else
       writeln(#13, #13: 80, Error);
   except
     on E: Exception do
       writeln(#13, #13: 80, 'An exception was raised: ' + E.Message);
   end;
-  writeln(#13, #13: 80, 'Elapsed ', TimeDifference(Start), ' sec');
+  writeln(#13, #13: 80, 'Elapsed ',
+    Format('%0.2f', [(Now - Start) * (24 * 60 * 60)]) , ' sec');
   FreeAndNil(LongSwitches);
   Terminate;
-end;
-
-procedure TGulpApplication.IsKilled;
-begin
-  if Terminated then
-    raise exception.create('User Abort.');
 end;
 
 end.
