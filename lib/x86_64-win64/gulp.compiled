@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CONFIG>
-  <Compiler Value="C:\lazarus\fpc\2.6.4\bin\x86_64-win64\fpc.exe" Date="1162574780"/>
-  <Params Value=" -MDelphi -Sh -CX -O3 -Xs -XX -vewnhi -FiC:\Users\Angela\Documents\GitHub\gulp\lib\x86_64-win64 -FuC:\lazarus\components\lazutils\lib\x86_64-win64 -FuC:\lazarus\packager\units\x86_64-win64 -FuC:\Users\Angela\Documents\GitHub\gulp\ -FUC:\Users\Angela\Documents\GitHub\gulp\lib\x86_64-win64\ -l gulp.pas"/>
-</CONFIG>
