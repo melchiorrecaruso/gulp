@@ -82,6 +82,8 @@ begin
   {$ENDIF}
 end;
 
+{$R *.res}
+
 begin
   SetCtrlCHandler(@CtrlHandler);
   App := TGulpApplication.Create(nil);

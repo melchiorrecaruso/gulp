@@ -4,15 +4,18 @@
     <Version Value="9"/>
     <General>
       <Flags>
+        <SaveOnlyProjectUnits Value="True"/>
+        <MainUnitHasUsesSectionForAllUnits Value="False"/>
         <MainUnitHasCreateFormStatements Value="False"/>
         <MainUnitHasTitleStatement Value="False"/>
         <AlwaysBuild Value="True"/>
       </Flags>
-      <SessionStorage Value="InProjectDir"/>
       <MainUnit Value="0"/>
       <Title Value="Gulp"/>
       <UseAppBundle Value="False"/>
       <ResourceType Value="res"/>
+      <Icon Value="0"/>
+      <ActiveWindowIndexAtStart Value="0"/>
     </General>
     <i18n>
       <EnableI18N LFM="False"/>
@@ -20,7 +23,7 @@
     <VersionInfo>
       <StringTable ProductVersion=""/>
     </VersionInfo>
-    <BuildModes Count="1">
+    <BuildModes Count="1" Active="Default">
       <Item1 Name="Default" Default="True"/>
     </BuildModes>
     <PublishOptions>
@@ -41,6 +44,13 @@
         <Filename Value="gulp.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Gulp"/>
+        <EditorIndex Value="1"/>
+        <WindowIndex Value="1"/>
+        <TopLine Value="44"/>
+        <CursorPos X="33" Y="58"/>
+        <UsageCount Value="196"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit0>
     </Units>
   </ProjectOptions>
@@ -92,4 +102,5 @@
       </Item3>
     </Exceptions>
   </Debugging>
+  <EditorMacros Count="0"/>
 </CONFIG>
