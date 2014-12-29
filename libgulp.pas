@@ -12,46 +12,40 @@ uses
 
 const
   // --- Gulp Flags ---
-  gfUnknow         = $00000000;
-  gfAdd            = $00000001; // Add command
-  gfDelete         = $00000002; // Delete command
-  gfUpdate         = $00000004; // Update command
+  gfAdd            = $00000001;
+  gfDelete         = $00000002;
+  gfUpdate         = $00000004;
 
-  gfFile           = $00000100; // Regular file
-  gfLink           = $00000200; // Link
-  gfSymbolicLink   = $00000400; // Symbolic link
-  gfDirectory      = $00000800; // Directory entry
+  gfLast           = $00000100;
+  gfModifiedTime   = $00000200;
+  gfAttributes     = $00000400;
+  gfSize           = $00000800;
+  gfLinkName       = $00001000;
+  gfUID            = $00002000;
+  gfUserName       = $00004000;
+  gfGID            = $00008000;
+  gfGroupName      = $00010000;
 
-  gfLast           = $00010000; // Last record
-  gfModifiedTime   = $00020000; // Last modification date and time
-  gfAttributes     = $00040000; // File Attributes
-  gfSize           = $00080000; // File size in bytes
-  gfLinkName       = $00100000; // Name of linked file
-  gfUID            = $00200000; // User ID
-  gfUserName       = $00400000; // User Name
-  gfGID            = $00800000; // Group ID
-  gfGroupName      = $01000000; // Group Name
-
-  gfReserved       = $80000000; // Extra flags
+  gfReserved       = $80000000;
 
   // --- Gulp Attributes ---
-  gaReadOnly       = $00000001; //
-  gaHidden         = $00000002; //
-  gaSysFile        = $00000004; //
-  gaVolumeId       = $00000008; //
-  gaDirectory      = $00000010; //
-  gaArchive        = $00000020; //
-  gaSymLink        = $00000040; //
+  gaReadOnly       = $00000001;
+  gaHidden         = $00000002;
+  gaSysFile        = $00000004;
+  gaVolumeId       = $00000008;
+  gaDirectory      = $00000010;
+  gaArchive        = $00000020;
+  gaSymLink        = $00000040;
 
-  gaReadByOwner    = $00001000; //
-  gaWriteByOwner   = $00002000; //
-  gaExecuteByOwner = $00004000; //
-  gaReadByGroup    = $00008000; //
-  gaWriteByGroup   = $00010000; //
-  gaExecuteByGroup = $00020000; //
-  gaReadByOther    = $00040000; //
-  gaWriteByOther   = $00080000; //
-  gaExecuteByOther = $00100000; //
+  gaReadByOwner    = $00001000;
+  gaWriteByOwner   = $00002000;
+  gaExecuteByOwner = $00004000;
+  gaReadByGroup    = $00008000;
+  gaWriteByGroup   = $00010000;
+  gaExecuteByGroup = $00020000;
+  gaReadByOther    = $00040000;
+  gaWriteByOther   = $00080000;
+  gaExecuteByOther = $00100000;
 
 type
   // --- Gulp Marker ---
@@ -60,8 +54,8 @@ type
   // --- Gulp Record CLASS ---
   TGulpRec = class(TObject)
   private
-    FFlags         : cardinal;   // Flags
     FName          : ansistring; // File path and name
+    FFlags         : cardinal;   // Flags
     FStoredTime    : TDateTime;  // Stored date time
     FModifiedTime  : TDateTime;  // Last modification date and time
     FAttributes    : cardinal;   // File mode
@@ -164,10 +158,10 @@ function CompareFileTime(const FileName: string; var Rec: TGulpRec): longint;
 function CompareFileSize(const FileName: string; var Rec: TGulpRec): longint;
 function CompareFileAttr(const FileName: string; var Rec: TGulpRec): longint;
 
-function CommToString(Rec: TGulpRec): string;
-function AttrToString(Rec: TGulpRec): string;
-function SizeToString(Rec: TGulpRec): string;
-function TimeToString(Rec: TGulpRec): string;
+function CommandToString(Rec: TGulpRec): string;
+function AttrToString   (Rec: TGulpRec): string;
+function SizeToString   (Rec: TGulpRec): string;
+function TimeToString   (Rec: TGulpRec): string;
 
 // =============================================================================
 // IMPLEMENTATION
@@ -185,15 +179,19 @@ const
 // GULP Lib Routines
 // =============================================================================
 
+{$IFDEF MSWINDOWS}
 function ConvertFileName(const FileName: string): string;
 begin
-  {$IFDEF MSWINDOWS}
-    Result := StringReplace(Filename, '/', '\', [rfReplaceAll]);
-  {$ENDIF}
-  {$IFDEF UNIX}
-    Result := StringReplace(Filename, '\', '/', [rfReplaceAll]);
-  {$ENDIF}
+  Result := StringReplace(Filename, '/', '\', [rfReplaceAll]);
 end;
+{$ENDIF}
+
+{$IFDEF UNIX}
+function ConvertFileName(const FileName: string): string;
+begin
+  Result := StringReplace(Filename, '\', '/', [rfReplaceAll]);
+end;
+{$ENDIF}
 
 function CompareFileTime(const FileName: string; var Rec: TGulpRec): longint;
 var
@@ -230,11 +228,11 @@ begin
   FindClose(SR);
 end;
 
+{$IFDEF MSWINDOWS}
 function CompareFileAttr(const FileName: string; var Rec: TGulpRec): longint;
 var
   SR: TSearchRec;
   SRA:  cardinal;
-  {$IFDEF UNIX} info: stat; {$ENDIF}
 begin
   Result := 0;
   if FindFirst(FileName, faAnyFile, SR) = 0 then
@@ -247,7 +245,36 @@ begin
     if faDirectory and SR.Attr <> 0 then SRA := SRA or gaDirectory;
     if faArchive   and SR.Attr <> 0 then SRA := SRA or gaArchive;
     if faSymLink   and SR.Attr <> 0 then SRA := SRA or gaSymLink;
-    {$IFDEF UNIX}
+
+    if SRA > Rec.Attributes then
+      Result := - 1
+    else
+      if SRA < Rec.Attributes then
+        Result := 1;
+  end;
+  FindClose(SR);
+end;
+{$ENDIF}
+
+{$IFDEF UNIX}
+function CompareFileAttr(const FileName: string; var Rec: TGulpRec): longint;
+var
+  SR: TSearchRec;
+  SRA:  cardinal;
+  info: stat;
+begin
+  Result := 0;
+  if FindFirst(FileName, faAnyFile, SR) = 0 then
+  begin
+    SRA := 0;
+    if faReadOnly  and SR.Attr <> 0 then SRA := SRA or gaReadOnly;
+    if faHidden    and SR.Attr <> 0 then SRA := SRA or gaHidden;
+    if faSysFile   and SR.Attr <> 0 then SRA := SRA or gaSysFile;
+    if faVolumeId  and SR.Attr <> 0 then SRA := SRA or gaVolumeId;
+    if faDirectory and SR.Attr <> 0 then SRA := SRA or gaDirectory;
+    if faArchive   and SR.Attr <> 0 then SRA := SRA or gaArchive;
+    if faSymLink   and SR.Attr <> 0 then SRA := SRA or gaSymLink;
+
     if fpstat (FileName, info) = 0 then
     begin
       if info.st_mode and $0100 <> 0 then SRA := SRA or gaReadByOwner;
@@ -260,7 +287,7 @@ begin
       if info.st_mode and $0002 <> 0 then SRA := SRA or gaWriteByOther;
       if info.st_mode and $0001 <> 0 then SRA := SRA or gaExecuteByOther;
     end;
-    {$ENDIF}
+
     if SRA > Rec.Attributes then
       Result := - 1
     else
@@ -269,12 +296,13 @@ begin
   end;
   FindClose(SR);
 end;
+{$ENDIF}
 
+{$IFDEF MSWINDOWS}
 function GetFileAttributes(const FileName: string): longword;
 var
   SR: TSearchRec;
   SRA:  cardinal;
-  {$IFDEF UNIX} info: stat; {$ENDIF}
 begin
   Result := 0;
   if FindFirst(FileName, faAnyFile, SR) = 0 then
@@ -287,7 +315,31 @@ begin
     if faDirectory and SR.Attr <> 0 then SRA := SRA or gaDirectory;
     if faArchive   and SR.Attr <> 0 then SRA := SRA or gaArchive;
     if faSymLink   and SR.Attr <> 0 then SRA := SRA or gaSymLink;
-    {$IFDEF UNIX}
+
+    Result := SRA;
+  end;
+end;
+{$ENDIF}
+
+{$IFDEF UNIX}
+function GetFileAttributes(const FileName: string): longword;
+var
+  SR: TSearchRec;
+  SRA:  cardinal;
+  info: stat;
+begin
+  Result := 0;
+  if FindFirst(FileName, faAnyFile, SR) = 0 then
+  begin
+    SRA := 0;
+    if faReadOnly  and SR.Attr <> 0 then SRA := SRA or gaReadOnly;
+    if faHidden    and SR.Attr <> 0 then SRA := SRA or gaHidden;
+    if faSysFile   and SR.Attr <> 0 then SRA := SRA or gaSysFile;
+    if faVolumeId  and SR.Attr <> 0 then SRA := SRA or gaVolumeId;
+    if faDirectory and SR.Attr <> 0 then SRA := SRA or gaDirectory;
+    if faArchive   and SR.Attr <> 0 then SRA := SRA or gaArchive;
+    if faSymLink   and SR.Attr <> 0 then SRA := SRA or gaSymLink;
+
     if SR.Attr and faSymLink = 0 then
     begin
       if fpstat (FileName, info) = 0 then
@@ -315,16 +367,38 @@ begin
         if info.st_mode and $0002 <> 0 then SRA := SRA or gaWriteByOther;
         if info.st_mode and $0001 <> 0 then SRA := SRA or gaExecuteByOther;
       end;
-    {$ENDIF}
+
     Result := SRA;
   end;
 end;
+{$ENDIF}
 
+{$IFDEF MSWINDOWS}
+function GetFileLink(const FileName: string): string;
+var
+  Link: TStream;
+begin
+  Link := TFileStream.Create(FileName, fmOpenRead);
+  Result := Link.ToString;
+  FreeAndNil(Link);
+end;
+{$ENDIF}
+
+{$IFDEF UNIX}
 function GetFileLink(const FileName: string): string;
 begin
   Result := fpReadLink(FileName);
 end;
+{$ENDIF}
 
+{$IFDEF MSWINDOWS}
+function GetFileUID(const FileName: string): longword;
+begin
+  Result := longword(-1);
+end;
+{$ENDIF}
+
+{$IFDEF UNIX}
 function GetFileUID(const FileName: string): longword;
 var
   info: stat;
@@ -333,7 +407,16 @@ begin
   if fpstat (FileName, info) <> 0 then
     Result := info.st_uid;
 end;
+{$ENDIF}
 
+{$IFDEF MSWINDOWS}
+function GetFileGID(const FileName: string): longword;
+begin
+  Result := longword(-1);
+end;
+{$ENDIF}
+
+{$IFDEF UNIX}
 function GetFileGID(const FileName: string): longword;
 var
   info: stat;
@@ -342,6 +425,7 @@ begin
   if fpstat (FileName, info) <> 0 then
     Result := info.st_gid;
 end;
+{$ENDIF}
 
 function GetFileUserName(const FileName: string): string;
 begin
@@ -353,7 +437,7 @@ begin
   Result := '';
 end;
 
-function CommToString(Rec: TGulpRec): string;
+function CommandToString(Rec: TGulpRec): string;
 begin
   case Rec.Flags and $FF of
     gfAdd:    Result := 'ADD';
@@ -495,8 +579,8 @@ begin
   Result := Marker = GulpMarker;
   if Result then
   begin
-    Read       (Rec.FFlags, SizeOf (Rec.FFlags));
     ReadString (Rec.FName);
+    Read       (Rec.FFlags, SizeOf (Rec.FFlags));
     Read       (Rec.FStoredTime, SizeOf (Rec.FStoredTime));
 
     if gfModifiedTime and Rec.Flags <> 0 then Read      (Rec.FModifiedTime, SizeOf (Rec.FModifiedTime));
@@ -541,19 +625,19 @@ begin
   end;
 end;
 
-function TGulpReader.GetFileSize: int64;
-begin
-  Result := FStream.Size;
-end;
-
 function TGulpReader.GetFilePos: int64;
 begin
-  Result := FStream.Position;
+  Result := FStream.Seek (0, soCurrent);
 end;
 
 procedure TGulpReader.SetFilePos (const NewPos: int64);
 begin
   FStream.Seek (NewPos, soBeginning);
+end;
+
+function TGulpReader.GetFileSize: int64;
+begin
+  Result := FStream.Size;
 end;
 
 // =============================================================================
@@ -598,8 +682,8 @@ var
 begin
   SHA1Init    (FCTX);
   Write       (GulpMarker, SizeOf (GulpMarker));
-  Write       (Rec.Flags, SizeOf (Rec.Flags));
   WriteString (Rec.Name);
+  Write       (Rec.Flags, SizeOf (Rec.Flags));
   Write       (Rec.StoredTime, SizeOf (Rec.StoredTime));
 
   if gfModifiedTime and Rec.Flags <> 0 then Write      (Rec.ModifiedTime, SizeOf (Rec.ModifiedTime));
@@ -655,7 +739,7 @@ procedure TGulpWriter.Add (const FileName: string; LastFlag: boolean);
 var
   Rec: TGulpRec;
   SR: TSearchRec;
-  Stream: TFileStream = nil;
+  Stream: TStream;
 begin
   Rec := ClearRec(TGulpRec.Create);
   if FindFirst(FileName, faAnyFile, SR) = 0 then
@@ -669,25 +753,22 @@ begin
     Rec.FGID          := GetFileGID(FileName);
 
     IncludeFlag(Rec.FFlags, gfAdd);
-    if SR.Attr and faDirectory <> 0 then
+    if SR.Attr and faSymLink <> 0 then
     begin
-      IncludeFlag(Rec.FFlags, gfDirectory);
-    end else
-      if SR.Attr and faSymLink <> 0 then
-      begin
-        IncludeFlag(Rec.FFlags, gfSymbolicLink);
-        IncludeFlag(Rec.FFlags, gfLinkName);
-        Rec.FLinkName := GetFileLink(FileName);
-      end else
-      begin
-        IncludeFlag(Rec.FFlags, gfFile);
-        try
-          Stream := TFileStream.Create(FileName, fmOpenRead);
-          IncludeFlag(Rec.FFlags, gfSize);
-        except
-          Stream := nil;
-        end;
+      IncludeFlag(Rec.FFlags, gfLinkName);
+      Rec.FLinkName := GetFileLink(FileName);
+    end;
+
+    Stream := nil;
+    if SR.Attr and (faDirectory or faVolumeId or faSymLink) = 0 then
+      try
+        Stream := TFileStream.Create(FileName, fmOpenRead);
+      except
+        Stream := nil;
       end;
+
+    if Assigned(Stream) then
+      IncludeFlag(Rec.FFlags, gfSize);
 
     IncludeFlag(Rec.FFlags, gfModifiedTime);
     IncludeFlag(Rec.FFlags, gfAttributes);

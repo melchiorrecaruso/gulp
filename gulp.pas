@@ -71,7 +71,7 @@ var
 {$ENDIF}
 begin
   {$IFDEF MSWINDOWS}
-    SetConsoleCtrlHandler(CtrlHandler, TRUE);
+    SetConsoleCtrlHandler(@CtrlHandler, TRUE);
   {$ENDIF}
   {$IFDEF UNIX}
     na.sa_handler  := SigActionHandler(CtrlHandler);

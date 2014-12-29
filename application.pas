@@ -30,6 +30,9 @@ unit Application;
 interface
 
 uses
+  {$IFDEF MSWINDOWS}
+  Windows,
+  {$ENDIF}
   {$IFDEF UNIX}
   BaseUnix,
   Unix,
@@ -318,10 +321,10 @@ begin
           end;
 
         writeln(#13, #13: 80, Format('%3s %17s %19s %12s %s', [
-          CommToString(Rec),
-          AttrToString(Rec),
-          TimeToString(Rec),
-          SizeToString(Rec),
+          CommandToString(Rec),
+             AttrToString(Rec),
+             TimeToString(Rec),
+             SizeToString(Rec),
           Rec.Name]));
         Break;
       end;
