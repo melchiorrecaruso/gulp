@@ -23,11 +23,9 @@
 
   Modifyed:
 
-    v1.0 build 2210 - 2014.01.15 by Melchiorre Caruso.
-
 }
 
 {*$DEFINE DEBUG}
 {$INLINE OFF}
 
-
+

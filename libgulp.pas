@@ -1,32 +1,64 @@
-unit LibGulp;
+{
+  Copyright (c) 2014 Melchiorre Caruso.
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+}
+
+{
+  Contains:
+
+  Modifyed:
+
+}
+
+unit Libgulp;
+
+{$I gulp.inc}
 
 interface
 
 uses
-  {$IFDEF UNIX} BaseUnix, Unix, {$ENDIF}
-  {$IFDEF MSWINDOWS} Windows, {$ENDIF}
-  {$IFDEF LIBCUNIT} Libc, {$ENDIF}
-  SysUtils,
+  {$IFDEF UNIX}
+  BaseUnix,
+  Unix,
+  {$ENDIF}
+  {$IFDEF MSWINDOWS}
+  Windows,
+  {$ENDIF}
   Classes,
+  SysUtils,
   SHA1;
 
 const
   // --- Gulp Flags ---
+  gfLast           = $00000000;
   gfAdd            = $00000001;
   gfDelete         = $00000002;
-  gfUpdate         = $00000004;
+  gfUpdate         = $00000003;
 
-  gfLast           = $00000100;
-  gfModifiedTime   = $00000200;
-  gfAttributes     = $00000400;
-  gfSize           = $00000800;
-  gfLinkName       = $00001000;
-  gfUID            = $00002000;
-  gfUserName       = $00004000;
-  gfGID            = $00008000;
-  gfGroupName      = $00010000;
-
-  gfReserved       = $80000000;
+  gfName           = $00000100;
+  gfFlags          = $00000200;
+  gfStoredTime     = $00000400;
+  gfModifiedTime   = $00000800;
+  gfAttributes     = $00001000;
+  gfSize           = $00002000;
+  gfLinkName       = $00004000;
+  gfUID            = $00008000;
+  gfUserName       = $00010000;
+  gfGID            = $00020000;
+  gfGroupName      = $00040000;
 
   // --- Gulp Attributes ---
   gaReadOnly       = $00000001;
@@ -54,8 +86,8 @@ type
   // --- Gulp Record CLASS ---
   TGulpRec = class(TObject)
   private
+    FFlags         : longword;   // Flags
     FName          : ansistring; // File path and name
-    FFlags         : cardinal;   // Flags
     FStoredTime    : TDateTime;  // Stored date time
     FModifiedTime  : TDateTime;  // Last modification date and time
     FAttributes    : cardinal;   // File mode
@@ -71,8 +103,8 @@ type
     FStartPosition : int64;      // Start position  (reserved)
     FEndPosition   : int64;      // End position    (reserved)
   public
-    property Name         : ansistring read FName;
     property Flags        : cardinal   read FFlags;
+    property Name         : ansistring read FName;
     property StoredTime   : TDateTime  read FStoredTime;
     property ModifiedTime : TDateTime  read FModifiedTime;
     property Attributes   : cardinal   read FAttributes;
@@ -98,22 +130,13 @@ type
     destructor Destroy; override;
     procedure Reset;
 
-
-
-
-
     function  FindNext  (var Rec: TGulpRec; Stream: TStream): boolean;
-
-
-
-    function GetFileSize: int64;
-    function GetFilePos: int64;
-    procedure SetFilePos (const NewPos : int64);
   end;
 
   // --- The Gulp Writer CLASS ---
   TGulpWriter = class(TObject)
   protected
+    FModified       : boolean;
     FCTX            : TSHA1Context;
     FStream         : TStream;
     FStoredTime     : TDateTime;
@@ -123,9 +146,9 @@ type
   public
     constructor Create  (Stream: TStream);
     destructor Destroy; override;
-    procedure Add      (const FileName: string; LastFlag: boolean);
-    procedure Delete   (const FileName: string; LastFlag: boolean);
-    procedure CopyFrom (const Rec: TGulpRec; Stream: TStream);
+    procedure Add      (const FileName: string);
+    procedure Delete   (const FileName: string);
+    procedure CopyFrom (var Rec: TGulpRec; Stream: TStream);
   end;
 
   // --- The Gulp List CLASS ---
@@ -151,7 +174,7 @@ type
     property Count: longint read GetCount;
   end;
 
-// --- Some useful constants
+// --- Some useful routines
 
 function ConvertFileName(const FileName: string): string;
 function CompareFileTime(const FileName: string; var Rec: TGulpRec): longint;
@@ -458,7 +481,7 @@ end;
 
 function AttrToString (Rec: TGulpRec): string;
 begin
-  if Rec.Flags and $FF <> gfDelete then
+  if Rec.Flags and gfDelete = 0 then
   begin
     Result := '....... .........';
     if Rec.Attributes and faReadOnly       <> 0 then Result[1]  := 'R';
@@ -504,8 +527,8 @@ end;
 function ClearRec(const Rec: TGulpRec) :TGulpRec;
 begin
   Result                := Rec;
-  Result.FName          := '';
   Result.FFlags         := 0;
+  Result.FName          := '';
   Result.FStoredTime    := 0.0;
   Result.FModifiedTime  := 0.0;
   Result.FAttributes    := 0;
@@ -579,10 +602,10 @@ begin
   Result := Marker = GulpMarker;
   if Result then
   begin
-    ReadString (Rec.FName);
-    Read       (Rec.FFlags, SizeOf (Rec.FFlags));
-    Read       (Rec.FStoredTime, SizeOf (Rec.FStoredTime));
+    Read (Rec.FFlags, SizeOf (Rec.FFlags));
 
+    if gfName         and Rec.Flags <> 0 then ReadString(Rec.FName);
+    if gfStoredTime   and Rec.Flags <> 0 then Read      (Rec.FStoredTime,   SizeOf (Rec.FStoredTime));
     if gfModifiedTime and Rec.Flags <> 0 then Read      (Rec.FModifiedTime, SizeOf (Rec.FModifiedTime));
     if gfAttributes   and Rec.Flags <> 0 then Read      (Rec.FAttributes,   SizeOf (Rec.FAttributes));
     if gfSize         and Rec.Flags <> 0 then Read      (Rec.FSize,         SizeOf (Rec.FSize));
@@ -625,21 +648,6 @@ begin
   end;
 end;
 
-function TGulpReader.GetFilePos: int64;
-begin
-  Result := FStream.Seek (0, soCurrent);
-end;
-
-procedure TGulpReader.SetFilePos (const NewPos: int64);
-begin
-  FStream.Seek (NewPos, soBeginning);
-end;
-
-function TGulpReader.GetFileSize: int64;
-begin
-  Result := FStream.Size;
-end;
-
 // =============================================================================
 // TGulpWriter
 // =============================================================================
@@ -647,13 +655,26 @@ end;
 constructor TGulpWriter.Create (Stream: TStream);
 begin
   inherited Create;
+  FModified   := FALSE;
   FStoredTime := Now;
   FStream     := Stream;
-  FStream.Seek(0, soFromEnd);
+  FStream.Seek (0, soFromEnd);
 end;
 
 destructor TGulpWriter.Destroy;
+var
+  Flags: longword;
+  Digest: TSHA1Digest;
 begin
+  if FModified then
+  begin
+    Flags := gfLast;
+    SHA1Init (FCTX);
+    Write    (GulpMarker, SizeOf (GulpMarker));
+    Write    (Flags,      SizeOf (Flags));
+    SHA1Final(FCTX, Digest);
+    FStream.Write(Digest, SizeOf(Digest));
+  end;
   FStream := nil;
   inherited Destroy;
 end;
@@ -680,12 +701,13 @@ var
   Digest: TSHA1Digest;
   Buffer: array[0..$FFFF] of byte;
 begin
-  SHA1Init    (FCTX);
-  Write       (GulpMarker, SizeOf (GulpMarker));
-  WriteString (Rec.Name);
-  Write       (Rec.Flags, SizeOf (Rec.Flags));
-  Write       (Rec.StoredTime, SizeOf (Rec.StoredTime));
+  FModified := TRUE;
+  SHA1Init (FCTX);
+  Write    (GulpMarker, SizeOf (GulpMarker));
+  Write    (Rec.Flags,  SizeOf (Rec.Flags ));
 
+  if gfName         and Rec.Flags <> 0 then WriteString(Rec.Name);
+  if gfStoredTime   and Rec.Flags <> 0 then Write      (Rec.StoredTime,   SizeOf (Rec.StoredTime));
   if gfModifiedTime and Rec.Flags <> 0 then Write      (Rec.ModifiedTime, SizeOf (Rec.ModifiedTime));
   if gfAttributes   and Rec.Flags <> 0 then Write      (Rec.Attributes,   SizeOf (Rec.Attributes));
   if gfSize         and Rec.Flags <> 0 then Write      (Rec.Size,         SizeOf (Rec.Size));
@@ -695,7 +717,7 @@ begin
   if gfGID          and Rec.Flags <> 0 then Write      (Rec.GID,          SizeOf (Rec.GID));
   if gfGroupName    and Rec.Flags <> 0 then WriteString(Rec.GroupName);
 
-  if Rec.Size <> 0 then
+  if Assigned(Stream) then
   begin
     Count := Rec.Size;
     while Count <> 0 do
@@ -710,7 +732,7 @@ begin
   FStream.Write(Digest, SizeOf(Digest));
 end;
 
-procedure TGulpWriter.CopyFrom(const Rec: TGulpRec; Stream: TStream);
+procedure TGulpWriter.CopyFrom(var Rec: TGulpRec; Stream: TStream);
 begin
   Stream.Seek(Rec.FStartPosition, soBeginning);
   if Rec.FEndPosition - Rec.FStartPosition > 0 then
@@ -719,14 +741,14 @@ begin
   end;
 end;
 
-procedure TGulpWriter.Delete (const FileName: string; LastFlag: boolean);
+procedure TGulpWriter.Delete (const FileName: string);
 var
   Rec: TGulpRec;
 begin
   Rec := ClearRec(TGulpRec.Create);
   IncludeFlag(Rec.FFlags, gfDelete);
-  if LastFlag then
-    IncludeFlag(Rec.FFlags, gfLast);
+  IncludeFlag(Rec.FFlags, gfName);
+  IncludeFlag(Rec.FFlags, gfStoredTime);
 
   Rec.FName       := FileName;
   Rec.FStoredTime := FStoredTime;
@@ -735,7 +757,7 @@ begin
   FreeAndNil(Rec);
 end;
 
-procedure TGulpWriter.Add (const FileName: string; LastFlag: boolean);
+procedure TGulpWriter.Add (const FileName: string);
 var
   Rec: TGulpRec;
   SR: TSearchRec;
@@ -744,20 +766,11 @@ begin
   Rec := ClearRec(TGulpRec.Create);
   if FindFirst(FileName, faAnyFile, SR) = 0 then
   begin
-    Rec.FName         := FileName;
-    Rec.FStoredTime   := FStoredTime;
-    Rec.FModifiedTime := FileDateToDateTime(SR.Time);
-    Rec.FAttributes   := GetFileAttributes(FileName);
-    Rec.FSize         := SR.Size;
-    Rec.FUID          := GetFileUID(FileName);
-    Rec.FGID          := GetFileGID(FileName);
-
     IncludeFlag(Rec.FFlags, gfAdd);
-    if SR.Attr and faSymLink <> 0 then
-    begin
-      IncludeFlag(Rec.FFlags, gfLinkName);
-      Rec.FLinkName := GetFileLink(FileName);
-    end;
+    IncludeFlag(Rec.FFlags, gfName);
+    IncludeFlag(Rec.FFlags, gfStoredTime);
+    IncludeFlag(Rec.FFlags, gfModifiedTime);
+    IncludeFlag(Rec.FFlags, gfAttributes);
 
     Stream := nil;
     if SR.Attr and (faDirectory or faVolumeId or faSymLink) = 0 then
@@ -770,12 +783,22 @@ begin
     if Assigned(Stream) then
       IncludeFlag(Rec.FFlags, gfSize);
 
-    IncludeFlag(Rec.FFlags, gfModifiedTime);
-    IncludeFlag(Rec.FFlags, gfAttributes);
+    if SR.Attr and faSymLink <> 0 then
+    begin
+      IncludeFlag(Rec.FFlags, gfLinkName);
+      Rec.FLinkName := GetFileLink(FileName);
+    end;
+
     IncludeFlag(Rec.FFlags, gfUID);
     IncludeFlag(Rec.FFlags, gfGID);
-    if LastFlag then
-      IncludeFlag(Rec.FFlags, gfLast);
+
+    Rec.FName         := FileName;
+    Rec.FStoredTime   := FStoredTime;
+    Rec.FModifiedTime := FileDateToDateTime(SR.Time);
+    Rec.FAttributes   := GetFileAttributes(FileName);
+    Rec.FSize         := SR.Size;
+    Rec.FUID          := GetFileUID(FileName);
+    Rec.FGID          := GetFileGID(FileName);
 
     WriteStream(Rec, Stream);
     if Assigned(Stream) then
@@ -906,15 +929,19 @@ begin
   begin
     if Rec.StoredTime < StoredTime + 0.00002 then
     begin
-      if Rec.Flags and gfDelete = 0 then
-      begin
-        BinInsert(Rec);
-        Rec := TGulpRec.Create;
-      end else
-      begin
-        I := Find(Rec.Name);
-        if I <> - 1 then Delete(I);
+      case Rec.Flags and $FF of
+        gfLast:;
+        gfAdd: begin
+          BinInsert(Rec);
+          Rec := TGulpRec.Create;
+        end;
+        gfDelete: begin
+          I := Find(Rec.Name);
+          if I <> - 1 then Delete(I);
+        end;
+        gfUpdate:;
       end;
+
     end;
   end;
   Rec.Destroy;

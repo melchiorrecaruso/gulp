@@ -28,8 +28,13 @@ program Gulp;
 {$I gulp.inc}
 
 uses
-  {$IFDEF MSWINDOWS} Windows, {$ENDIF}
-  {$IFDEF UNIX} BaseUnix,  cthreads, {$ENDIF}
+  {$IFDEF MSWINDOWS}
+  Windows,
+  {$ENDIF}
+  {$IFDEF UNIX}
+  cthreads,
+  BaseUnix,
+  {$ENDIF}
   Application,
   Classes;
 

@@ -118,7 +118,6 @@ var
   GulpWriter: TGulpWriter = nil;
   GulpList: TGulpList = nil;
   Rec: TGulpRec = nil;
-  LastFlag: boolean;
 begin
   writeln(#13, #13: 80, 'Synchronize ' + GetOptionValue('s', 'synch'));
   write  (#13, #13: 80, 'Scanning... ');
@@ -139,30 +138,22 @@ begin
   GulpWriter := TGulpWriter.Create(Stream);
   for I := 0 to GulpList.Count - 1 do
   begin
-    LastFlag := FALSE;
-    if Scanner.Count = 0 then
-      LastFlag := GulpList.Count -1 = I;
-
     Rec := GulpList.Items[I];
     J := Scanner.Find(Rec.Name);
     if J = -1 then
-      GulpWriter.Delete(Rec.Name, LastFlag)
+      GulpWriter.Delete(Rec.Name)
     else
       if (CompareFileAttr(Scanner.Items[J], Rec) <> 0) or
          (CompareFileTime(Scanner.Items[J], Rec) <> 0) or
          (CompareFileSize(Scanner.Items[J], Rec) <> 0) then
-        GulpWriter.Delete(Rec.Name, LastFlag)
+        GulpWriter.Delete(Rec.Name)
       else
         Scanner.Delete(J);
   end;
 
   write(#13, #13: 80, 'Adding recors... ');
   for I := 0 to Scanner.Count - 1 do
-  begin
-    LastFlag := Scanner.Count -1 = I;
-    GulpWriter.Add(Scanner.Items[I], LastFlag);
-  end;
-
+    GulpWriter.Add(Scanner.Items[I]);
 
   FreeAndNil(GulpWriter);
   FreeAndNil(GulpList);
@@ -192,7 +183,7 @@ begin
   Rec := TGulpRec.Create;
   try
     while GulpReader.FindNext(Rec ,nil) do
-      if Rec.Flags and gfLast <> 0 then
+      if Rec.Flags and $FF = gfLast then
       begin
         FixSize := Stream.Position;
         writeln(#13, #13: 80, 'Founded a job at ',
@@ -218,9 +209,9 @@ end;
 
 procedure TGulpApplication.Check;
 var
-  Nul: TNulStream = nil;
-  GulpReader: TGulpReader = nil;
-  Rec: TGulpRec = nil;
+  Nul: TNulStream;
+  GulpReader: TGulpReader;
+  Rec: TGulpRec;
   StoredTime: TDateTime = 0.0;
 begin
   writeln(#13, #13: 80, 'Check the contents of ' + GetOptionValue('c', 'check'));
@@ -271,7 +262,10 @@ begin
   New := TFileStream.Create('pippo', fmCreate);
   GulpWriter := TGulpWriter.Create(New);
   for I := 0 to GulpList.Count - 1 do
-    GulpWriter.CopyFrom(GulpList.Items[I], Stream);
+  begin
+    Rec := GulpList.Items[I];
+    GulpWriter.CopyFrom(Rec, Stream);
+  end;
 
   FreeAndNil(New);
   FreeAndNil(GulpWriter);
