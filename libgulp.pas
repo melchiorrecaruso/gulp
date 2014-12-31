@@ -43,10 +43,9 @@ uses
 
 const
   // --- Gulp Flags ---
-  gfLast           = $00000000;
+  gfFix            = $00000000;
   gfAdd            = $00000001;
   gfDelete         = $00000002;
-  gfUpdate         = $00000003;
 
   gfName           = $00000100;
   gfFlags          = $00000200;
@@ -90,7 +89,7 @@ type
     FName          : ansistring; // File path and name
     FStoredTime    : TDateTime;  // Stored date time
     FModifiedTime  : TDateTime;  // Last modification date and time
-    FAttributes    : cardinal;   // File mode
+    FAttr          : longword;   // File mode
     FSize          : int64;      // File size in bytes
     FLinkName      : ansistring; // Name of linked file
     FUID           : longint;    // User ID
@@ -103,11 +102,11 @@ type
     FStartPosition : int64;      // Start position  (reserved)
     FEndPosition   : int64;      // End position    (reserved)
   public
-    property Flags        : cardinal   read FFlags;
+    property Flags        : longword   read FFlags;
     property Name         : ansistring read FName;
     property StoredTime   : TDateTime  read FStoredTime;
     property ModifiedTime : TDateTime  read FModifiedTime;
-    property Attributes   : cardinal   read FAttributes;
+    property Attr         : longword   read FAttr;
     property Size         : int64      read FSize;
     property LinkName     : ansistring read FLinkName;
     property UID          : longint    read FUID;
@@ -126,11 +125,10 @@ type
     function ReadString (var Buffer: string): longint;
     function Read (var Buffer; Count: longint): longint;
   public
-    constructor Create  (Stream: TStream);
+    constructor Create (Stream: TStream);
     destructor Destroy; override;
     procedure Reset;
-
-    function  FindNext  (var Rec: TGulpRec; Stream: TStream): boolean;
+    function  FindNext (var Rec: TGulpRec; Stream: TStream): boolean;
   end;
 
   // --- The Gulp Writer CLASS ---
@@ -156,19 +154,18 @@ type
   private
     FList: TList;
     FBinaryMode: boolean;
-    FReader: TGulpReader;
+    FStoredTime:TDateTime;
     function Get(Index: longint): TGulpRec;
     function GetCount: longint;
     procedure Delete(Index: longint);
-    procedure BinInsert(Rec: TGulpRec);
+    procedure BinInsert(const Rec: TGulpRec);
     function BinSearch(const Filename: string): longint;
   public
-    constructor Create(Stream: TStream);
+    constructor Create(StoredTime: TDateTime);
     destructor Destroy; override;
-    procedure Clear;
-    procedure Load;
-    procedure LoadAt(StoredTime: TDateTime);
     function Find(const FileName: string): longint;
+    procedure Add(var Rec: TGulpRec);
+    procedure Clear;
   public
     property Items[Index: longint]: TGulpRec read Get;
     property Count: longint read GetCount;
@@ -177,9 +174,9 @@ type
 // --- Some useful routines
 
 function ConvertFileName(const FileName: string): string;
-function CompareFileTime(const FileName: string; var Rec: TGulpRec): longint;
-function CompareFileSize(const FileName: string; var Rec: TGulpRec): longint;
-function CompareFileAttr(const FileName: string; var Rec: TGulpRec): longint;
+function CompareFileTime(const FileName: string; const Rec: TGulpRec): longint;
+function CompareFileSize(const FileName: string; const Rec: TGulpRec): longint;
+function CompareFileAttr(const FileName: string; const Rec: TGulpRec): longint;
 
 function CommandToString(Rec: TGulpRec): string;
 function AttrToString   (Rec: TGulpRec): string;
@@ -216,7 +213,7 @@ begin
 end;
 {$ENDIF}
 
-function CompareFileTime(const FileName: string; var Rec: TGulpRec): longint;
+function CompareFileTime(const FileName: string; const Rec: TGulpRec): longint;
 var
   SR: TSearchRec;
 begin
@@ -232,14 +229,14 @@ begin
   FindClose(SR);
 end;
 
-function CompareFileSize(const FileName: string; var Rec: TGulpRec): longint;
+function CompareFileSize(const FileName: string; const Rec: TGulpRec): longint;
 var
   SR: TSearchRec;
 begin
   Result := 0;
   if FindFirst(FileName, faAnyFile, SR) = 0 then
   begin
-    if (SR.Attr and faDirectory = 0) or (Rec.Attributes and gaDirectory = 0) then
+    if (SR.Attr and faDirectory = 0) or (Rec.Attr and gaDirectory = 0) then
     begin
       if SR.Size > Rec.Size then
         Result := - 1
@@ -252,10 +249,10 @@ begin
 end;
 
 {$IFDEF MSWINDOWS}
-function CompareFileAttr(const FileName: string; var Rec: TGulpRec): longint;
+function CompareFileAttr(const FileName: string; const Rec: TGulpRec): longint;
 var
   SR: TSearchRec;
-  SRA:  cardinal;
+  SRA:  longword;
 begin
   Result := 0;
   if FindFirst(FileName, faAnyFile, SR) = 0 then
@@ -280,10 +277,10 @@ end;
 {$ENDIF}
 
 {$IFDEF UNIX}
-function CompareFileAttr(const FileName: string; var Rec: TGulpRec): longint;
+function CompareFileAttr(const FileName: string; const Rec: TGulpRec): longint;
 var
   SR: TSearchRec;
-  SRA:  cardinal;
+  SRA:  longword;
   info: stat;
 begin
   Result := 0;
@@ -311,161 +308,22 @@ begin
       if info.st_mode and $0001 <> 0 then SRA := SRA or gaExecuteByOther;
     end;
 
-    if SRA > Rec.Attributes then
+    if SRA > Rec.Attr then
       Result := - 1
     else
-      if SRA < Rec.Attributes then
+      if SRA < Rec.Attr then
         Result := 1;
   end;
   FindClose(SR);
 end;
 {$ENDIF}
 
-{$IFDEF MSWINDOWS}
-function GetFileAttributes(const FileName: string): longword;
-var
-  SR: TSearchRec;
-  SRA:  cardinal;
-begin
-  Result := 0;
-  if FindFirst(FileName, faAnyFile, SR) = 0 then
-  begin
-    SRA := 0;
-    if faReadOnly  and SR.Attr <> 0 then SRA := SRA or gaReadOnly;
-    if faHidden    and SR.Attr <> 0 then SRA := SRA or gaHidden;
-    if faSysFile   and SR.Attr <> 0 then SRA := SRA or gaSysFile;
-    if faVolumeId  and SR.Attr <> 0 then SRA := SRA or gaVolumeId;
-    if faDirectory and SR.Attr <> 0 then SRA := SRA or gaDirectory;
-    if faArchive   and SR.Attr <> 0 then SRA := SRA or gaArchive;
-    if faSymLink   and SR.Attr <> 0 then SRA := SRA or gaSymLink;
-
-    Result := SRA;
-  end;
-end;
-{$ENDIF}
-
-{$IFDEF UNIX}
-function GetFileAttributes(const FileName: string): longword;
-var
-  SR: TSearchRec;
-  SRA:  cardinal;
-  info: stat;
-begin
-  Result := 0;
-  if FindFirst(FileName, faAnyFile, SR) = 0 then
-  begin
-    SRA := 0;
-    if faReadOnly  and SR.Attr <> 0 then SRA := SRA or gaReadOnly;
-    if faHidden    and SR.Attr <> 0 then SRA := SRA or gaHidden;
-    if faSysFile   and SR.Attr <> 0 then SRA := SRA or gaSysFile;
-    if faVolumeId  and SR.Attr <> 0 then SRA := SRA or gaVolumeId;
-    if faDirectory and SR.Attr <> 0 then SRA := SRA or gaDirectory;
-    if faArchive   and SR.Attr <> 0 then SRA := SRA or gaArchive;
-    if faSymLink   and SR.Attr <> 0 then SRA := SRA or gaSymLink;
-
-    if SR.Attr and faSymLink = 0 then
-    begin
-      if fpstat (FileName, info) = 0 then
-      begin
-        if info.st_mode and $0100 <> 0 then SRA := SRA or gaReadByOwner;
-        if info.st_mode and $0080 <> 0 then SRA := SRA or gaWriteByOwner;
-        if info.st_mode and $0040 <> 0 then SRA := SRA or gaExecuteByOwner;
-        if info.st_mode and $0020 <> 0 then SRA := SRA or gaReadByGroup;
-        if info.st_mode and $0010 <> 0 then SRA := SRA or gaWriteByGroup;
-        if info.st_mode and $0008 <> 0 then SRA := SRA or gaExecuteByGroup;
-        if info.st_mode and $0004 <> 0 then SRA := SRA or gaReadByOther;
-        if info.st_mode and $0002 <> 0 then SRA := SRA or gaWriteByOther;
-        if info.st_mode and $0001 <> 0 then SRA := SRA or gaExecuteByOther;
-      end;
-    end else
-      if fpLstat (FileName, info) = 0 then
-      begin
-        if info.st_mode and $0100 <> 0 then SRA := SRA or gaReadByOwner;
-        if info.st_mode and $0080 <> 0 then SRA := SRA or gaWriteByOwner;
-        if info.st_mode and $0040 <> 0 then SRA := SRA or gaExecuteByOwner;
-        if info.st_mode and $0020 <> 0 then SRA := SRA or gaReadByGroup;
-        if info.st_mode and $0010 <> 0 then SRA := SRA or gaWriteByGroup;
-        if info.st_mode and $0008 <> 0 then SRA := SRA or gaExecuteByGroup;
-        if info.st_mode and $0004 <> 0 then SRA := SRA or gaReadByOther;
-        if info.st_mode and $0002 <> 0 then SRA := SRA or gaWriteByOther;
-        if info.st_mode and $0001 <> 0 then SRA := SRA or gaExecuteByOther;
-      end;
-
-    Result := SRA;
-  end;
-end;
-{$ENDIF}
-
-{$IFDEF MSWINDOWS}
-function GetFileLink(const FileName: string): string;
-var
-  Link: TStream;
-begin
-  Link := TFileStream.Create(FileName, fmOpenRead);
-  Result := Link.ToString;
-  FreeAndNil(Link);
-end;
-{$ENDIF}
-
-{$IFDEF UNIX}
-function GetFileLink(const FileName: string): string;
-begin
-  Result := fpReadLink(FileName);
-end;
-{$ENDIF}
-
-{$IFDEF MSWINDOWS}
-function GetFileUID(const FileName: string): longword;
-begin
-  Result := longword(-1);
-end;
-{$ENDIF}
-
-{$IFDEF UNIX}
-function GetFileUID(const FileName: string): longword;
-var
-  info: stat;
-begin
-  Result := longword(-1);
-  if fpstat (FileName, info) <> 0 then
-    Result := info.st_uid;
-end;
-{$ENDIF}
-
-{$IFDEF MSWINDOWS}
-function GetFileGID(const FileName: string): longword;
-begin
-  Result := longword(-1);
-end;
-{$ENDIF}
-
-{$IFDEF UNIX}
-function GetFileGID(const FileName: string): longword;
-var
-  info: stat;
-begin
-  Result := longword(-1);
-  if fpstat (FileName, info) <> 0 then
-    Result := info.st_gid;
-end;
-{$ENDIF}
-
-function GetFileUserName(const FileName: string): string;
-begin
-  Result := '';
-end;
-
-function GetFileGroupName(const FileName: string): string;
-begin
-  Result := '';
-end;
-
 function CommandToString(Rec: TGulpRec): string;
 begin
   case Rec.Flags and $FF of
+    gfFix:    Result := 'LST';
     gfAdd:    Result := 'ADD';
     gfDelete: Result := 'DEL';
-    gfUpdate: Result := 'UPD';
     else      Result := '???';
   end;
 end;
@@ -473,41 +331,41 @@ end;
 function SizeToString (Rec: TGulpRec): string;
 begin
   Result := ' ';
-  if Rec.Flags and gfSize <> 0 then
-  begin
-    Result := Format('%u', [Rec.Size])
-  end;
+  if Rec.Flags and $FF in [gfAdd] then
+    if Rec.Flags and gfSize <> 0 then
+    begin
+      Result := Format('%u', [Rec.Size])
+    end;
 end;
 
 function AttrToString (Rec: TGulpRec): string;
 begin
-  if Rec.Flags and gfDelete = 0 then
+  Result := '....... .........';
+  if Rec.Flags and $FF in [gfAdd] then
   begin
-    Result := '....... .........';
-    if Rec.Attributes and faReadOnly       <> 0 then Result[1]  := 'R';
-    if Rec.Attributes and faHidden         <> 0 then Result[2]  := 'H';
-    if Rec.Attributes and faSysFile        <> 0 then Result[3]  := 'S';
-    if Rec.Attributes and faVolumeId       <> 0 then Result[4]  := 'V';
-    if Rec.Attributes and faDirectory      <> 0 then Result[5]  := 'D';
-    if Rec.Attributes and faArchive        <> 0 then Result[6]  := 'A';
-    if Rec.Attributes and faSymLink        <> 0 then Result[7]  := 'L';
+    if Rec.Attr and faReadOnly       <> 0 then Result[1]  := 'R';
+    if Rec.Attr and faHidden         <> 0 then Result[2]  := 'H';
+    if Rec.Attr and faSysFile        <> 0 then Result[3]  := 'S';
+    if Rec.Attr and faVolumeId       <> 0 then Result[4]  := 'V';
+    if Rec.Attr and faDirectory      <> 0 then Result[5]  := 'D';
+    if Rec.Attr and faArchive        <> 0 then Result[6]  := 'A';
+    if Rec.Attr and faSymLink        <> 0 then Result[7]  := 'L';
 
-    if Rec.Attributes and gaExecuteByOwner <> 0 then Result[9]  := 'X';
-    if Rec.Attributes and gaReadByOwner    <> 0 then Result[10] := 'R';
-    if Rec.Attributes and gaWriteByOwner   <> 0 then Result[11] := 'W';
-    if Rec.Attributes and gaExecuteByGroup <> 0 then Result[12] := 'X';
-    if Rec.Attributes and gaReadByGroup    <> 0 then Result[13] := 'R';
-    if Rec.Attributes and gaWriteByGroup   <> 0 then Result[14] := 'W';
-    if Rec.Attributes and gaExecuteByOther <> 0 then Result[15] := 'X';
-    if Rec.Attributes and gaReadByOther    <> 0 then Result[16] := 'R';
-    if Rec.Attributes and gaWriteByOther   <> 0 then Result[17] := 'W';
-  end else
-    Result := '....... .........';
+    if Rec.Attr and gaExecuteByOwner <> 0 then Result[9]  := 'X';
+    if Rec.Attr and gaReadByOwner    <> 0 then Result[10] := 'R';
+    if Rec.Attr and gaWriteByOwner   <> 0 then Result[11] := 'W';
+    if Rec.Attr and gaExecuteByGroup <> 0 then Result[12] := 'X';
+    if Rec.Attr and gaReadByGroup    <> 0 then Result[13] := 'R';
+    if Rec.Attr and gaWriteByGroup   <> 0 then Result[14] := 'W';
+    if Rec.Attr and gaExecuteByOther <> 0 then Result[15] := 'X';
+    if Rec.Attr and gaReadByOther    <> 0 then Result[16] := 'R';
+    if Rec.Attr and gaWriteByOther   <> 0 then Result[17] := 'W';
+  end;
 end;
 
 function TimeToString (Rec: TGulpRec): string;
 begin
-  if Rec.Flags and gfDelete = 0 then
+  if Rec.Flags and $FF in [gfAdd] then
     Result := FormatDateTime(
       DefaultFormatSettings.LongDateFormat + ' ' +
       DefaultFormatSettings.LongTimeFormat, Rec.ModifiedTime)
@@ -531,7 +389,7 @@ begin
   Result.FName          := '';
   Result.FStoredTime    := 0.0;
   Result.FModifiedTime  := 0.0;
-  Result.FAttributes    := 0;
+  Result.FAttr    := 0;
   Result.FSize          := 0;
   Result.FLinkName      := '';
   Result.FUID           := 0;
@@ -561,6 +419,7 @@ constructor TGulpReader.Create (Stream : TStream);
 begin
   inherited Create;
   FStream := Stream;
+  Reset;
 end;
 
 destructor TGulpReader.Destroy;
@@ -589,7 +448,7 @@ end;
 
 function TGulpReader.ReadStream (var Rec: TGulpRec; Stream: TStream): boolean;
 var
-  Count: int64;
+  Size: int64;
   Readed: longint;
   Digest: TSHA1Digest;
   DigestAux: TSHA1Digest;
@@ -607,7 +466,7 @@ begin
     if gfName         and Rec.Flags <> 0 then ReadString(Rec.FName);
     if gfStoredTime   and Rec.Flags <> 0 then Read      (Rec.FStoredTime,   SizeOf (Rec.FStoredTime));
     if gfModifiedTime and Rec.Flags <> 0 then Read      (Rec.FModifiedTime, SizeOf (Rec.FModifiedTime));
-    if gfAttributes   and Rec.Flags <> 0 then Read      (Rec.FAttributes,   SizeOf (Rec.FAttributes));
+    if gfAttributes   and Rec.Flags <> 0 then Read      (Rec.FAttr,         SizeOf (Rec.FAttr));
     if gfSize         and Rec.Flags <> 0 then Read      (Rec.FSize,         SizeOf (Rec.FSize));
     if gfLinkName     and Rec.Flags <> 0 then ReadString(Rec.FLinkName);
     if gfUID          and Rec.Flags <> 0 then Read      (Rec.FUID,          SizeOf (Rec.FUID));
@@ -617,18 +476,17 @@ begin
 
     if Assigned(Stream) then
     begin
-      Count := Rec.Size;
-      while Count <> 0 do
+      Size := Rec.Size;
+      while Size <> 0 do
       begin
-          Readed := Read(Buffer, Min(SizeOf(Buffer), Count));
+          Readed := Read(Buffer, Min(SizeOf(Buffer), Size));
             Stream.Write(Buffer, Readed);
         SHA1Update(FCTX, Buffer, Readed);
-        Dec(Count, Readed);
+        Dec(Size, Readed);
       end;
     end else
       if Rec.Size <> 0 then
         FStream.Seek(Rec.Size, soCurrent);
-
 
     SHA1Final(FCTX, Digest);
     Fstream.Read(DigestAux, SizeOf(DigestAux));
@@ -666,12 +524,13 @@ var
   Flags: longword;
   Digest: TSHA1Digest;
 begin
-  if FModified then
+  if FModified = TRUE then
   begin
-    Flags := gfLast;
+    Flags := gfFix or gfStoredTime;
     SHA1Init (FCTX);
-    Write    (GulpMarker, SizeOf (GulpMarker));
-    Write    (Flags,      SizeOf (Flags));
+    Write    (GulpMarker,  SizeOf (GulpMarker));
+    Write    (Flags,       SizeOf (Flags));
+    Write    (FStoredTime, SizeOf(FStoredTime));
     SHA1Final(FCTX, Digest);
     FStream.Write(Digest, SizeOf(Digest));
   end;
@@ -709,7 +568,7 @@ begin
   if gfName         and Rec.Flags <> 0 then WriteString(Rec.Name);
   if gfStoredTime   and Rec.Flags <> 0 then Write      (Rec.StoredTime,   SizeOf (Rec.StoredTime));
   if gfModifiedTime and Rec.Flags <> 0 then Write      (Rec.ModifiedTime, SizeOf (Rec.ModifiedTime));
-  if gfAttributes   and Rec.Flags <> 0 then Write      (Rec.Attributes,   SizeOf (Rec.Attributes));
+  if gfAttributes   and Rec.Flags <> 0 then Write      (Rec.Attr,         SizeOf (Rec.Attr));
   if gfSize         and Rec.Flags <> 0 then Write      (Rec.Size,         SizeOf (Rec.Size));
   if gfLinkName     and Rec.Flags <> 0 then WriteString(Rec.LinkName);
   if gfUID          and Rec.Flags <> 0 then Write      (Rec.UID,          SizeOf (Rec.UID));
@@ -734,6 +593,7 @@ end;
 
 procedure TGulpWriter.CopyFrom(var Rec: TGulpRec; Stream: TStream);
 begin
+  FModified := TRUE;
   Stream.Seek(Rec.FStartPosition, soBeginning);
   if Rec.FEndPosition - Rec.FStartPosition > 0 then
   begin
@@ -747,16 +607,18 @@ var
 begin
   Rec := ClearRec(TGulpRec.Create);
   IncludeFlag(Rec.FFlags, gfDelete);
-  IncludeFlag(Rec.FFlags, gfName);
-  IncludeFlag(Rec.FFlags, gfStoredTime);
 
-  Rec.FName       := FileName;
+  Rec.FName := FileName;
+  IncludeFlag(Rec.FFlags, gfName);
+
   Rec.FStoredTime := FStoredTime;
+  IncludeFlag(Rec.FFlags, gfStoredTime);
 
   WriteStream (Rec, nil);
   FreeAndNil(Rec);
 end;
 
+{$IFDEF MSWINDOWS}
 procedure TGulpWriter.Add (const FileName: string);
 var
   Rec: TGulpRec;
@@ -767,9 +629,122 @@ begin
   if FindFirst(FileName, faAnyFile, SR) = 0 then
   begin
     IncludeFlag(Rec.FFlags, gfAdd);
+
+    Rec.FName := FileName;
     IncludeFlag(Rec.FFlags, gfName);
+
+    Rec.FStoredTime := FStoredTime;
     IncludeFlag(Rec.FFlags, gfStoredTime);
+
+    Rec.FModifiedTime := FileDateToDateTime(SR.Time);
     IncludeFlag(Rec.FFlags, gfModifiedTime);
+
+    if faReadOnly  and SR.Attr <> 0 then Rec.FAttributes := Rec.FAttributes or gaReadOnly;
+    if faHidden    and SR.Attr <> 0 then Rec.FAttributes := Rec.FAttributes or gaHidden;
+    if faSysFile   and SR.Attr <> 0 then Rec.FAttributes := Rec.FAttributes or gaSysFile;
+    if faVolumeId  and SR.Attr <> 0 then Rec.FAttributes := Rec.FAttributes or gaVolumeId;
+    if faDirectory and SR.Attr <> 0 then Rec.FAttributes := Rec.FAttributes or gaDirectory;
+    if faArchive   and SR.Attr <> 0 then Rec.FAttributes := Rec.FAttributes or gaArchive;
+    if faSymLink   and SR.Attr <> 0 then Rec.FAttributes := Rec.FAttributes or gaSymLink;
+    IncludeFlag(Rec.FFlags, gfAttributes);
+
+    Stream := nil;
+    if SR.Attr and (faDirectory or faVolumeId) = 0 then
+      try
+        Stream := TFileStream.Create(FileName, fmOpenRead);
+      except
+        Stream := nil;
+      end;
+
+    if Assigned(Stream) then
+    begin
+      Rec.FSize := SR.Size;
+      IncludeFlag(Rec.FFlags, gfSize);
+    end;
+
+    if SR.Attr and faSymLink <> 0 then
+    begin
+      // nothing to do
+    end;
+
+    WriteStream(Rec, Stream);
+    if Assigned(Stream) then
+      FreeAndNil(Stream);
+  end;
+  FindClose(SR);
+  FreeAndNil(Rec);
+end;
+{$ENDIF}
+
+{$IFDEF UNIX}
+procedure TGulpWriter.Add (const FileName: string);
+var
+  Info: stat;
+  Rec: TGulpRec;
+  SR: TSearchRec;
+  Stream: TStream;
+begin
+  Rec := ClearRec(TGulpRec.Create);
+  if FindFirst(FileName, faAnyFile, SR) = 0 then
+  begin
+    IncludeFlag(Rec.FFlags, gfAdd);
+
+    Rec.FName := StringReplace(Filename, '\', '/', [rfReplaceAll]);
+    IncludeFlag(Rec.FFlags, gfName);
+
+    Rec.FStoredTime := FStoredTime;
+    IncludeFlag(Rec.FFlags, gfStoredTime);
+
+    Rec.FModifiedTime := FileDateToDateTime(SR.Time);
+    IncludeFlag(Rec.FFlags, gfModifiedTime);
+
+    if faReadOnly  and SR.Attr <> 0 then Rec.FAttr := Rec.FAttr or gaReadOnly;
+    if faHidden    and SR.Attr <> 0 then Rec.FAttr := Rec.FAttr or gaHidden;
+    if faSysFile   and SR.Attr <> 0 then Rec.FAttr := Rec.FAttr or gaSysFile;
+    if faVolumeId  and SR.Attr <> 0 then Rec.FAttr := Rec.FAttr or gaVolumeId;
+    if faDirectory and SR.Attr <> 0 then Rec.FAttr := Rec.FAttr or gaDirectory;
+    if faArchive   and SR.Attr <> 0 then Rec.FAttr := Rec.FAttr or gaArchive;
+    if faSymLink   and SR.Attr <> 0 then Rec.FAttr := Rec.FAttr or gaSymLink;
+
+    if SR.Attr and faSymLink = 0 then
+    begin
+      if fpstat (FileName, Info) = 0 then
+      begin
+        if Info.st_mode and $0100 <> 0 then Rec.FAttr := Rec.FAttr or gaReadByOwner;
+        if Info.st_mode and $0080 <> 0 then Rec.FAttr := Rec.FAttr or gaWriteByOwner;
+        if Info.st_mode and $0040 <> 0 then Rec.FAttr := Rec.FAttr or gaExecuteByOwner;
+        if info.st_mode and $0020 <> 0 then Rec.FAttr := Rec.FAttr or gaReadByGroup;
+        if info.st_mode and $0010 <> 0 then Rec.FAttr := Rec.FAttr or gaWriteByGroup;
+        if info.st_mode and $0008 <> 0 then Rec.FAttr := Rec.FAttr or gaExecuteByGroup;
+        if info.st_mode and $0004 <> 0 then Rec.FAttr := Rec.FAttr or gaReadByOther;
+        if info.st_mode and $0002 <> 0 then Rec.FAttr := Rec.FAttr or gaWriteByOther;
+        if info.st_mode and $0001 <> 0 then Rec.FAttr := Rec.FAttr or gaExecuteByOther;
+
+        Rec.FUID := info.st_uid;
+        IncludeFlag(Rec.FFlags, gfUID);
+        Rec.FGID := info.st_gid;
+        IncludeFlag(Rec.FFlags, gfGID);
+      end;
+
+    end else
+      if fpLstat (FileName, Info) = 0 then
+      begin
+        if Info.st_mode and $0100 <> 0 then Rec.FAttr := Rec.FAttr or gaReadByOwner;
+        if Info.st_mode and $0080 <> 0 then Rec.FAttr := Rec.FAttr or gaWriteByOwner;
+        if Info.st_mode and $0040 <> 0 then Rec.FAttr := Rec.FAttr or gaExecuteByOwner;
+        if Info.st_mode and $0020 <> 0 then Rec.FAttr := Rec.FAttr or gaReadByGroup;
+        if Info.st_mode and $0010 <> 0 then Rec.FAttr := Rec.FAttr or gaWriteByGroup;
+        if Info.st_mode and $0008 <> 0 then Rec.FAttr := Rec.FAttr or gaExecuteByGroup;
+        if Info.st_mode and $0004 <> 0 then Rec.FAttr := Rec.FAttr or gaReadByOther;
+        if Info.st_mode and $0002 <> 0 then Rec.FAttr := Rec.FAttr or gaWriteByOther;
+        if Info.st_mode and $0001 <> 0 then Rec.FAttr := Rec.FAttr or gaExecuteByOther;
+
+        Rec.FUID := info.st_uid;
+        IncludeFlag(Rec.FFlags, gfUID);
+        Rec.FGID := info.st_gid;
+        IncludeFlag(Rec.FFlags, gfGID);
+      end;
+
     IncludeFlag(Rec.FFlags, gfAttributes);
 
     Stream := nil;
@@ -781,24 +756,16 @@ begin
       end;
 
     if Assigned(Stream) then
+    begin
+      Rec.FSize := SR.Size;
       IncludeFlag(Rec.FFlags, gfSize);
+    end;
 
     if SR.Attr and faSymLink <> 0 then
     begin
+      Rec.FLinkName := fpReadLink(FileName);
       IncludeFlag(Rec.FFlags, gfLinkName);
-      Rec.FLinkName := GetFileLink(FileName);
     end;
-
-    IncludeFlag(Rec.FFlags, gfUID);
-    IncludeFlag(Rec.FFlags, gfGID);
-
-    Rec.FName         := FileName;
-    Rec.FStoredTime   := FStoredTime;
-    Rec.FModifiedTime := FileDateToDateTime(SR.Time);
-    Rec.FAttributes   := GetFileAttributes(FileName);
-    Rec.FSize         := SR.Size;
-    Rec.FUID          := GetFileUID(FileName);
-    Rec.FGID          := GetFileGID(FileName);
 
     WriteStream(Rec, Stream);
     if Assigned(Stream) then
@@ -807,24 +774,24 @@ begin
   FindClose(SR);
   FreeAndNil(Rec);
 end;
+{$ENDIF}
 
 // =============================================================================
 // TGulpList
 // =============================================================================
 
-constructor TGulpList.Create(Stream: TStream);
+constructor TGulpList.Create(StoredTime: TDateTime);
 begin
   inherited Create;
-  FReader     := TGulpReader.Create(Stream);
   FList       := TList.Create;
-  FBinaryMode := TRUE;
+  FStoredTime := StoredTime;
+  FBinaryMode := FStoredTime <> 0.0;
 end;
 
 destructor TGulpList.Destroy;
 begin
   Clear;
   FList.Destroy;
-  FReader.Destroy;
   inherited Destroy;
 end;
 
@@ -837,7 +804,7 @@ begin
   FList.Clear;
 end;
 
-procedure TGulpList.BinInsert(Rec: TGulpRec);
+procedure TGulpList.BinInsert(const Rec: TGulpRec);
 var
   L, M, H, I: longint;
 begin
@@ -917,51 +884,25 @@ begin
   FList.Delete(Index);
 end;
 
-procedure TGulpList.LoadAt(StoredTime: TDateTime);
+procedure TGulpList.Add(var Rec: TGulpRec);
 var
   I: longint;
-  Rec: TGulpRec;
 begin
-  Clear;
-  FReader.Reset;
-  Rec := TGulpRec.Create;
-  while FReader.FindNext(Rec, nil) do
+  if FBinaryMode = TRUE then
   begin
-    if Rec.StoredTime < StoredTime + 0.00002 then
+    if Rec.StoredTime < FStoredTime + 0.00002 then
     begin
       case Rec.Flags and $FF of
-        gfLast:;
-        gfAdd: begin
-          BinInsert(Rec);
-          Rec := TGulpRec.Create;
-        end;
+      //gfFix: nothing to do
+        gfAdd:  BinInsert(Rec);
         gfDelete: begin
           I := Find(Rec.Name);
           if I <> - 1 then Delete(I);
         end;
-        gfUpdate:;
       end;
-
     end;
-  end;
-  Rec.Destroy;
-  FBinaryMode := TRUE;
-end;
-
-procedure TGulpList.Load;
-var
-  Rec: TGulpRec;
-begin
-  Clear;
-  FReader.Reset;
-  Rec := TGulpRec.Create;
-  while FReader.FindNext(Rec, nil) do
-  begin
+  end else
     FList.Add(Rec);
-    Rec := TGulpRec.Create;
-  end;
-  Rec.Destroy;
-  FBinaryMode := FALSE;
 end;
 
 function TGulpList.Get(Index: longint): TGulpRec;

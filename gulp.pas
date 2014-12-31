@@ -47,11 +47,11 @@ var
 function CtrlHandler(CtrlType: longword): longbool;
 begin
   case CtrlType of
-    CTRL_C_EVENT:        App.Terminate;
-    CTRL_BREAK_EVENT:    App.Terminate;
-    CTRL_CLOSE_EVENT:    App.Terminate;
-    CTRL_LOGOFF_EVENT:   App.Terminate;
-    CTRL_SHUTDOWN_EVENT: App.Terminate;
+    CTRL_C_EVENT:        App.Kill;
+    CTRL_BREAK_EVENT:    App.Kill;
+    CTRL_CLOSE_EVENT:    App.Kill;
+    CTRL_LOGOFF_EVENT:   App.Kill;
+    CTRL_SHUTDOWN_EVENT: App.Kill;
   end;
   Result := True;
 end;
@@ -61,10 +61,10 @@ end;
 procedure CtrlHandler(sig: cint);
 begin
   case sig of
-    SIGINT:  App.Terminate;
-    SIGQUIT: App.Terminate;
-    SIGKILL: App.Terminate;
-    SIGSTOP: App.Terminate;
+    SIGINT:  App.Kill;
+    SIGQUIT: App.Kill;
+    SIGKILL: App.Kill;
+    SIGSTOP: App.Kill;
   end;
 end;
 {$ENDIF}

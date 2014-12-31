@@ -51,19 +51,15 @@
               <OverflowChecks Value="True"/>
               <StackChecks Value="True"/>
             </Checks>
+            <Optimizations>
+              <OptimizationLevel Value="0"/>
+            </Optimizations>
           </CodeGeneration>
           <Linking>
             <Debugging>
               <DebugInfoType Value="dsDwarf2Set"/>
-              <UseLineInfoUnit Value="False"/>
-              <UseHeaptrc Value="True"/>
-              <StripSymbols Value="True"/>
-              <UseExternalDbgSyms Value="True"/>
             </Debugging>
           </Linking>
-          <Other>
-            <CompilerPath Value="$(CompPath)"/>
-          </Other>
         </CompilerOptions>
       </Item2>
       <Item3 Name="Release">
@@ -98,9 +94,6 @@
             </Debugging>
             <LinkSmart Value="True"/>
           </Linking>
-          <Other>
-            <CompilerPath Value="$(CompPath)"/>
-          </Other>
         </CompilerOptions>
       </Item3>
     </BuildModes>
@@ -117,7 +110,7 @@
         <PackageName Value="LazUtils"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="5">
+    <Units Count="4">
       <Unit0>
         <Filename Value="gulp.pas"/>
         <IsPartOfProject Value="True"/>
@@ -138,11 +131,6 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="Scanner"/>
       </Unit3>
-      <Unit4>
-        <Filename Value="streams.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="Streams"/>
-      </Unit4>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -176,9 +164,6 @@
       </Debugging>
       <LinkSmart Value="True"/>
     </Linking>
-    <Other>
-      <CompilerPath Value="$(CompPath)"/>
-    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="3">

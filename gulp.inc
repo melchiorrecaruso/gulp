@@ -26,6 +26,6 @@
 }
 
 {*$DEFINE DEBUG}
-{$INLINE OFF}
+{*$INLINE OFF}
 
-
+
