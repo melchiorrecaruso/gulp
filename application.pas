@@ -25,8 +25,6 @@
 
 unit Application;
 
-{$I gulp.inc}
-
 interface
 
 uses
@@ -40,8 +38,8 @@ uses
   SysUtils,
   Classes,
   CustApp,
-  LibGulp,
-  Scanner;
+  Libgulp,
+  Common;
 
 type
   { TGulpApplication class }

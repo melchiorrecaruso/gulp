@@ -23,9 +23,7 @@
 
 }
 
-unit Scanner;
-
-{$I gulp.inc}
+unit Common;
 
 interface
 

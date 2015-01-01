@@ -25,8 +25,6 @@
 
 program Gulp;
 
-{$I gulp.inc}
-
 uses
   {$IFDEF MSWINDOWS}
   Windows,

@@ -25,8 +25,6 @@
 
 unit Libgulp;
 
-{$I gulp.inc}
-
 interface
 
 uses
