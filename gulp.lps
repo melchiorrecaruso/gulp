@@ -8,10 +8,8 @@
       <Unit0>
         <Filename Value="gulp.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Gulp"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="9"/>
-        <CursorPos X="11" Y="17"/>
+        <CursorPos X="22" Y="2"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
@@ -22,8 +20,8 @@
         <UnitName Value="Application"/>
         <EditorIndex Value="1"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="11"/>
-        <CursorPos X="18" Y="26"/>
+        <TopLine Value="32"/>
+        <CursorPos X="22" Y="2"/>
         <UsageCount Value="50"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
@@ -32,9 +30,11 @@
         <Filename Value="libgulp.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Libgulp"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="2"/>
         <WindowIndex Value="1"/>
-        <CursorPos X="14" Y="26"/>
+        <TopLine Value="78"/>
+        <CursorPos X="40" Y="84"/>
         <UsageCount Value="50"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
