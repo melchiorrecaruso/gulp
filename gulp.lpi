@@ -127,8 +127,9 @@
         <UnitName Value="Libgulp"/>
       </Unit2>
       <Unit3>
-        <Filename Value="scanner.pas"/>
+        <Filename Value="common.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="Common"/>
       </Unit3>
     </Units>
   </ProjectOptions>

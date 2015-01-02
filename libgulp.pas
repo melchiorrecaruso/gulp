@@ -41,22 +41,22 @@ uses
 
 const
   // --- Gulp Flags ---
-  gfFix            = $00000000;
-  gfAdd            = $00000001;
-  gfDelete         = $00000002;
+  gfFix   = $00000000;
+  gfAdd   = $00000001;
+  gfDel   = $00000002;
 
-  gfName           = $00000100;
-  gfFlags          = $00000200;
-  gfSTime          = $00000400;
-  gfMTime          = $00000800;
-  gfAttr           = $00001000;
-  gfMode           = $00002000;
-  gfSize           = $00004000;
-  gfLName          = $00008000;
-  gfUID            = $00010000;
-  gfUName          = $00020000;
-  gfGID            = $00040000;
-  gfGName          = $00080000;
+  gfName  = $00000100;
+  gfFlags = $00000200;
+  gfSTime = $00000400;
+  gfMTime = $00000800;
+  gfAttr  = $00001000;
+  gfMode  = $00002000;
+  gfSize  = $00004000;
+  gfLName = $00008000;
+  gfUID   = $00010000;
+  gfUName = $00020000;
+  gfGID   = $00040000;
+  gfGName = $00080000;
 
 type
   // --- Gulp Marker ---
@@ -155,26 +155,28 @@ type
 
 // --- Some useful routines ---
 
-function GetName (const FileName: string): string;
-function GetTime (const FileName: string): TDateTime; overload;
-function GetTime (var   SR: TSearchRec  ): TDateTime; overload;
-function GetSize (const FileName: string): int64;     overload;
-function GetSize (var   SR: TSearchRec  ): int64;     overload;
-function GetAttr (const FileName: string): longint;   overload;
-function GetAttr (var   SR: TSearchRec  ): longint;   overload;
+function GetName(const FileName: string): string;
+function GetTime(const FileName: string): TDateTime; overload;
+function GetTime(var   SR: TSearchRec  ): TDateTime; overload;
+function GetSize(const FileName: string): int64;     overload;
+function GetSize(var   SR: TSearchRec  ): int64;     overload;
+function GetAttr(const FileName: string): longint;   overload;
+function GetAttr(var   SR: TSearchRec  ): longint;   overload;
 {$IFDEF UNIX}
-function GetMode (const FileName: string): longword;  overload;
-function GetMode (var   Info: stat      ): longword;  overload;
-function GetUID  (const FileName: string): longword;  overload;
-function GetUID  (var   Info: stat      ): longword;  overload;
-function GetGID  (const FileName: string): longword;  overload;
-function GetGID  (var   Info: stat      ): longword;  overload;
+function GetMode(const FileName: string): longword;  overload;
+function GetMode(var   Info: stat      ): longword;  overload;
+function GetUID (const FileName: string): longword;  overload;
+function GetUID (var   Info: stat      ): longword;  overload;
+function GetGID (const FileName: string): longword;  overload;
+function GetGID (var   Info: stat      ): longword;  overload;
 {$ENDIF}
 function  TagToString (var Rec: TGulpRec): string;
 function AttrToString (var Rec: TGulpRec): string;
 function SizeToString (var Rec: TGulpRec): string;
 function TimeToString (var Rec: TGulpRec): string;
 function ModeToString (var Rec: TGulpRec): string;
+function StringToAttr (const S: string  ): longint;
+function StringToMode (const S: string  ): longint;
 
 // =============================================================================
 // IMPLEMENTATION
@@ -323,10 +325,10 @@ end;
 function TagToString(var Rec: TGulpRec): string;
 begin
   case Rec.Flags and $FF of
-    gfFix:    Result := 'FIX';
-    gfAdd:    Result := 'ADD';
-    gfDelete: Result := 'DEL';
-    else      Result := '???';
+    gfFix: Result := 'FIX';
+    gfAdd: Result := 'ADD';
+    gfDel: Result := 'DEL';
+    else   Result := '???';
   end;
 end;
 
@@ -355,6 +357,21 @@ begin
   end;
 end;
 
+function StringToAttr (const S: string  ): longint;
+begin
+  Result := 0;
+  if Length(S) = 7 then
+  begin
+    if Upcase(S[1]) = 'R' then  Result := Result or faReadOnly;
+    if Upcase(S[2]) = 'H' then  Result := Result or faHidden;
+    if Upcase(S[3]) = 'S' then  Result := Result or faSysFile;
+    if Upcase(S[4]) = 'V' then  Result := Result or faVolumeId;
+    if Upcase(S[5]) = 'D' then  Result := Result or faDirectory;
+    if Upcase(S[6]) = 'A' then  Result := Result or faArchive;
+    if Upcase(S[7]) = 'L' then  Result := Result or faSymLink;
+  end;
+end;
+
 {$IFDEF UNIX}
 function ModeToString (var Rec: TGulpRec): string;
 begin
@@ -370,6 +387,23 @@ begin
     if Rec.FMode and S_IROTH <> 0 then Result[7] := 'R';
     if Rec.FMode and S_IWOTH <> 0 then Result[8] := 'W';
     if Rec.FMode and S_IXOTH <> 0 then Result[9] := 'X';
+  end;
+end;
+
+function StringToMode (const S: string): longint;
+begin
+  Result := 0;
+  if Length(S) = 9 then
+  begin
+    if UpCase(S[1]) = 'R' then Result := Result or S_IRUSR;
+    if UpCase(S[2]) = 'W' then Result := Result or S_IWUSR;
+    if UpCase(S[3]) = 'X' then Result := Result or S_IXUSR;
+    if UpCase(S[4]) = 'R' then Result := Result or S_IRGRP;
+    if UpCase(S[5]) = 'W' then Result := Result or S_IWGRP;
+    if UpCase(S[6]) = 'X' then Result := Result or S_IXGRP;
+    if UpCase(S[7]) = 'R' then Result := Result or S_IROTH;
+    if UpCase(S[8]) = 'W' then Result := Result or S_IWOTH;
+    if UpCase(S[9]) = 'X' then Result := Result or S_IXOTH;
   end;
 end;
 {$ENDIF}
@@ -475,25 +509,27 @@ begin
   begin
     Read (Rec.FFlags, SizeOf (Rec.FFlags));
 
-    if gfName         and Rec.Flags <> 0 then ReadString(Rec.FName);
-    if gfSTime   and Rec.Flags <> 0 then Read      (Rec.FSTime,   SizeOf (Rec.FSTime));
+    if gfName  and Rec.Flags <> 0 then ReadString(Rec.FName);
+    if gfSTime and Rec.Flags <> 0 then Read      (Rec.FSTime, SizeOf (Rec.FSTime));
     if gfMTime and Rec.Flags <> 0 then Read      (Rec.FMTime, SizeOf (Rec.FMTime));
-    if gfAttr         and Rec.Flags <> 0 then Read      (Rec.FAttr,         SizeOf (Rec.FAttr));
-    if gfMode         and Rec.Flags <> 0 then Read      (Rec.FMode,         SizeOf (Rec.FMode));
-    if gfSize         and Rec.Flags <> 0 then Read      (Rec.FSize,         SizeOf (Rec.FSize));
-    if gfLName     and Rec.Flags <> 0 then ReadString(Rec.FLName);
-    if gfUID          and Rec.Flags <> 0 then Read      (Rec.FUID,          SizeOf (Rec.FUID));
-    if gfUName     and Rec.Flags <> 0 then ReadString(Rec.FUName);
-    if gfGID          and Rec.Flags <> 0 then Read      (Rec.FGID,          SizeOf (Rec.FGID));
-    if gfGName    and Rec.Flags <> 0 then ReadString(Rec.FGName);
+    if gfAttr  and Rec.Flags <> 0 then Read      (Rec.FAttr,  SizeOf (Rec.FAttr));
+    if gfMode  and Rec.Flags <> 0 then Read      (Rec.FMode,  SizeOf (Rec.FMode));
+    if gfSize  and Rec.Flags <> 0 then Read      (Rec.FSize,  SizeOf (Rec.FSize));
+    if gfLName and Rec.Flags <> 0 then ReadString(Rec.FLName);
+    if gfUID   and Rec.Flags <> 0 then Read      (Rec.FUID,   SizeOf (Rec.FUID));
+    if gfUName and Rec.Flags <> 0 then ReadString(Rec.FUName);
+    if gfGID   and Rec.Flags <> 0 then Read      (Rec.FGID,   SizeOf (Rec.FGID));
+    if gfGName and Rec.Flags <> 0 then ReadString(Rec.FGName);
 
     if Assigned(Stream) then
     begin
       Size := Rec.Size;
       while Size <> 0 do
       begin
-          Readed := Read(Buffer, Min(SizeOf(Buffer), Size));
-            Stream.Write(Buffer, Readed);
+        Readed := Read(Buffer, Min(SizeOf(Buffer), Size));
+        if Readed = 0 then
+          raise Exception.Create('Stream read error');
+        Stream.Write(Buffer, Readed);
         Dec(Size, Readed);
       end;
     end else
@@ -579,17 +615,17 @@ begin
   Write    (GulpMarker, SizeOf (GulpMarker));
   Write    (Rec.FFlags, SizeOf (Rec.FFlags));
 
-  if gfName         and Rec.Flags <> 0 then WriteString(Rec.FName);
-  if gfSTime   and Rec.Flags <> 0 then Write      (Rec.FSTime,   SizeOf (Rec.FSTime));
+  if gfName  and Rec.Flags <> 0 then WriteString(Rec.FName);
+  if gfSTime and Rec.Flags <> 0 then Write      (Rec.FSTime, SizeOf (Rec.FSTime));
   if gfMTime and Rec.Flags <> 0 then Write      (Rec.FMTime, SizeOf (Rec.FMTime));
-  if gfAttr         and Rec.Flags <> 0 then Write      (Rec.FAttr,         SizeOf (Rec.FAttr));
-  if gfMode         and Rec.Flags <> 0 then Write      (Rec.FMode,         SizeOf (Rec.FMode));
-  if gfSize         and Rec.Flags <> 0 then Write      (Rec.FSize,         SizeOf (Rec.FSize));
-  if gfLName     and Rec.Flags <> 0 then WriteString(Rec.FLName);
-  if gfUID          and Rec.Flags <> 0 then Write      (Rec.FUID,          SizeOf (Rec.FUID));
-  if gfUName     and Rec.Flags <> 0 then WriteString(Rec.FUName);
-  if gfGID          and Rec.Flags <> 0 then Write      (Rec.FGID,          SizeOf (Rec.FGID));
-  if gfGName    and Rec.Flags <> 0 then WriteString(Rec.FGName);
+  if gfAttr  and Rec.Flags <> 0 then Write      (Rec.FAttr,  SizeOf (Rec.FAttr));
+  if gfMode  and Rec.Flags <> 0 then Write      (Rec.FMode,  SizeOf (Rec.FMode));
+  if gfSize  and Rec.Flags <> 0 then Write      (Rec.FSize,  SizeOf (Rec.FSize));
+  if gfLName and Rec.Flags <> 0 then WriteString(Rec.FLName);
+  if gfUID   and Rec.Flags <> 0 then Write      (Rec.FUID,   SizeOf (Rec.FUID));
+  if gfUName and Rec.Flags <> 0 then WriteString(Rec.FUName);
+  if gfGID   and Rec.Flags <> 0 then Write      (Rec.FGID,   SizeOf (Rec.FGID));
+  if gfGName and Rec.Flags <> 0 then WriteString(Rec.FGName);
 
   if Assigned(Stream) then
   begin
@@ -597,7 +633,9 @@ begin
     while Count > 0 do
     begin
       Readed := Stream.Read (Buffer, Min(SizeOf(Buffer), Count));
-                      Write (Buffer, Readed);
+      if Readed = 0 then
+        raise Exception.Create('Stream read error');
+      Write (Buffer, Readed);
       Dec(Count, Readed);
     end;
   end;
@@ -620,7 +658,7 @@ var
   Rec: TGulpRec;
 begin
   Rec := ClearRec(TGulpRec.Create);
-  IncludeFlag(Rec.FFlags, gfDelete);
+  IncludeFlag(Rec.FFlags, gfDel);
   IncludeFlag(Rec.FFlags, gfName);
   IncludeFlag(Rec.FFlags, gfSTime);
 
@@ -653,11 +691,11 @@ begin
     IncludeFlag(Rec.FFlags, gfAttr);
     IncludeFlag(Rec.FFlags, gfMode);
 
-    Rec.FName         := FileName;
-    Rec.FSTime   := FStoredTime;
-    Rec.FMTime := GetTime(SR);
-    Rec.FAttr         := GetAttr(SR);
-    Rec.FMode         := GetMode(FileName);
+    Rec.FName   := FileName;
+    Rec.FSTime := FStoredTime;
+    Rec.FMTime   := GetTime(SR);
+    Rec.FAttr   := GetAttr(SR);
+    Rec.FMode   := GetMode(FileName);
 
     Stream := nil;
     if FpS_ISREG(Rec.FMode) then
@@ -785,7 +823,7 @@ begin
     for I := FList.Count - 1 downto 0 do
       if AnsiCompareFileName(FileName, Items[I].Name) = 0 then
       begin
-        if Items[I].Flags and gfDelete <> 0 then
+        if Items[I].Flags and gfDel <> 0 then
           Result := I
         else
           Break;
@@ -805,7 +843,7 @@ begin
       case Rec.Flags and $FF of
       //gfFix: nothing to do
         gfAdd:  BinInsert(Rec);
-        gfDelete: begin
+        gfDel: begin
           I := Find(Rec.Name);
           if I <> - 1 then Delete(I);
         end;

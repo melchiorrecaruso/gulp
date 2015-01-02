@@ -44,13 +44,13 @@ uses
 type
   { TGulpApplication class }
 
-  TGulpApplication = class(TCustomApplication)
+  TGulpApplication = class (TCustomApplication)
   private
-    FileNames: TStringList;
-    Switches:  TStringList;
-    Scanner:   TSysScanner;
-    Stream:    TFileStream;
-    Start:     TDateTime;
+    FileNames : TStringList;
+    Switches  : TStringList;
+    Scanner   : TSysScanner;
+    Stream    : TFileStream;
+    Start     : TDateTime;
     procedure Synch;
     procedure Restore;
     procedure Purge;
@@ -61,9 +61,9 @@ type
   protected
     procedure DoRun; override;
   public
-    constructor Create(AOwner: TComponent); override;
-    destructor Destroy; override;
-    procedure Kill;
+    constructor Create (AOwner: TComponent); override;
+    destructor  Destroy; override;
+    procedure   Kill;
   end;
 
 implementation
@@ -101,7 +101,7 @@ begin
   if Assigned(Rec) then
   begin
     if Rec.Flags and $FF <> gfFix then
-      raise Exception.Create('Fix point not founded');
+      raise Exception.Create('Fix point error');
     if Rec.ChecksumOK = FALSE then
       raise Exception.Create('Fix point checksum mismatched');
   end;
@@ -114,11 +114,12 @@ end;
 constructor TGulpApplication.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  StopOnException := TRUE;
-  FileNames       := TStringList.Create;
-  Switches        := TStringList.Create;
-  Scanner         := TSysScanner.Create;
-  Start           := Now;
+  CaseSensitiveOptions := TRUE;
+  StopOnException      := TRUE;
+  FileNames            := TStringList.Create;
+  Switches             := TStringList.Create;
+  Scanner              := TSysScanner.Create;
+  Start                := Now;
 end;
 
 destructor TGulpApplication.Destroy;
@@ -131,18 +132,18 @@ end;
 
 procedure TGulpApplication.Synch;
 var
-  I, J: longint;
-  GulpCount: longint;
-  GulpWriter: TGulpWriter;
-  GulpReader: TGulpReader;
-  GulpList: TGulpList;
-  GulpRec: TGulpRec;
-  GulpFix: TGulpRec;
+  I, J       : longint;
+  GulpCount  : longint;
+  GulpWriter : TGulpWriter;
+  GulpReader : TGulpReader;
+  GulpList   : TGulpList;
+  GulpRec    : TGulpRec;
+  GulpFix    : TGulpRec;
 begin
   writeln(#13, #13: 80, 'Synch the contents of ' + GetOptionValue('s', 'synch'));
   write  (#13, #13: 80, 'Scanning filesystem... ');
   for I := 0 to FileNames.Count - 1 do
-    Scanner.Add(FileNames[I]);
+    Scanner.Add(FileNames[I], rmAUTO);
 
   write(#13, #13: 80, 'Opening archive... ');
   if FileExists(GetOptionValue('s', 'synch')) then
@@ -178,9 +179,9 @@ begin
       GulpWriter.Delete(GulpRec.Name);
     end else
       if (GetTime(Scanner.Items[J]) <> GulpRec.MTime) or
-         (GetAttr(Scanner.Items[J]) <> GulpRec.Attr ) or
-         (GetMode(Scanner.Items[J]) <> GulpRec.Mode ) or
-         (GetSize(Scanner.Items[J]) <> GulpRec.Size ) then
+         (GetAttr(Scanner.Items[J]) <> GulpRec.Attr) or
+         (GetMode(Scanner.Items[J]) <> GulpRec.Mode) or
+         (GetSize(Scanner.Items[J]) <> GulpRec.Size) then
       begin
         Inc(GulpCount);
         GulpWriter.Delete(GulpRec.Name);
@@ -209,10 +210,10 @@ end;
 
 procedure TGulpApplication.Fix;
 var
-  OldSize: int64 = 0;
-  NewSize: int64 = 0;
-  GulpReader: TGulpReader;
-  GulpRec: TGulpRec;
+  OldSize    : int64 = 0;
+  NewSize    : int64 = 0;
+  GulpReader : TGulpReader;
+  GulpRec    : TGulpRec;
 begin
   writeln(#13, #13: 80, 'Fix the contents of ' + GetOptionValue('f', 'fix'));
   write  (#13, #13: 80, 'Opening archive... ');
@@ -250,9 +251,9 @@ end;
 
 procedure TGulpApplication.Check;
 var
-  GulpReader: TGulpReader;
-  GulpRec: TGulpRec;
-  Temp: TStream;
+  GulpReader : TGulpReader;
+  GulpRec    : TGulpRec;
+  Temp       : TStream;
 begin
   writeln(#13, #13: 80, 'Check the contents of ' + GetOptionValue('c', 'check'));
   write  (#13, #13: 80, 'Opening archive... ');
@@ -291,18 +292,18 @@ end;
 
 procedure TGulpApplication.Purge;
 var
-  I: longint;
-  GulpReader: TGulpReader;
-  GulpWriter: TGulpWriter;
-  GulpList: TGulpList;
-  GulpRec: TGulpRec;
-  GulpFix: TGulpRec;
-  TempName: string;
-  Temp: TStream;
+  I          : longint;
+  GulpReader : TGulpReader;
+  GulpWriter : TGulpWriter;
+  GulpList   : TGulpList;
+  GulpRec    : TGulpRec;
+  GulpFix    : TGulpRec;
+  TempName   : string;
+  Temp       : TStream;
 begin
   writeln(#13, #13: 80, 'Purge the contents of ' + GetOptionValue('p', 'purge'));
   write  (#13, #13: 80, 'Opening archive... ');
-  TempName := GetTempFileName('', '');
+  TempName := GetTempFileName(GetCurrentDir, '');
   Temp     := TFileStream.Create(TempName, fmCreate);
   Stream   := TFileStream.Create(GetOptionValue('p', 'purge'), fmOpenRead);
 
@@ -345,13 +346,13 @@ end;
 
 procedure TGulpApplication.List;
 var
-  I, J: longint;
-  StoredTime: TDateTime;
-  GulpReader: TGulpReader;
-  GulpList: TGulpList;
-  GulpRec: TGulpRec;
-  GulpFix: TGulpRec;
-  HistoryMode: boolean;
+  I, J        : longint;
+  StoredTime  : TDateTime;
+  GulpReader  : TGulpReader;
+  GulpList    : TGulpList;
+  GulpRec     : TGulpRec;
+  GulpFix     : TGulpRec;
+  HistoryMode : boolean;
 begin
   writeln(#13, #13: 80, 'List the contents of ' + GetOptionValue('l', 'list'));
   write  (#13, #13: 80, 'Opening archive... ');
@@ -394,7 +395,7 @@ begin
         if HistoryMode = TRUE then
           if GulpRec.Flags and $FF = gfFix then
           begin
-            writeln(#13, #13: 80, 'FIX ....... ......... ',
+            writeln(#13, #13: 80, 'FIX point at ',
               FormatDateTime(
                 DefaultFormatSettings.LongDateFormat + ' ' +
                 DefaultFormatSettings.LongTimeFormat, GulpRec.STime));
@@ -430,16 +431,16 @@ end;
 
 procedure TGulpApplication.DoRun;
 var
-  Error: string;
-  ShortSwitches: string;
-  LongSwitches: TStrings;
+  Error         : string;
+  ShortSwitches : string;
+  LongSwitches  : TStrings;
 begin
   writeln('GULP 0.0.2 archiver utility, Copyright (c) 2014 Melchiorre Caruso.');
 
   DefaultFormatSettings.LongDateFormat  := 'yyyy-mm-dd';
   DefaultFormatSettings.ShortDateFormat := 'yyyy-mm-dd';
 
-  ShortSwitches := 's:r:p:l:c:f:t:h';
+  ShortSwitches := 's:r:p:l:c:f:h:t:';
   LongSwitches  :=  TStringList.Create;
   LongSwitches.Add('synch:');
   LongSwitches.Add('restore:');
@@ -447,8 +448,8 @@ begin
   LongSwitches.Add('list:');
   LongSwitches.Add('check:');
   LongSwitches.Add('fix:');
-  LongSwitches.Add('time:');
   LongSwitches.Add('help');
+  LongSwitches.Add('time:');
 
   try
     Error := CheckOptions(ShortSwitches, LongSwitches, Switches, FileNames);
