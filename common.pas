@@ -36,17 +36,19 @@ type
   TSysScanner = class(TObject)
   private
     FItems: TStringList;
+    FRecursiveMode: boolean;
     function GetCount: integer;
     function GetItem(Index: longint): string;
-    procedure Scan(const FileMask:string);
     procedure AddItem(const FileName: string);
+    procedure Scan(const FileMask:string);
+    function HasWildCard(const FileMask: string): boolean;
   public
     constructor Create;
     destructor Destroy; override;
-    procedure Add(FileMask: string);
-    procedure Delete(const FileMask: string; Recursive: boolean); overload;
-    procedure Delete(Index: longint); overload;
     function Find(const FileName: string): longint;
+    procedure Delete(const FileMask: string); overload;
+    procedure Delete(Index: longint); overload;
+    procedure Add(const FileMask: string);
     procedure Clear;
   public
     property Count: integer read GetCount;
@@ -79,6 +81,7 @@ begin
   FItems               := TStringList.Create;
   FItems.CaseSensitive := FileNameCaseSensitive;
   FItems.Sorted        := TRUE;
+  FRecursiveMode       := FALSE;
 end;
 
 destructor TSysScanner.Destroy;
@@ -114,17 +117,21 @@ begin
   ScanPath := ExtractFilePath(FileMask);
   ScanMask := ExtractFileName(FileMask);
   // search filemask ...
-  Error := SysUtils.FindFirst(ScanPath + '*', faAnyFile, Rec);
+  Error := SysUtils.FindFirst(ScanPath + '*',
+    faReadOnly  or faHidden  or faSysFile or faVolumeId  or
+    faDirectory or faArchive or faSymLink or faAnyFile,  Rec);
   while Error = 0 do
   begin
-    if (Rec.Attr and faDirectory) = faDirectory then
+
+    if (Rec.Attr and faDirectory) <> 0 then
     begin
-      if (Rec.Name <> '.') and (Rec.Name <> '..') then
-      begin
-        Scan(ScanPath + Rec.Name + PathDelim + ScanMask);
-        if FileNameMatch(ScanPath + Rec.Name, FileMask) then
-          AddItem(ScanPath + Rec.Name);
-      end;
+      if FRecursiveMode then
+        if (Rec.Name <> '.') and (Rec.Name <> '..') then
+        begin
+          Scan(ScanPath + Rec.Name + PathDelim + ScanMask);
+          if FileNameMatch(ScanPath + Rec.Name, FileMask) then
+            AddItem(ScanPath + Rec.Name);
+        end;
     end else
       if FileNameMatch(ScanPath + Rec.Name, FileMask) then
         AddItem(ScanPath + Rec.Name);
@@ -134,22 +141,37 @@ begin
   SysUtils.FindClose(Rec);
 end;
 
-procedure TSysScanner.Add(FileMask: string);
+function TSysScanner.HasWildCard(const FileMask: string): boolean;
+begin
+  Result := Pos('*', FileMask) <> 0;
+  if Result = FALSE then
+    Result := Pos('?', FileMask) <> 0;
+end;
+
+procedure TSysScanner.Add(const FileMask: string);
 begin
   if FileMask = '' then Exit;
   // directory and recursive mode ...
   if DirectoryExists(FileMask) then
   begin
     AddItem(FileMask);
+    FRecursiveMode := TRUE;
     Scan(IncludeTrailingPathDelimiter(FileMask) + '*');
   end else
+  begin
     if FileMask[Length(FileMask)] = PathDelim then
+    begin
+      FRecursiveMode := TRUE;
       Scan(IncludeTrailingPathDelimiter(FileMask) + '*')
-    else
+    end else
+    begin
+      FRecursiveMode := HasWildCard(FileMask);
       Scan(FileMask);
+    end;
+  end;
 end;
 
-procedure TSysScanner.Delete(const FileMask: string; Recursive: boolean);
+procedure TSysScanner.Delete(const FileMask: string);
 var
   I: longint;
 begin
