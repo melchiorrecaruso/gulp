@@ -101,36 +101,37 @@ type
   // --- The Gulp Reader CLASS ---
   TGulpReader = class(TObject)
   protected
-    FCTX            : TSHA1Context;
-    FChecked        : boolean;
-    FCount          : longword;
-    FStream         : TStream;
+    FChecked : boolean;
+    FCount   : longword;
+    FCTX     : TSHA1Context;
+    FStream  : TStream;
     function ReadStream (var Rec: TGulpRec; Stream: TStream): boolean;
     procedure ReadString (var Buffer: string);
     function Read (var Buffer; Count: longint): longint;
   public
     constructor Create (Stream: TStream);
     destructor Destroy; override;
-    procedure Reset;
-    function  ReadNext (var Rec: TGulpRec; Stream: TStream): boolean;
+    function ReadNext (var Rec: TGulpRec; Stream: TStream): boolean;
+    property Count: longword read FCount;
   end;
 
   // --- The Gulp Writer CLASS ---
   TGulpWriter = class(TObject)
   protected
-    FModified       : boolean;
-    FCTX            : TSHA1Context;
-    FStream         : TStream;
-    FStoredTime     : TDateTime;
+    FCount      : longword;
+    FCTX        : TSHA1Context;
+    FStream     : TStream;
+    FStoredTime : TDateTime;
     procedure WriteStream (Rec: TGulpRec; Stream: TStream);
     procedure WriteString (const Buffer: string);
     procedure Write (const Buffer; Count: longint);
   public
-    constructor Create  (Stream: TStream);
+    constructor Create (Stream: TStream);
     destructor Destroy; override;
-    procedure Add      (const FileName: string);
-    procedure Delete   (const FileName: string);
-    procedure Copy     (const Rec: TGulpRec; Stream: TStream);
+    procedure Add    (const FileName: string);
+    procedure Delete (const FileName: string);
+    procedure Copy   (const Rec: TGulpRec; Stream: TStream);
+    property Count: longword read FCount;
   end;
 
   // --- The Gulp List CLASS ---
@@ -140,7 +141,7 @@ type
     FHistoryMode: boolean;
     FStoredTime:TDateTime;
     function GetCount: longint;
-    function Get(Index: longint): TGulpRec;
+    function Get(Index: longint): TGulpRec; overload;
     procedure BinInsert(const Rec: TGulpRec);
     function BinSearch(const FileName: string): longint;
   public
@@ -488,21 +489,16 @@ end;
 constructor TGulpReader.Create (Stream : TStream);
 begin
   inherited Create;
+  FCount   := 0;
   FStream  := Stream;
-  Reset;
+  FChecked := FStream.Size = 0;
+  FStream.Seek(0, soBeginning);
 end;
 
 destructor TGulpReader.Destroy;
 begin
   FStream := nil;
   inherited Destroy;
-end;
-
-procedure TGulpReader.Reset;
-begin
-  FCount   := 0;
-  FChecked := FStream.Size = 0;
-  FStream.Seek(0, soBeginning);
 end;
 
 function TGulpReader.Read(var Buffer; Count: longint): longint;
@@ -594,7 +590,7 @@ end;
 constructor TGulpWriter.Create (Stream: TStream);
 begin
   inherited Create;
-  FModified   := FALSE;
+  FCount      := 0;
   FStoredTime := Now;
   FStream     := Stream;
   FStream.Seek (0, soFromEnd);
@@ -605,7 +601,7 @@ var
   Flags  : longword;
   Digest : TSHA1Digest;
 begin
-  if FModified = TRUE then
+  if FCount <> 0 then
   begin
     Flags := 0;
     IncludeFlag(Flags, gfFIX);
@@ -643,7 +639,7 @@ var
   Digest : TSHA1Digest;
   Buffer : array[0..$FFFF] of byte;
 begin
-  FModified := TRUE;
+  Inc(FCount);
   SHA1Init (FCTX);
   Write    (GulpMarker, SizeOf (GulpMarker));
   Write    (Rec.FFlags, SizeOf (Rec.FFlags));
@@ -693,7 +689,7 @@ end;
 
 procedure TGulpWriter.Copy(const Rec: TGulpRec; Stream: TStream);
 begin
-  FModified := TRUE;
+  Inc(FCount);
   FStream.CopyFrom(Stream, GetLength(Rec));
 end;
 
@@ -779,9 +775,12 @@ begin
 end;
 
 procedure TGulpList.Clear;
+var
+  I: longint;
 begin
-  while Count > 0 do
-    Delete(0);
+  for I := 0 to FList.Count - 1 do
+    Items[I].Destroy;
+  FList.Clear;
 end;
 
 procedure TGulpList.Delete(Index: longint);
@@ -854,12 +853,11 @@ begin
     Result := -1;
     for I := FList.Count - 1 downto 0 do
       if ((Items[I].Flags and $FF) in [gfFIX, gfDEL]) = FALSE then
-      begin
-        if AnsiCompareFileName(FileName, Items[I].Name) = 0 then
-          Result := I
-        else
+        if AnsiCompareFileName(Items[I].Name, FileName) = 0 then
+        begin
+          Result := I;
           Break;
-      end;
+        end;
   end else
     Result := BinSearch(FileName);
 end;

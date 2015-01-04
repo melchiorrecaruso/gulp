@@ -122,7 +122,6 @@ end;
 procedure TGulpApplication.Synch;
 var
   I, J       : longint;
-  GulpCount  : longint;
   GulpWriter : TGulpWriter;
   GulpReader : TGulpReader;
   GulpList   : TGulpList;
@@ -151,7 +150,6 @@ begin
   FreeAndNil(GulpRec);
 
   write(#13, #13: 80, 'Deleting recors... ');
-  GulpCount  := 0;
   GulpWriter := TGulpWriter.Create(Stream);
   for I := 0 to GulpList.Count - 1 do
   begin
@@ -159,7 +157,6 @@ begin
     J := Scanner.Find(GulpRec.Name);
     if J = -1 then
     begin
-      Inc(GulpCount);
       GulpWriter.Delete(GulpRec.Name);
     end else
       if (GetTime(Scanner.Items[J]) <> GulpRec.MTime) or
@@ -167,7 +164,6 @@ begin
          (GetMode(Scanner.Items[J]) <> GulpRec.Mode) or
          (GetSize(Scanner.Items[J]) <> GulpRec.Size) then
       begin
-        Inc(GulpCount);
         GulpWriter.Delete(GulpRec.Name);
       end else
         Scanner.Delete(J);
@@ -175,16 +171,14 @@ begin
 
   write(#13, #13: 80, 'Adding recors... ');
   for I := 0 to Scanner.Count - 1 do
-  begin
-    Inc(GulpCount);
     GulpWriter.Add(Scanner.Items[I]);
-  end;
 
+  write(#13, #13: 80, 'Finished (', GulpWriter.Count, ' records writed)');
   FreeAndNil(GulpWriter);
   FreeAndNil(GulpReader);
   FreeAndNil(GulpList);
   FreeAndNil(Stream);
-  writeln(#13, #13: 80, 'Finished (', GulpCount, ' changes)')
+  writeln;
 end;
 
 procedure TGulpApplication.Restore;
@@ -226,11 +220,11 @@ begin
   if NewSize < OldSize then
     Stream.Size := NewSize;
 
+  write(#13, #13: 80, 'Finished (', OldSize - NewSize, ' bytes removed)');
   FreeAndNil(GulpReader);
   FreeAndNil(GulpRec);
   FreeAndNil(Stream);
-
-  writeln(#13, #13: 80, 'Finished (removed ', OldSize - NewSize, ' bytes)');
+  writeln;
 end;
 
 procedure TGulpApplication.Check;
@@ -267,16 +261,17 @@ begin
     end;
   end;
 
+  write(#13, #13: 80, 'Finished (No error detected)');
   FreeAndNil(GulpReader);
   FreeAndNil(GulpRec);
   FreeAndNil(Stream);
   FreeAndNil(Temp);
-  writeln(#13, #13: 80, 'Finished (0 errors)');
+  writeln;
 end;
 
 procedure TGulpApplication.Purge;
 var
-  I, Count   : longint;
+  I, Handle  : longint;
   GulpWriter : TGulpWriter;
   GulpReader : TGulpReader;
   GulpList   : TGulpList;
@@ -300,24 +295,27 @@ begin
     GulpRec := TGulpRec.Create;
   end;
   FreeAndNil(GulpRec);
+  FreeAndNil(GulpReader);
 
   write(#13, #13: 80, 'Moving records... ');
-  Count   := 0;
+  Handle  := 0;
   GulpRec := TGulpRec.Create;
-  GulpReader.Reset;
+  GulpReader := TGulpReader.Create(Stream);
   GulpWriter := TGulpWriter.Create(Temp);
   repeat
-    I := GulpList.Find(Count);
+    I := GulpList.Find(Handle);
     if I <> - 1 then
     begin
       GulpWriter.Copy(GulpList.Items[I], Stream);
     end else
       if GulpReader.ReadNext(GulpRec, nil) = FALSE then Break;
-    Inc(Count);
+    Inc(Handle);
   until FALSE;
   FreeAndNil(GulpRec);
-  FreeAndNil(GulpWriter);
   FreeAndNil(GulpReader);
+
+  write(#13, #13: 80, 'Finished (', GulpWriter.Count, ' records writed)');
+  FreeAndNil(GulpWriter);
   FreeAndNil(GulpList);
   FreeAndNil(Stream);
   FreeAndNil(Temp);
@@ -327,7 +325,7 @@ begin
   else
     if RenameFile(TempName, GetOptionValue('p', 'purge'))= FALSE then
       raise Exception.CreateFmt('Error renaming tmpfile %s', [TempName]);
-  writeln(#13, #13: 80, 'Finished');
+  writeln;
 end;
 
 procedure TGulpApplication.List;
@@ -409,8 +407,9 @@ procedure TGulpApplication.DoRun;
 var
   Error         : string;
   ShortSwitches : string;
-  LongSwitches  : TStrings;
+  LongSwitches  : TStringList;
 begin
+  inherited DoRun;
   writeln('GULP 0.0.2 archiver utility, Copyright (c) 2014 Melchiorre Caruso.');
 
   DefaultFormatSettings.LongDateFormat  := 'yyyy-mm-dd';
