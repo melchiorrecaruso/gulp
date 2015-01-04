@@ -1,0 +1,31 @@
+.\" Manpage for GULP.
+.\" Contact melchiorrecaruso@gmail.com to correct errors or typos.
+.TH man 8 "02 JAN 2015" "0.0.2" "GULP man page"
+.SH NAME
+gulp \- A simple backup utility.
+.SH SYNOPSIS
+gulp [-srplcfh] [--longoption] [gulpfile] [-t date time] [[file ...]]
+.SH DESCRIPTION
+gulp stores and extracts files from a disk archive.
+.SH OPTIONS
+\-s, --sinch    Synchronize archive, 
+.br
+\-r, --restore  Restore files archived, 
+.br
+\-p, --purge    Purge archive, remove old files archived
+.br
+\-l, --list     List contents of archive
+.br
+\-c, --check    Check archive integrity
+.br
+\-f, --fix      Fix damaged archive
+.br
+\-h, --help     Show this help
+.br
+\-t, --time     Set datetime
+.SH SEE ALSO
+No
+.SH BUGS
+No known bugs.
+.SH AUTHOR
+Melchiorre Caruso (melchiorrecaruso@gmail.com)
