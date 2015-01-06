@@ -39,7 +39,6 @@
             <SyntaxOptions>
               <SyntaxMode Value="Delphi"/>
               <CStyleOperator Value="False"/>
-              <IncludeAssertionCode Value="True"/>
               <AllowLabel Value="False"/>
               <CPPInline Value="False"/>
             </SyntaxOptions>
@@ -47,11 +46,7 @@
           <CodeGeneration>
             <Checks>
               <IOChecks Value="True"/>
-              <RangeChecks Value="True"/>
-              <OverflowChecks Value="True"/>
-              <StackChecks Value="True"/>
             </Checks>
-            <VerifyObjMethodCallValidity Value="True"/>
             <Optimizations>
               <OptimizationLevel Value="0"/>
             </Optimizations>
@@ -59,9 +54,6 @@
           <Linking>
             <Debugging>
               <UseHeaptrc Value="True"/>
-              <TrashVariables Value="True"/>
-              <StripSymbols Value="True"/>
-              <UseExternalDbgSyms Value="True"/>
             </Debugging>
           </Linking>
         </CompilerOptions>
@@ -107,8 +99,9 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="-s pop.g2 gulp"/>
-        <WorkingDirectory Value="/home/quacquero/Repositories/gulp"/>
+        <CommandLineParams Value="-p pop.g2"/>
+        <WorkingDirectory Value="/home/quacquero/Repositories"/>
+        <Display Use="True"/>
       </local>
     </RunParams>
     <RequiredPackages Count="1">

@@ -271,7 +271,8 @@ end;
 
 procedure TGulpApplication.Purge;
 var
-  I, Handle  : longint;
+  I          : longint;
+  Count      : longword;
   GulpWriter : TGulpWriter;
   GulpReader : TGulpReader;
   GulpList   : TGulpList;
@@ -298,18 +299,18 @@ begin
   FreeAndNil(GulpReader);
 
   write(#13, #13: 80, 'Moving records... ');
-  Handle  := 0;
+  Count   := 0;
   GulpRec := TGulpRec.Create;
   GulpReader := TGulpReader.Create(Stream);
   GulpWriter := TGulpWriter.Create(Temp);
   repeat
-    I := GulpList.Find(Handle);
-    if I <> - 1 then
+    I := GulpList.Find(Count);
+    if I = - 1 then
     begin
-      GulpWriter.Copy(GulpList.Items[I], Stream);
-    end else
       if GulpReader.ReadNext(GulpRec, nil) = FALSE then Break;
-    Inc(Handle);
+    end else
+      GulpWriter.Copy(GulpList.Items[I], Stream);
+    Inc(Count);
   until FALSE;
   FreeAndNil(GulpRec);
   FreeAndNil(GulpReader);
@@ -331,10 +332,10 @@ end;
 procedure TGulpApplication.List;
 var
   I, J        : longint;
-  StoredTime  : TDateTime;
   GulpReader  : TGulpReader;
   GulpList    : TGulpList;
   GulpRec     : TGulpRec;
+  StoredTime  : TDateTime;
 begin
   writeln(#13, #13: 80, 'List the contents of ' + GetOptionValue('l', 'list'));
   write  (#13, #13: 80, 'Opening archive... ');
@@ -410,7 +411,7 @@ var
   LongSwitches  : TStringList;
 begin
   inherited DoRun;
-  writeln('GULP 0.0.2 archiver utility, Copyright (c) 2014 Melchiorre Caruso.');
+  writeln('GULP 0.0.2 archiver utility, copyright (c) 2014-2015 Melchiorre Caruso.');
 
   DefaultFormatSettings.LongDateFormat  := 'yyyy-mm-dd';
   DefaultFormatSettings.ShortDateFormat := 'yyyy-mm-dd';
@@ -443,9 +444,9 @@ begin
     on E: Exception do
       writeln(#13, #13: 80, 'An exception was raised: ' + E.Message);
   end;
+  FreeAndNil(LongSwitches);
   writeln(#13, #13: 80, 'Elapsed ',
     Format('%0.2f', [(Now - Start) * (24 * 60 * 60)]) , ' sec');
-  FreeAndNil(LongSwitches);
   Terminate;
 end;
 
