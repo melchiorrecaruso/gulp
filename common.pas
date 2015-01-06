@@ -127,7 +127,9 @@ begin
         if (Rec.Name <> '.') and (Rec.Name <> '..') then
         begin
           AddItem(ScanPath + Rec.Name);
-          Scan(ScanPath + Rec.Name + PathDelim + ScanMask, Recursive);
+
+          if Rec.Attr and faSymLink = 0 then
+            Scan(ScanPath + Rec.Name + PathDelim + ScanMask, Recursive);
         end;
     end else
       if FileNameMatch(ScanPath + Rec.Name, FileMask) then
