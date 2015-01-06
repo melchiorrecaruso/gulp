@@ -149,7 +149,7 @@ begin
   end;
   FreeAndNil(GulpRec);
 
-  write(#13, #13: 80, 'Deleting recors... ');
+  write(#13, #13: 80, 'Deleting records... ');
   GulpWriter := TGulpWriter.Create(Stream);
   for I := 0 to GulpList.Count - 1 do
   begin
@@ -169,7 +169,7 @@ begin
         Scanner.Delete(J);
   end;
 
-  write(#13, #13: 80, 'Adding recors... ');
+  write(#13, #13: 80, 'Adding records... ');
   for I := 0 to Scanner.Count - 1 do
     GulpWriter.Add(Scanner.Items[I]);
 
