@@ -28,27 +28,24 @@ unit Common;
 interface
 
 uses
-  Classes;
+  Classes,
+  SysUtils;
 
 type
-  { TRecursiveMode }
-
-  TRecursiveMode = (rmON, rmOFF, rmAUTO);
-
   { TSysScanner }
 
   TSysScanner = class(TObject)
   private
-    FItems: TStringList;
+    FList: TStringList;
     function GetCount: integer;
     function GetItem(Index: longint): string;
     procedure AddItem(const FileName: string);
-    procedure Scan(const FileMask:string; Recursive:boolean);
+    procedure Scan(const FileMask: string; Recursive: boolean);
   public
     constructor Create;
     destructor Destroy; override;
-    procedure Add(const FileMask: string; Mode: TRecursiveMode);
-    procedure Delete(const FileMask: string; Mode: TRecursiveMode); overload;
+    procedure Add(const FileMask: string);
+    procedure Delete(const FileMask: string); overload;
     procedure Delete(Index: longint); overload;
     function Find(const FileName: string): longint;
     procedure Clear;
@@ -72,7 +69,6 @@ type
 implementation
 
 uses
-  SysUtils,
   Masks;
 
 { TSysScanner class }
@@ -80,28 +76,30 @@ uses
 constructor TSysScanner.Create;
 begin
   inherited Create;
-  FItems               := TStringList.Create;
-  FItems.CaseSensitive := FileNameCaseSensitive;
-  FItems.Sorted        := TRUE;
+  FList := TStringList.Create;
+  {$IFDEF MSWINDOWS}  FList.CaseSensitive := FALSE; {$ENDIF}
+  {$IFDEF UNIX}       FList.CaseSensitive := TRUE;  {$ENDIF}
+  {$IFDEF MAC}        FList.CaseSensitive := TRUE;  {$ENDIF}
+  FList.Sorted := TRUE;
 end;
 
 destructor TSysScanner.Destroy;
 begin
-  FItems.Clear;
-  FItems.Destroy;
+  Clear;
+  FList.Destroy;
   inherited Destroy;
 end;
 
 procedure TSysScanner.Clear;
 begin
-  FItems.Clear;
+  FList.Clear;
 end;
 
 procedure TSysScanner.AddItem(const FileName: string);
 begin
-  if FItems.IndexOf(FileName) = -1 then
+  if FList.IndexOf(FileName) = - 1 then
   begin
-    FItems.Add(FileName);
+    FList.Add(FileName);
   end;
 end;
 
@@ -123,14 +121,21 @@ begin
 
     if (Rec.Attr and faDirectory) <> 0 then
     begin
-      if Recursive then
-        if (Rec.Name <> '.') and (Rec.Name <> '..') then
+      if (Rec.Name <> '.') and (Rec.Name <> '..') then
+      begin
+
+        if Recursive then
         begin
           AddItem(ScanPath + Rec.Name);
-
           if Rec.Attr and faSymLink = 0 then
-            Scan(ScanPath + Rec.Name + PathDelim + ScanMask, Recursive);
+            Scan(ScanPath + Rec.Name + PathDelim + ScanMask, TRUE);
+        end else
+        begin
+          if FileNameMatch(ScanPath + Rec.Name, FileMask) then
+            AddItem(ScanPath + Rec.Name);
         end;
+
+      end;
     end else
       if FileNameMatch(ScanPath + Rec.Name, FileMask) then
         AddItem(ScanPath + Rec.Name);
@@ -140,58 +145,61 @@ begin
   SysUtils.FindClose(Rec);
 end;
 
-procedure TSysScanner.Add(const FileMask: string; Mode: TRecursiveMode);
+procedure TSysScanner.Add(const FileMask: string);
 begin
   if FileMask = '' then Exit;
   // directory and recursive mode ...
   if DirectoryExists(FileMask) then
   begin
     AddItem(FileMask);
-    Scan(IncludeTrailingPathDelimiter(FileMask) + '*', Mode in [rmON, rmAUTO]);
+    Scan(FileMask + PathDelim + '*', TRUE);
   end else
   begin
     if FileMask[Length(FileMask)] = PathDelim then
     begin
-      Scan(IncludeTrailingPathDelimiter(FileMask) + '*', Mode in [rmON, rmAUTO])
+      Scan(FileMask + '*', TRUE)
     end else
     begin
-      if FileExists(FileMask) = FALSE then
-        Scan(FileMask, Mode in [rmON, rmAUTO])
+      if FileExists(FileMask) then
+        AddItem(FileMask)
       else
-        Scan(FileMask, Mode in [rmON]);
+        Scan(FileMask, TRUE);
     end;
   end;
 end;
 
-procedure TSysScanner.Delete(const FileMask: string; Mode: TRecursiveMode);
+procedure TSysScanner.Delete(const FileMask: string);
 var
   I: longint;
 begin
   for I := Count - 1 downto 0 do
-    if FileNameMatch(FItems[I], FileMask) then
+    if FileNameMatch(Items[I], FileMask) then
     begin
-      FItems.Delete(I);
+      Delete(I);
     end;
 end;
 
 procedure TSysScanner.Delete(Index: longint);
 begin
-  FItems.Delete(Index);
+  FList.Delete(Index);
 end;
 
 function TSysScanner.Find(const FileName: string): longint;
 begin
-  Result := FItems.IndexOf(FileName);
+  if FList.Find(FileName, Result) = FALSE then
+  begin
+    Result := -1;
+  end;
 end;
 
 function TSysScanner.GetCount: longint;
 begin
-  Result := FItems.Count;
+  Result := FList.Count;
 end;
 
 function TSysScanner.GetItem(Index: longint): string;
 begin
-  Result := FItems[Index];
+  Result := FList[Index];
 end;
 
 { TNulStream class }
@@ -210,8 +218,10 @@ end;
 
 function FileNameMatch(const FileName, FileMask: string): boolean;
 begin
-  Result := MatchesMask(FileName, FileMask, FileNameCaseSensitive);
+  {$IFDEF MSWINDOWS} Result := MatchesMask(FileName, FileMask, FALSE); {$ENDIF}
+  {$IFDEF UNIX}      Result := MatchesMask(FileName, FileMask, TRUE ); {$ENDIF}
+  {$IFDEF MAC}       Result := MatchesMask(FileName, FileMask, TRUE ); {$ENDIF}
 end;
 
 end.
-
+

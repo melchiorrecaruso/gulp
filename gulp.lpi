@@ -39,6 +39,7 @@
             <SyntaxOptions>
               <SyntaxMode Value="Delphi"/>
               <CStyleOperator Value="False"/>
+              <IncludeAssertionCode Value="True"/>
               <AllowLabel Value="False"/>
               <CPPInline Value="False"/>
             </SyntaxOptions>
@@ -46,7 +47,12 @@
           <CodeGeneration>
             <Checks>
               <IOChecks Value="True"/>
+              <RangeChecks Value="True"/>
+              <OverflowChecks Value="True"/>
+              <StackChecks Value="True"/>
             </Checks>
+            <VerifyObjMethodCallValidity Value="True"/>
+            <TargetOS Value="win32"/>
             <Optimizations>
               <OptimizationLevel Value="0"/>
             </Optimizations>
@@ -54,8 +60,12 @@
           <Linking>
             <Debugging>
               <UseHeaptrc Value="True"/>
+              <UseExternalDbgSyms Value="True"/>
             </Debugging>
           </Linking>
+          <Other>
+            <CompilerPath Value="$(CompPath)"/>
+          </Other>
         </CompilerOptions>
       </Item2>
       <Item3 Name="Release">
@@ -90,6 +100,9 @@
             </Debugging>
             <LinkSmart Value="True"/>
           </Linking>
+          <Other>
+            <CompilerPath Value="$(CompPath)"/>
+          </Other>
         </CompilerOptions>
       </Item3>
     </BuildModes>
@@ -113,6 +126,7 @@
       <Unit0>
         <Filename Value="gulp.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="Gulp"/>
       </Unit0>
       <Unit1>
         <Filename Value="application.pas"/>
@@ -162,6 +176,9 @@
       </Debugging>
       <LinkSmart Value="True"/>
     </Linking>
+    <Other>
+      <CompilerPath Value="$(CompPath)"/>
+    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="3">
