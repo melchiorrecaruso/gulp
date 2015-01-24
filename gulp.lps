@@ -3,17 +3,15 @@
   <ProjectSession>
     <PathDelim Value="\"/>
     <Version Value="9"/>
-    <BuildModes Active="Release"/>
+    <BuildModes Active="Debug"/>
     <Units Count="4">
       <Unit0>
         <Filename Value="gulp.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Gulp"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="0"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="42"/>
-        <CursorPos X="1" Y="95"/>
+        <TopLine Value="22"/>
+        <CursorPos X="28" Y="34"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
@@ -24,10 +22,10 @@
         <UnitName Value="Application"/>
         <EditorIndex Value="3"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="46"/>
-        <CursorPos X="23" Y="27"/>
-        <FoldState Value=" T3jZ0)012o"/>
-        <UsageCount Value="133"/>
+        <TopLine Value="131"/>
+        <CursorPos X="10" Y="146"/>
+        <FoldState Value=" T3lJ0gX"/>
+        <UsageCount Value="160"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit1>
@@ -35,11 +33,13 @@
         <Filename Value="libgulp.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Libgulp"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="469"/>
-        <CursorPos X="45" Y="569"/>
-        <UsageCount Value="133"/>
+        <TopLine Value="753"/>
+        <CursorPos X="20" Y="762"/>
+        <FoldState Value=" T3lV0361A31A"/>
+        <UsageCount Value="160"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit2>
@@ -49,17 +49,13 @@
         <UnitName Value="Common"/>
         <EditorIndex Value="2"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="82"/>
-        <CursorPos X="38" Y="165"/>
-        <FoldState Value=" T3ig0511131:"/>
-        <UsageCount Value="82"/>
+        <TopLine Value="42"/>
+        <CursorPos X="26" Y="61"/>
+        <UsageCount Value="109"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit3>
     </Units>
-    <General>
-      <ActiveWindowIndexAtStart Value="0"/>
-    </General>
   </ProjectSession>
   <Debugging>
     <BreakPoints Count="1">
@@ -71,5 +67,4 @@
       </Item1>
     </BreakPoints>
   </Debugging>
-  <EditorMacros Count="0"/>
-</CONFIG>
+</CONFIG>

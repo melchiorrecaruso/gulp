@@ -1,31 +1,93 @@
 .\" Manpage for GULP.
 .\" Contact melchiorrecaruso@gmail.com to correct errors or typos.
-.TH man 8 "02 JAN 2015" "0.0.2" "GULP man page"
+.TH man 1 "24 JAN 2015" "0.0.2" "GULP man page"
 .SH NAME
-gulp \- A simple backup utility.
+.B gulp
+\- A simple incremental command-line archiver.
 .SH SYNOPSIS
-gulp [-srplcfh] [--longoption] [gulpfile] [-t date time] [[file ...]]
+.BR gulp " [-] s --synch | r --restore | p --purge | l --list | c --check | f --fix 
+.RI " [" options "] [ " files " ...]"
 .SH DESCRIPTION
-gulp stores and extracts files from a disk archive.
+.B gulp
+stores and extracts files from a disk archive. A GULP archive is a sequence of timestamped updates, each listing the files and directories that have been added, changed, or deleted since the previous transacted update, normally based on changes to the last-modified dates.
+
+The first argument to gulp should be a function; either one of the letters 
+.BR srplcfh ", or one of the long function names. A function letter need be prefixed with '-', and can't be combined with other single-letter options. A long function name must be prefixed with --.  Some options take a parameter; with the single-letter form these must be given as separate arguments. With the long form, they may be given by appending =value to the option."
+
+.SH FUNCTION LETTERS
+Main operation mode:
+
+.BR \-s ", " --sinch
+.RS
+append changes in 
+.IR files " to archive, or create archive if it does not exist. " files " is a list of file and directory names separated by spaces. If a name is a directory, then it recursively includes all files and subdirectories within. In Windows, files may contain wildcards * and ? in the last component of the path (after the last slash). * matches any string and ? matches any character."
+
+.RI "A change is an addition, update, or deletion of any file or directory in " files " or any of its subdirectories to any depth. A file or directory is considered changed if its size, last-modified date, or Windows attributes or Unix/Linux permissions differ between the internal and external versions. File contents are not compared."
+
+.RI  "For each added or updated file or directory, the following information is saved in the archive: the contents, the file or directory name as it appears in " files " plus any trailing path, the last-modified date, and the Unix/Linux permissions or Windows attributes. Other metadata such as owner, group, last access time, etc. are not saved. Symbolic links are saved. Hard links are followed as if they were ordinary files. Special file types such as devices, named pipes, and named sockets are not saved. If any file cannot be read (e.g. permission denied), then it is skipped. However, other files are still added and the update is still valid."
+
+.RI "Updates are transacted. If gulp is interrupted before completing the update, then the archive can be repair with fix function."
+.RE
+
+.BR \-r ", " --restore
+.RS
+.RI "restore " files " (including the contents of directories), or extract the whole archive contents if " files " is omitted. The file names, last-modified date, and permissions or attributes are set as saved in the archive. If there are multiple versions of a file stored, then only the latest version is extracted. If a stored file has been marked as deleted, then it is deleted. Existing files are overwritten if they are considered changed."
+.RE
+
+.BR \-p ", " --purge
+.RS
+purge archive, remove old files archived
+.RE
+
+.BR \-l ", " --list
+.RS
+.RI "list " files " within the archive, or list the entire archive contents if " files " is omitted. For each file or directory, show marker, last modified date, Windows attributes or Unix/Linux permissions, size and name. Attributes are listed as an octal number in Unix/Linux (as per chmod(1)) or with the letters D, A, S, H, R, I in Windows (as per the attrib command)."
+.RE
+
+.BR \-c ", " --check
+.RS
+check archive integrity by verifying that the data agrees with the stored SHA-1 hashes and sizes and that the data otherwise conforms to the gulp standard.
+.RE
+
+.BR \-f ", " --fix
+.RS
+truncates any data added after last valid update.
+.RE
+
 .SH OPTIONS
-\-s, --sinch    Synchronize archive, 
-.br
-\-r, --restore  Restore files archived, 
-.br
-\-p, --purge    Purge archive, remove old files archived
-.br
-\-l, --list     List contents of archive
-.br
-\-c, --check    Check archive integrity
-.br
-\-f, --fix      Fix damaged archive
-.br
-\-h, --help     Show this help
-.br
-\-t, --time     Set datetime
+Operation modifiers:
+
+.BR \-u ", " --until
+.RS
+ignore any part of the archive updated after date-time. A date is specified as a 4 digit year (1900 to 2999), 2 digit month (01 to 12), 2 digit day (01 to 31), optional 2 digit hour (00 to 23, default 23), optional 2 digit minute (00 to 59, default 59), and optional 2 digit seconds (00 to 59, default 59). Dates and times are always universal time zone (UT), not local time. Dates may contain spaces and punctuation characters for readability but are ignored. For example:
+
+.RS
+gulp -l backup files -until "2014-04-30 11:30:00"
+.RE
+
+show files added before April 30, 2014 at 11:30:59 universal time.
+.RE
+
+.SH EXAMPLES
+Create archive.gulp from files foo and bar.
+.RS
+gulp -s archive.gulp foo bar
+.RE
+List all files in archive.gulp.
+.RS
+gulp -l archive.gulp
+.RE
+Restore all files from archive.gulp.
+.RS
+gulp -r archive.gulp
+.RE
+
+
 .SH SEE ALSO
 No
 .SH BUGS
-No known bugs.
+The archive format does not save sufficient information for backing up and restoring the operating system.
 .SH AUTHOR
-Melchiorre Caruso (melchiorrecaruso@gmail.com)
+gulp is copyright (C) 2014-2015, Melchiorre Caruso. 
+
+It is licensed under GPL v2. For information on the license, see <http://www.gnu.org/copyleft/gpl.html>. Program was written by Melchiorre Caruso <melchiorrecaruso at gmail dot com>
