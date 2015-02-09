@@ -1,6 +1,6 @@
 .\" Manpage for GULP.
 .\" Contact melchiorrecaruso@gmail.com to correct errors or typos.
-.TH man 1 "24 JAN 2015" "0.0.2" "GULP man page"
+.TH man 1 "25 JAN 2015" "0.0.2" "GULP man page"
 .SH NAME
 .B gulp
 \- A simple incremental command-line archiver.
@@ -88,6 +88,5 @@ No
 .SH BUGS
 The archive format does not save sufficient information for backing up and restoring the operating system.
 .SH AUTHOR
-gulp is copyright (C) 2014-2015, Melchiorre Caruso. 
-
-It is licensed under GPL v2. For information on the license, see <http://www.gnu.org/copyleft/gpl.html>. Program was written by Melchiorre Caruso <melchiorrecaruso at gmail dot com>
+.B gulp
+is copyright (C) 2014-2015, Melchiorre Caruso. It is licensed under GPL v2. For information on the license, see <http://www.gnu.org/copyleft/gpl.html>. Program was written by Melchiorre Caruso <melchiorrecaruso at gmail dot com>"

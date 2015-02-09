@@ -44,13 +44,14 @@ uses
 type
   { TGulpApplication class }
 
-  TGulpApplication = class (TCustomApplication)
+  TGulpApplication = class(TCustomApplication)
   private
-    FileNames : TStringList;
-    Switches  : TStringList;
-    Scanner   : TSysScanner;
-    Stream    : TFileStream;
-    Start     : TDateTime;
+    FFileNames : TStringList;
+    FSwitches  : TStringList;
+    FScanner   : TSysScanner;
+    FStream    : TFileStream;
+    FStart     : TDateTime;
+    FVersion   : longword;
     procedure Synch;
     procedure Restore;
     procedure Purge;
@@ -61,12 +62,15 @@ type
   protected
     procedure DoRun; override;
   public
-    constructor Create (AOwner: TComponent); override;
+    constructor Create(AOwner: TComponent); override;
     destructor  Destroy; override;
     procedure   Kill;
   end;
 
 implementation
+
+uses
+  DateUtils;
 
 {$IFDEF MSWINDOWS}
 function SetIdlePriority: boolean;
@@ -105,323 +109,276 @@ begin
   inherited Create(AOwner);
   CaseSensitiveOptions := TRUE;
   StopOnException      := TRUE;
-  FileNames            := TStringList.Create;
-  Switches             := TStringList.Create;
-  Scanner              := TSysScanner.Create;
-  Start                := Now;
+  FFileNames           := TStringList.Create;
+  FSwitches            := TStringList.Create;
+  FScanner             := TSysScanner.Create;
+  FStart               := Now;
+  FVersion             := longword(-2);
 end;
 
 destructor TGulpApplication.Destroy;
 begin
-  FileNames.Destroy;
-  Switches.Destroy;
-  Scanner.Destroy;
+  FScanner.Destroy;
+  FSwitches.Destroy;
+  FFileNames.Destroy;
   inherited Destroy;
 end;
 
 procedure TGulpApplication.Synch;
 var
-  I, J       : longint;
-  Count      : longint = 0;
-  GulpWriter : TGulpWriter;
-  GulpReader : TGulpReader;
-  GulpList   : TGulpList;
-  GulpRec    : TGulpRec;
+     I, J : longint;
+    Count : longint;
+  GulpLib : TGulpLib;
 begin
-  writeln(#13, #13: 80, 'Synch the contents of ' + GetOptionValue('s', 'synch'));
+  writeln(#13, #13: 80, 'Synch the content of ' + GetOptionValue('s', 'synch'));
   write  (#13, #13: 80, 'Scanning filesystem... ');
-  for I := 0 to FileNames.Count - 1 do
-    Scanner.Add(FileNames[I]);
+  if FFileNames.Count = 0 then
+    FFileNames.Add('*');
+  for I := 0 to FFileNames.Count - 1 do
+    FScanner.Add(FFileNames[I]);
 
   write(#13, #13: 80, 'Opening archive... ');
   if FileExists(GetOptionValue('s', 'synch')) then
-    Stream := TFileStream.Create (GetOptionValue('s', 'synch'), fmOpenReadWrite)
+    FStream := TFileStream.Create (GetOptionValue('s', 'synch'), fmOpenReadWrite)
   else
-    Stream := TFileStream.Create (GetOptionValue('s', 'synch'), fmCreate);;
+    FStream := TFileStream.Create (GetOptionValue('s', 'synch'), fmCreate);;
 
   write(#13, #13: 80, 'Reading records... ');
-  GulpList   := TGulpList.Create;
-  GulpReader := TGulpReader.Create(Stream);
-  if GulpList.Load(GulpReader, Start) = FALSE then
+  GulpLib := TGulpLib.Create(FStream);
+  if GulpLib.OpenArchive(longword(-2)) = FALSE then
   begin
-    if Stream.Size <> 0 then
+    if FStream.Size <> 0 then
       raise Exception.Create('FIX point error');
   end;
 
   write(#13, #13: 80, 'Deleting records... ');
-  GulpWriter := TGulpWriter.Create(Stream);
-  for I := 0 to GulpList.Count - 1 do
+  Count := 0;
+  for I := 0 to GulpLib.Count - 1 do
   begin
-    GulpRec := GulpList.Items[I];
-    J := Scanner.Find(GulpRec.Name);
+    J := FScanner.Find(GulpLib.Items[I].Name);
     if J = -1 then
     begin
       Inc(Count);
-      LibDEL(GulpWriter, Start, GulpRec.Name);
+      GulpLib.Delete(I);
     end else
-      if (GetTime(Scanner.Items[J]) <> GulpRec.MTime) then
+      if GetTime(FScanner.Items[J]) <> GulpLib.Items[I].Time then
       begin
         Inc(Count);
-        LibDEL(GulpWriter, Start, GulpRec.Name);
+        GulpLib.Delete(I);
       end else
-        Scanner.Delete(J);
+        FScanner.Delete(J);
   end;
 
   write(#13, #13: 80, 'Adding records... ');
-  for I := 0 to Scanner.Count - 1 do
+  for I := 0 to FScanner.Count - 1 do
   begin
     Inc(Count);
-    LibADD(GulpWriter, Start, Scanner.Items[I]);
+    GulpLib.Add(FScanner.Items[I]);
   end;
-  if Count <> 0 then
-    LibFIX(GulpWriter, Start);
+  GulpLib.CloseArchive;
 
-  write(#13, #13: 80, 'Finished (', Count, ' new records added)');
-  FreeAndNil(GulpWriter);
-  FreeAndNil(GulpReader);
-  FreeAndNil(GulpList);
-  FreeAndNil(Stream);
+  write(#13, #13: 80, 'Finished (', Count, ' added records)');
+  FreeAndNil(GulpLib);
+  FreeAndNil(FStream);
   writeln;
 end;
 
 procedure TGulpApplication.Restore;
+var
+     I, J : longint;
+    Count : longint;
+  GulpLib : TGulpLib;
 begin
+  writeln(#13, #13: 80, 'Restore the content of ' + GetOptionValue('r', 'restore'));
+  write  (#13, #13: 80, 'Scanning filesystem... ');
+  if FFileNames.Count = 0 then
+    FFileNames.Add('*');
+  for I := 0 to FFileNames.Count - 1 do
+    FScanner.Add(FFileNames[I]);
 
+  write(#13, #13: 80, 'Opening archive... ');
+  FStream := TFileStream.Create(GetOptionValue('r', 'restore'), fmOpenRead);
+
+  if GetOptionValue('u', 'until') <> '' then
+  begin
+    if lowercase(GetOptionValue('u', 'until')) <> 'now' then
+      FVersion := StrToQWordDef(GetOptionValue('u', 'until'), longword(-1));
+  end;
+
+  write(#13, #13: 80, 'Reading records... ');
+  GulpLib := TGulpLib.Create(FStream);
+  if GulpLib.OpenArchive(FVersion) = FALSE then
+  begin
+    if FStream.Size <> 0 then
+      raise Exception.Create('FIX point error');
+  end;
+
+  write(#13, #13: 80, 'Deleting records... ');
+  for I := 0 to FScanner.Count - 1 do
+    if GulpLib.Find(FScanner.Items[I]) = - 1 then
+      if DeleteFile(FScanner.Items[I]) then
+        FScanner.Delete(I);
+
+  for I := 0 to FScanner.Count - 1 do
+    if GulpLib.Find(FScanner.Items[I]) = - 1 then
+      if RemoveDir(FScanner.Items[I]) then
+        FScanner.Delete(I);
+
+  write(#13, #13: 80, 'Extracting records... ');
+  Count := 0;
+  for I := 0 to GulpLib.Count - 1 do
+  begin
+    J := FScanner.Find(GulpLib.Items[I].Name);
+    if J = - 1 then
+    begin
+      Inc(Count);
+      GulpLib.Extract(I);
+    end else
+      if GetTime(FScanner.Items[J]) <> GulpLib.Items[I].Time then
+      begin
+        Inc(Count);
+        GulpLib.Extract(I);
+      end;
+  end;
+  FreeAndNil(GulpLib);
+
+  write(#13, #13: 80, 'Finished (', Count, ' records extracted)');
+  FreeAndNil(FStream);
+  writeln;
 end;
 
 procedure TGulpApplication.Fix;
 var
-  OldSize    : int64 = 0;
-  NewSize    : int64 = 0;
-  GulpReader : TGulpReader;
-  GulpRec    : TGulpRec;
+  Size : int64;
 begin
-  writeln(#13, #13: 80, 'Fix the contents of ' + GetOptionValue('f', 'fix'));
+  writeln(#13, #13: 80, 'Fix the content of ' + GetOptionValue('f', 'fix'));
   write  (#13, #13: 80, 'Opening archive... ');
-  Stream := TFileStream.Create (GetOptionValue('f', 'fix'), fmOpenReadWrite);
+  FStream := TFileStream.Create (GetOptionValue('f', 'fix'), fmOpenReadWrite);
+  Size    := FStream.Size;
 
-  write(#13, #13: 80, 'Reading records... ');
-  GulpRec    := TGulpRec.Create;
-  GulpReader := TGulpReader.Create(Stream);
-  try
-    while GulpReader.Read(GulpRec, nil) do
-      if (GulpRec.Flags and $FF) = gfFix then
-      begin
-        NewSize := Stream.Position;
-        writeln(#13, #13: 80, 'Founded fix point at ',
-          FormatDateTime(
-            DefaultFormatSettings.LongDateFormat + ' ' +
-            DefaultFormatSettings.LongTimeFormat, GulpRec.STime));
-        write(#13, #13: 80, 'Reading records... ');
-      end;
-  except
-    // noting to do
-  end;
+  write(#13, #13: 80, 'Fixing archive... ');
+  FixArchive(FStream);
 
-  if NewSize = 0 then
-    raise Exception.Create('Zero size error');
-
-  write(#13, #13: 80, 'Resizing archive... ');
-  OldSize := Stream.Size;
-  if NewSize < OldSize then
-    Stream.Size := NewSize;
-
-  write(#13, #13: 80, 'Finished (', OldSize - NewSize, ' bytes removed)');
-  FreeAndNil(GulpReader);
-  FreeAndNil(GulpRec);
-  FreeAndNil(Stream);
+  write(#13, #13: 80, 'Finished (', Size - FStream.Size, ' removed bytes)');
+  FreeAndNil(FStream);
   writeln;
 end;
 
 procedure TGulpApplication.Check;
 var
-  GulpReader : TGulpReader;
-  GulpRec    : TGulpRec;
-  TMP        : TStream;
+        I : longint;
+    Count : longint;
+  GulpLib : TGulpLib;
 begin
-  writeln(#13, #13: 80, 'Check the contents of ' + GetOptionValue('c', 'check'));
+  writeln(#13, #13: 80, 'Check the content of ' + GetOptionValue('c', 'check'));
   write  (#13, #13: 80, 'Opening archive... ');
-  TMP    := TNulStream.Create;
-  Stream := TFileStream.Create (GetOptionValue('c', 'check'), fmOpenRead);
+  FStream := TFileStream.Create (GetOptionValue('c', 'check'), fmOpenRead);
 
   write(#13, #13: 80, 'Reading records... ');
-  GulpRec    := TGulpRec.Create;
-  GulpReader := TGulpReader.Create(Stream);
-  while GulpReader.Read(GulpRec, TMP) do
+  GulpLib := TGulpLib.Create(FStream);
+  if GulpLib.OpenArchive(longword(-1)) = FALSE then
   begin
-    if (GulpRec.Flags and $FF) = gfFix then
-    begin
-      writeln(#13, #13: 80, 'Founded fix point at ',
-        FormatDateTime(
-          DefaultFormatSettings.LongDateFormat + ' ' +
-          DefaultFormatSettings.LongTimeFormat, GulpRec.STime));
-      write  (#13, #13: 80, 'Reading records... ');
-    end;
-
-    if GulpRec.ChecksumOK = FALSE then
-    begin
-      if GulpRec.Flags and $FF = gfFIX then
-        raise Exception.Create('Fix point checksum mismatched')
-      else
-        raise Exception.CreateFmt('Checksum mismatched for %s', [GulpRec.Name]);
-    end;
+    if FStream.Size <> 0 then
+      raise Exception.Create('FIX point error');
   end;
 
-  write(#13, #13: 80, 'Finished (no errors detected)');
-  FreeAndNil(GulpReader);
-  FreeAndNil(GulpRec);
-  FreeAndNil(Stream);
-  FreeAndNil(TMP);
+  write(#13, #13: 80, 'Checking records... ');
+  Count := 0;
+  for I := 0 to GulpLib.Count - 1 do
+  begin
+    Inc(Count);
+    GulpLib.Check(I);
+  end;
+  GulpLib.CloseArchive;
+
+  write(#13, #13: 80, 'Finished (', Count, ' checked records)');
+  FreeAndNil(GulpLib);
+  FreeAndNil(FStream);
   writeln;
 end;
 
 procedure TGulpApplication.Purge;
 var
-  I          : longint;
-  GulpWriter : TGulpWriter;
-  GulpReader : TGulpReader;
-  GulpList   : TGulpList;
-  GulpRec    : TGulpRec;
-  TempName   : string;
-  Temp       : TStream;
+  TmpName : string;
+      Tmp : TStream;
 begin
-  writeln(#13, #13: 80, 'Purge the contents of ' + GetOptionValue('p', 'purge'));
+  writeln(#13, #13: 80, 'Purge the content of ' + GetOptionValue('p', 'purge'));
   write  (#13, #13: 80, 'Opening archive... ');
-  TempName := GetTempFileName(GetCurrentDir, '');
-  Temp     := TFileStream.Create(TempName, fmCreate);
-  Stream   := TFileStream.Create(GetOptionValue('p', 'purge'), fmOpenRead);
-
-  write(#13, #13: 80, 'Reading records... ');
-  GulpList   := TGulpList.Create;
-  GulpReader := TGulpReader.Create(Stream);
-  if GulpList.Load(GulpReader, Start) = FALSE then
-  begin
-    if Stream.Size <> 0 then
-      raise Exception.Create('FIX point error');
-  end;
+  TmpName := GetTempFileName(GetCurrentDir, '');
+  Tmp     := TFileStream.Create(TmpName, fmCreate);
+  FStream := TFileStream.Create(GetOptionValue('p', 'purge'), fmOpenRead);
 
   write(#13, #13: 80, 'Moving records... ');
-  GulpReader := TGulpReader.Create(Stream);
-  GulpWriter := TGulpWriter.Create(Temp);
-  repeat
-    I := GulpList.Find(Stream.Seek(0, soCurrent));
-    if I = - 1 then
-    begin
-      if GulpReader.Read(GulpRec, nil) = FALSE then Break;
-    end else
-      Temp.CopyFrom(Stream, GulpRec.ESeek - GulpRec.SSeek);
-  until FALSE;
-  if GulpList.Count <> 0 then
-    LibFIX(GulpWriter, Start);
-  FreeAndNil(GulpWriter);
-  FreeAndNil(GulpReader);
-  FreeAndNil(GulpRec);
-  FreeAndNil(GulpList);
+  PurgeArchive(FStream, Tmp);
 
-  write(#13, #13: 80, 'Finished (', Stream.Size - Temp.Size, ' bytes removed)');
-
-  FreeAndNil(Stream);
-  FreeAndNil(Temp);
+  write(#13, #13: 80, 'Finished (', FStream.Size - Tmp.Size, ' bytes removed)');
+  FreeAndNil(FStream);
+  FreeAndNil(Tmp);
 
   if DeleteFile(GetOptionValue('p', 'purge')) = FALSE then
     raise Exception.CreateFmt('Error deleting file %s', [GetOptionValue('p', 'purge')])
   else
-    if RenameFile(TempName, GetOptionValue('p', 'purge'))= FALSE then
-      raise Exception.CreateFmt('Error renaming tmpfile %s', [TempName]);
+    if RenameFile(TmpName, GetOptionValue('p', 'purge'))= FALSE then
+      raise Exception.CreateFmt('Error renaming tmpfile %s', [TmpName]);
   writeln;
 end;
 
 procedure TGulpApplication.List;
 var
-  I, J        : longint;
-  GulpReader  : TGulpReader;
-  GulpList    : TGulpList;
-  GulpRec     : TGulpRec;
-  StoredTime  : TDateTime;
+     I, J : longint;
+    Count : longint;
+  GulpLib : TGulpLib;
+  GulpRec : TGulpRec;
 begin
-  writeln(#13, #13: 80, 'List the contents of ' + GetOptionValue('l', 'list'));
+  writeln(#13, #13: 80, 'List the content of ' + GetOptionValue('l', 'list'));
   write  (#13, #13: 80, 'Opening archive... ');
-  Stream := TFileStream.Create (GetOptionValue('l', 'list'), fmOpenRead);
+  FStream := TFileStream.Create (GetOptionValue('l', 'list'), fmOpenRead);
 
+  FVersion := longword(-1);
   if GetOptionValue('u', 'until') <> '' then
   begin
-    if lowercase(GetOptionValue('u', 'until')) <> 'now' then
-      StoredTime := StrToDateTime(GetOptionValue('u', 'until')) + 0.00002
+    if lowercase(GetOptionValue('u', 'until')) = 'now' then
+      FVersion := longword(-2)
     else
-      StoredTime := Start;
-  end else
-    StoredTime := 0.0;
+      FVersion := StrToInt(GetOptionValue('u', 'until'));
+  end;
 
-  if FileNames.Count = 0 then
-    FileNames.Add('*');
+  if FFileNames.Count = 0 then
+    FFileNames.Add('*');
+
+  write(#13, #13: 80, 'Reading records... ');
+  GulpLib := TGulpLib.Create(FStream);
+  if GulpLib.OpenArchive(FVersion) = FALSE then
+  begin
+    if FStream.Size <> 0 then
+      raise Exception.Create('FIX point error');
+  end;
 
   write (#13, #13: 80, 'Reading records... ');
-  if StoredTime = 0.0 then
+  Count := 0;
+  for I := 0 to GulpLib.Count - 1 do
   begin
-    GulpRec     := TGulpRec.Create;
-    GulpReader  := TGulpReader.Create(Stream);
-    while GulpReader.Read(GulpRec, nil) do
-    begin
-      if (GulpRec.Flags and $FF) = gfFIX then
-      begin
-        writeln(#13, #13: 80, 'FIX ....... ......... ',
-          FormatDateTime(
-            DefaultFormatSettings.LongDateFormat + ' ' +
-            DefaultFormatSettings.LongTimeFormat, GulpRec.STime));
-      end else
-        for J := 0 to FileNames.Count - 1 do
-        begin
-          if FileNameMatch(GulpRec.Name, FileNames[J])  then
-            writeln(#13, #13: 80, Format('%3s %7s %9s %19s %12s %s', [
-              FlagToString(GulpRec),
-              AttrToString(GulpRec),
-              ModeToString(GulpRec),
-              TimeToString(GulpRec),
-              SizeToString(GulpRec),
-              GulpRec.Name]));
-            Break;
-        end;
-    end;
-    FreeAndNil(GulpReader);
-    FreeAndNil(GulpRec);
-  end else
-  begin
-    GulpList   := TGulpList.Create;
-    GulpReader := TGulpReader.Create(Stream);
-    if GulpList.Load(GulpReader, StoredTime) = FALSE then
-    begin
-      if Stream.Size <> 0 then
-        raise Exception.Create('FIX point error');
-    end;
-
-    for I := 0 to GulpList.Count - 1 do
-    begin
-      GulpRec := GulpList.Items[I];
-      if (GulpRec.Flags and $FF) = gfFIX then
-      begin
-        writeln(#13, #13: 80, 'FIX ....... ......... ',
-          FormatDateTime(
-            DefaultFormatSettings.LongDateFormat + ' ' +
-            DefaultFormatSettings.LongTimeFormat, GulpRec.STime));
-      end else
-        for J := 0 to FileNames.Count - 1 do
-        begin
-          if FileNameMatch(GulpRec.Name, FileNames[J])  then
-            writeln(#13, #13: 80, Format('%3s %7s %9s %19s %12s %s', [
-              FlagToString(GulpRec),
-              AttrToString(GulpRec),
-              ModeToString(GulpRec),
-              TimeToString(GulpRec),
-              SizeToString(GulpRec),
-              GulpRec.Name]));
-          Break;
-        end;
-    end;
-    FreeAndNil(GulpReader);
-    FreeAndNil(GulpList);
+    GulpRec := GulpLib.Items[I];
+    for J := 0 to FFileNames.Count - 1 do
+       if FileNameMatch(GulpRec.Name, FFileNames[J])  then
+       begin
+         writeln(#13, #13: 80, Format('%3s %3s %7s %9s %19s %12s %s', [
+            VerTostring(Gulprec),
+           FlagToString(GulpRec),
+           AttrToString(GulpRec),
+           ModeToString(GulpRec),
+           TimeToString(GulpRec),
+           SizeToString(GulpRec),
+           GulpRec.Name]));
+         Inc(Count);
+         Break;
+       end;
   end;
-  FreeAndNil(Stream);
-  writeln(#13, #13: 80, 'Finished');
+
+  writeln(#13, #13: 80, 'Finished (', Count, ' listed records)');
+  FreeAndNil(GulpLib);
+  FreeAndNil(FStream);
+  writeln;
 end;
 
 procedure TGulpApplication.Help;
@@ -441,7 +398,8 @@ var
   LongSwitches  : TStringList;
 begin
   inherited DoRun;
-  writeln('GULP 0.0.2 archiver utility, copyright (c) 2014-2015 Melchiorre Caruso.');
+  writeln('GULP v0.0.2 journaling archiver, copyright (c) 2014-2015 Melchiorre Caruso.');
+  writeln('GULP archiver for incremental backups with rollback capability.');
 
   DefaultFormatSettings.LongDateFormat  := 'yyyy-mm-dd';
   DefaultFormatSettings.ShortDateFormat := 'yyyy-mm-dd';
@@ -458,7 +416,7 @@ begin
   LongSwitches.Add('until:');
 
   try
-    Error := CheckOptions(ShortSwitches, LongSwitches, Switches, FileNames);
+    Error := CheckOptions(ShortSwitches, LongSwitches, FSwitches, FFileNames);
     if Error = '' then
     begin
       if HasOption('s', 'synch'  ) then Synch   else
@@ -476,7 +434,7 @@ begin
   end;
   FreeAndNil(LongSwitches);
   writeln(#13, #13: 80, 'Elapsed ',
-    Format('%0.2f', [(Now - Start) * (24 * 60 * 60)]) , ' sec');
+    Format('%0.2f', [(Now - FStart) * (24 * 60 * 60)]) , ' sec');
   Terminate;
 end;
 

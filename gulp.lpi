@@ -56,12 +56,6 @@
               <OptimizationLevel Value="0"/>
             </Optimizations>
           </CodeGeneration>
-          <Linking>
-            <Debugging>
-              <UseHeaptrc Value="True"/>
-              <UseExternalDbgSyms Value="True"/>
-            </Debugging>
-          </Linking>
         </CompilerOptions>
       </Item2>
       <Item3 Name="Release">
@@ -129,7 +123,7 @@
       <Unit2>
         <Filename Value="libgulp.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Libgulp"/>
+        <UnitName Value="LibGulp"/>
       </Unit2>
       <Unit3>
         <Filename Value="common.pas"/>
