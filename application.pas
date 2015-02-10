@@ -201,8 +201,10 @@ begin
 
   if GetOptionValue('u', 'until') <> '' then
   begin
-    if lowercase(GetOptionValue('u', 'until')) <> 'now' then
-      FVersion := StrToQWordDef(GetOptionValue('u', 'until'), longword(-1));
+    if lowercase(GetOptionValue('u', 'until')) = 'now' then
+      FVersion := longword(-2)
+    else
+      FVersion := StrToInt(GetOptionValue('u', 'until'));
   end;
 
   write(#13, #13: 80, 'Reading records... ');
@@ -240,9 +242,9 @@ begin
         GulpLib.Extract(I);
       end;
   end;
-  FreeAndNil(GulpLib);
 
-  write(#13, #13: 80, 'Finished (', Count, ' records extracted)');
+  write(#13, #13: 80, 'Finished (', Count, ' extracted records)');
+  FreeAndNil(GulpLib);
   FreeAndNil(FStream);
   writeln;
 end;
@@ -269,10 +271,12 @@ var
         I : longint;
     Count : longint;
   GulpLib : TGulpLib;
+      Nul : TNulStream;
 begin
   writeln(#13, #13: 80, 'Check the content of ' + GetOptionValue('c', 'check'));
   write  (#13, #13: 80, 'Opening archive... ');
   FStream := TFileStream.Create (GetOptionValue('c', 'check'), fmOpenRead);
+  Nul     := TNulStream.Create;
 
   write(#13, #13: 80, 'Reading records... ');
   GulpLib := TGulpLib.Create(FStream);
@@ -287,13 +291,14 @@ begin
   for I := 0 to GulpLib.Count - 1 do
   begin
     Inc(Count);
-    GulpLib.Check(I);
+    GulpLib.ExtractTo(I, Nul);
   end;
   GulpLib.CloseArchive;
 
   write(#13, #13: 80, 'Finished (', Count, ' checked records)');
   FreeAndNil(GulpLib);
   FreeAndNil(FStream);
+  FreeAndNil(Nul);
   writeln;
 end;
 

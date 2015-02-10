@@ -59,13 +59,13 @@ Operation modifiers:
 
 .BR \-u ", " --until
 .RS
-ignore any part of the archive updated after date-time. A date is specified as a 4 digit year (1900 to 2999), 2 digit month (01 to 12), 2 digit day (01 to 31), optional 2 digit hour (00 to 23, default 23), optional 2 digit minute (00 to 59, default 59), and optional 2 digit seconds (00 to 59, default 59). Dates and times are always universal time zone (UT), not local time. Dates may contain spaces and punctuation characters for readability but are ignored. For example:
+ignore any part of the archive updated after version number. 
 
 .RS
-gulp -l backup files -until "2014-04-30 11:30:00"
+gulp -l backup files -until 20
 .RE
 
-show files added before April 30, 2014 at 11:30:59 universal time.
+show files added before version 20.
 .RE
 
 .SH EXAMPLES

@@ -54,6 +54,13 @@ type
     property Items[Index: longint]: string read GetItem;
   end;
 
+  // --- The Nul Stream CLASS ---
+  TNulStream = class(TStream)
+  public
+    function Read (var   Buffer; Count: Longint): Longint; override;
+    function Write(const Buffer; Count: Longint): Longint; override;
+  end;
+
   { Matching routine }
 
   function FileNameMatch(const FileName, FileMask: string): boolean;
@@ -192,6 +199,20 @@ end;
 function TSysScanner.GetItem(Index: longint): string;
 begin
   Result := FList[Index];
+end;
+
+// =============================================================================
+// TNulStream class
+// =============================================================================
+
+function TNulStream.Read(var Buffer; Count: Longint): Longint;
+begin
+  Result := Count;
+end;
+
+function TNulStream.Write(const Buffer; Count: Longint): Longint;
+begin
+  Result := Count;
 end;
 
 { Matching routine }

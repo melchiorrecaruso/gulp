@@ -145,19 +145,14 @@ type
     procedure Delete(Index: longint);
     function  Find(const FileName: string): longint;
 
+    procedure ExtractTo(Index: longint; Stream: TStream);
     procedure Extract(Index: longint);
-    procedure Check(Index: longint);
 
     property Items[Index: longint]: TGulpRec read GetItem;
     property Count: longint read GetCount;
   end;
 
-  // --- The Nul Stream CLASS ---
-  TNulStream = class(TStream)
-  public
-    function Read (var   Buffer; Count: Longint): Longint; override;
-    function Write(const Buffer; Count: Longint): Longint; override;
-  end;
+
 
   procedure FixArchive(Stream: TStream);
   procedure PurgeArchive(Source, Dest: TStream);
@@ -973,19 +968,16 @@ begin
 
 end;
 
-procedure TGulpLib.Check(Index: longint);
+procedure TGulpLib.ExtractTo(Index: longint; Stream: TStream);
 var
-  Nul : TNulStream;
   Rec : TGulpRec;
 begin
   Rec := Items[Index];
   FStream.Seek(Rec.SSeek, soBeginning);
   if Rec.Size > 0 then
   begin
-    Nul := TNulStream.Create;
-    if Read(Rec, Nul, Rec.Size) = FALSE then
+    if Read(Rec, Stream, Rec.Size) = FALSE then
       raise Exception.Create('Mismatched checksum for ' + Rec.Name);
-    FreeAndNil(Nul);
   end;
 end;
 
@@ -999,23 +991,16 @@ begin
   Result := FList.Count;
 end;
 
-// =============================================================================
-// TNulStream class
-// =============================================================================
-
-function TNulStream.Read(var Buffer; Count: Longint): Longint;
-begin
-  Result := Count;
-end;
-
-function TNulStream.Write(const Buffer; Count: Longint): Longint;
-begin
-  Result := Count;
-end;
 
 // =============================================================================
 // Advanced routines
 // =============================================================================
+
+procedure CheckArchive(Stream: TStream);
+begin
+
+
+end;
 
 procedure FixArchive(Stream: TStream);
 var
