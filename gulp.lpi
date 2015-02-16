@@ -113,7 +113,6 @@
       <Unit0>
         <Filename Value="gulp.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Gulp"/>
       </Unit0>
       <Unit1>
         <Filename Value="application.pas"/>
@@ -128,7 +127,6 @@
       <Unit3>
         <Filename Value="common.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Common"/>
       </Unit3>
     </Units>
   </ProjectOptions>

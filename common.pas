@@ -19,8 +19,11 @@
 {
   Contains:
 
-  Modifyed:
+    Various helper routines.
 
+  Modified:
+
+    v0.0.2 - 2015.02.14 by Melchiorre Caruso.
 }
 
 unit Common;
@@ -28,8 +31,7 @@ unit Common;
 interface
 
 uses
-  Classes,
-  SysUtils;
+  Classes;
 
 type
   { TSysScanner }
@@ -54,20 +56,31 @@ type
     property Items[Index: longint]: string read GetItem;
   end;
 
-  // --- The Nul Stream CLASS ---
+  { TNulStream }
+
   TNulStream = class(TStream)
   public
-    function Read (var   Buffer; Count: Longint): Longint; override;
+    function Read(var Buffer; Count: Longint): Longint; override;
     function Write(const Buffer; Count: Longint): Longint; override;
   end;
 
-  { Matching routine }
+  { Matching routines }
 
   function FileNameMatch(const FileName, FileMask: string): boolean;
+
+  { Priority routines }
+
+  function SetNormalPriority: boolean;
+  function SetIdlePriority: boolean;
 
 implementation
 
 uses
+  {$IFDEF UNIX}
+  BaseUnix,
+  Unix,
+  {$ENDIF}
+  SysUtils,
   Masks;
 
 { TSysScanner class }
@@ -97,17 +110,15 @@ end;
 procedure TSysScanner.AddItem(const FileName: string);
 begin
   if FList.IndexOf(FileName) = - 1 then
-  begin
     FList.Add(FileName);
-  end;
 end;
 
 procedure TSysScanner.Scan(const FileMask: string; Recursive: boolean);
 var
-  Error: longint;
-  Rec: TSearchRec;
-  ScanPath: string;
-  ScanMask: string;
+  Error    : longint;
+  Rec      : TSearchRec;
+  ScanPath : string;
+  ScanMask : string;
 begin
   ScanPath := ExtractFilePath(FileMask);
   ScanMask := ExtractFileName(FileMask);
@@ -191,19 +202,17 @@ begin
   end;
 end;
 
-function TSysScanner.GetCount: longint;
-begin
-  Result := FList.Count;
-end;
-
 function TSysScanner.GetItem(Index: longint): string;
 begin
   Result := FList[Index];
 end;
 
-// =============================================================================
-// TNulStream class
-// =============================================================================
+function TSysScanner.GetCount: longint;
+begin
+  Result := FList.Count;
+end;
+
+{ TNulStream class }
 
 function TNulStream.Read(var Buffer; Count: Longint): Longint;
 begin
@@ -215,7 +224,7 @@ begin
   Result := Count;
 end;
 
-{ Matching routine }
+{ Matching routines }
 
 function FileNameMatch(const FileName, FileMask: string): boolean;
 begin
@@ -223,6 +232,36 @@ begin
   {$IFDEF UNIX}      Result := MatchesMask(FileName, FileMask, TRUE ); {$ENDIF}
   {$IFDEF MAC}       Result := MatchesMask(FileName, FileMask, TRUE ); {$ENDIF}
 end;
+
+{ Priority routines }
+
+{$IFDEF MSWINDOWS}
+function SetIdlePriority: boolean;
+begin
+  Result := SetPriorityClass(GetCurrentProcess, IDLE_PRIORITY_CLASS);
+end;
+{$ENDIF}
+
+{$IFDEF UNIX}
+function SetIdlePriority: boolean;
+begin
+  Result := FpNice(5) = 0;
+end;
+{$ENDIF}
+
+{$IFDEF MSWINDOWS}
+function SetNormalPriority: boolean;
+begin
+  Result := SetPriorityClass(GetCurrentProcess, NORMAL_PRIORITY_CLASS);
+end;
+{$ENDIF}
+
+{$IFDEF UNIX}
+function SetNormalPriority: boolean;
+begin
+  Result := FpNice(10) = 0;
+end;
+{$ENDIF}
 
 end.
 

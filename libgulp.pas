@@ -19,8 +19,11 @@
 {
   Contains:
 
-  Modifyed:
+    The journaling archiver library.
 
+  Modified:
+
+    v0.0.2 - 2015.02.14 by Melchiorre Caruso.
 }
 
 unit LibGulp;
@@ -41,24 +44,24 @@ uses
 
 const
   // --- Gulp Flags ---
-  gfFIX   = $00000000;
-  gfADD   = $00000001;
-  gfDEL   = $00000002;
+  gfFIX        = $00000000;
+  gfADD        = $00000001;
+  gfDEL        = $00000002;
 
-  gfVer   = $00000100;
-  gfName  = $00000200;
-  gfFlags = $00000400;
-  gfTime  = $00000800;
-  gfAttr  = $00001000;
-  gfMode  = $00002000;
-  gfSize  = $00004000;
-  gfLName = $00008000;
-  gfUID   = $00010000;
-  gfUName = $00020000;
-  gfGID   = $00040000;
-  gfGName = $00080000;
-  gfSSeek = $00100000;
-  gfESeek = $00200000;
+  gfFlags      = $00000100;
+  gfVersion    = $00000200;
+  gfName       = $00000400;
+  gfTime       = $00000800;
+  gfAttributes = $00001000;
+  gfMode       = $00002000;
+  gfSize       = $00004000;
+  gfLinkName   = $00008000;
+  gfUserID     = $00010000;
+  gfUserName   = $00020000;
+  gfGroupID    = $00040000;
+  gfGroupName  = $00080000;
+  gfOffSet     = $00100000;
+  gfStoredSize = $00200000;
 
 type
   // --- Gulp Marker ---
@@ -67,37 +70,37 @@ type
   // --- Gulp Record CLASS ---
   TGulpRec = class(TObject)
   private
-    FFlags : longword;   // Flags
-    FVer   : longword;   // File version
-    FName  : ansistring; // File path and name
-    FTime  : TDateTime;  // Last modification date and time (UTC)
-    FAttr  : longint;    // File Attr
-    FMode  : longword;   // File Mode
-    FSize  : int64;      // File size in bytes
-    FLName : ansistring; // Name of linked file
-    FUID   : longword;   // User ID
-    FUName : ansistring; // User Name
-    FGID   : longword;   // Group ID
-    FGName : ansistring; // Group Name
-                         // Rec SHA digest
-    FSSeek : int64;      // Data start postion
-    FESeek : int64;      // Data end position
-                         // Data SHA digest
+    FFlags      : longword;   // Flags
+    FVersion    : longword;   // File version
+    FName       : ansistring; // File path and name
+    FTime       : TDateTime;  // Last modification date and time (UTC)
+    FAttributes : longint;    // File Attributes (Windows)
+    FMode       : longword;   // File Mode (Unix)
+    FSize       : int64;      // File size in bytes
+    FLinkName   : ansistring; // Name of linked file
+    FUserID     : longword;   // User ID
+    FUserName   : ansistring; // User Name
+    FGroupID    : longword;   // Group ID
+    FGroupName  : ansistring; // Group Name
+                              // Rec SHA digest
+    FOffSet     : int64;      // Data stream offset
+    FStoredSize : int64;      // Data stream size
+                              // Data SHA digest
   public
-    property Flags : longword   read FFlags;
-    property Ver   : longword   read FVer;
-    property Name  : ansistring read FName;
-    property Time  : TDateTime  read FTime;
-    property Attr  : longint    read FAttr;
-    property Mode  : longword   read FMode;
-    property Size  : int64      read FSize;
-    property LName : ansistring read FLName;
-    property UID   : longword   read FUID;
-    property UName : ansistring read FUName;
-    property GID   : longword   read FGID;
-    property GName : ansistring read FGName;
-    property SSeek : int64      read FSSeek;
-    property ESeek : int64      read FESeek;
+    property Flags      : longword   read FFlags;
+    property Version    : longword   read FVersion;
+    property Name       : ansistring read FName;
+    property Time       : TDateTime  read FTime;
+    property Attributes : longint    read FAttributes;
+    property Mode       : longword   read FMode;
+    property Size       : int64      read FSize;
+    property LinkName   : ansistring read FLinkName;
+    property UserID     : longword   read FUserID;
+    property UserName   : ansistring read FUserName;
+    property GroupID    : longword   read FGroupID;
+    property GroupName  : ansistring read FGroupName;
+    property Offset     : int64      read FOffSet;
+    property StoredSize : int64      read FStoredSize;
   end;
 
   // --- The Gulp Stream CLASS ---
@@ -113,19 +116,21 @@ type
     function Read(var Buffer; Count: longint): longint; overload;
     function Read(Rec: TGulpRec; Stream: TStream; Size: int64): boolean; overload;
     function Read(Rec: TGulpRec): boolean; overload;
+    function ReadOffSet(var OffSet: int64): boolean; overload;
     function Write(const Buffer: string): longint; overload;
     function Write(const Buffer; Count: longint): longint; overload;
     function Write(Rec: TGulpRec; Stream: TStream; Size: int64): boolean; overload;
     function Write(Rec: TGulpRec): boolean; overload;
+    function WriteOffSet(const OffSet: int64): boolean; overload;
   end;
 
   // --- The Gulp Lib CLASS ---
   TGulpLib = class(TGulpStream)
   private
-    FAdd        : TList;
-    FList       : TList;
-    FSimpleList : boolean;
-    FVersion    : longword;
+    FAdd     : TList;
+    FList    : TList;
+    FHistory : boolean;
+    FVersion : longword;
     function GetCount: longint;
     function GetItem(Index: longint): TGulpRec;
     procedure AddItem(Rec: TGulpRec);
@@ -145,14 +150,12 @@ type
     procedure Delete(Index: longint);
     function  Find(const FileName: string): longint;
 
-    procedure ExtractTo(Index: longint; Stream: TStream);
     procedure Extract(Index: longint);
+    procedure ExtractTo(Index: longint; Stream: TStream);
 
     property Items[Index: longint]: TGulpRec read GetItem;
     property Count: longint read GetCount;
   end;
-
-
 
   procedure FixArchive(Stream: TStream);
   procedure PurgeArchive(Source, Dest: TStream);
@@ -196,7 +199,7 @@ uses
   Math;
 
 const
-  GulpMarker: TGulpMarker = ('G', 'U','L','P',' ', ' ', ' ', '0','0','2');
+  GulpMarker : TGulpMarker = ('G', 'U','L','P',' ', ' ', ' ', '0','0','2');
 
 // =============================================================================
 // Library routines
@@ -330,10 +333,10 @@ begin
 end;
 {$ENDIF}
 
-function VerToString(var Rec: TGulpRec): string;
+function  VerToString(var Rec: TGulpRec): string;
 begin
-  if (Rec.FFlags and gfVer) = gfVer then
-    Result := IntTostr(Rec.Ver)
+  if (Rec.FFlags and gfVersion) = gfVersion then
+    Result := IntTostr(Rec.Version)
   else
     Result := '?';
 end;
@@ -358,7 +361,7 @@ begin
     Result := '.......... ........';
 end;
 
-function SizeToString (var Rec: TGulpRec): string;
+function SizeToString(var Rec: TGulpRec): string;
 begin
   Result := '';
   if (Rec.Flags and $FF) in [gfAdd] then
@@ -368,22 +371,22 @@ begin
     end;
 end;
 
-function AttrToString (var Rec: TGulpRec): string;
+function AttrToString(var Rec: TGulpRec): string;
 begin
   Result := '.......';
   if Rec.Flags and $FF in [gfAdd] then
   begin
-    if Rec.Attr and faReadOnly  <> 0 then Result[1] := 'R';
-    if Rec.Attr and faHidden    <> 0 then Result[2] := 'H';
-    if Rec.Attr and faSysFile   <> 0 then Result[3] := 'S';
-    if Rec.Attr and faVolumeId  <> 0 then Result[4] := 'V';
-    if Rec.Attr and faDirectory <> 0 then Result[5] := 'D';
-    if Rec.Attr and faArchive   <> 0 then Result[6] := 'A';
-    if Rec.Attr and faSymLink   <> 0 then Result[7] := 'L';
+    if Rec.Attributes and faReadOnly  <> 0 then Result[1] := 'R';
+    if Rec.Attributes and faHidden    <> 0 then Result[2] := 'H';
+    if Rec.Attributes and faSysFile   <> 0 then Result[3] := 'S';
+    if Rec.Attributes and faVolumeId  <> 0 then Result[4] := 'V';
+    if Rec.Attributes and faDirectory <> 0 then Result[5] := 'D';
+    if Rec.Attributes and faArchive   <> 0 then Result[6] := 'A';
+    if Rec.Attributes and faSymLink   <> 0 then Result[7] := 'L';
   end;
 end;
 
-function StringToAttr (const S: string  ): longint;
+function StringToAttr(const S: string  ): longint;
 begin
   Result := 0;
   if Length(S) = 7 then
@@ -399,49 +402,35 @@ begin
 end;
 
 {$IFDEF MSWINDOWS}
-function ModeToString (var Rec: TGulpRec): string;
+function ModeToString(var Rec: TGulpRec): string;
 begin
   Result := '.........';
 end;
 
-function StringToMode (const S: string): longint;
+function StringToMode(const S: string): longint;
 begin
   Result := 0;
 end;
 {$ENDIF}
 
 {$IFDEF UNIX}
-function ModeToString (var Rec: TGulpRec): string;
+function ModeToString(var Rec: TGulpRec): string;
 begin
-  Result := '.........';
+  Result := '...';
   if Rec.Flags and $FF in [gfAdd] then
   begin
-    if Rec.FMode and S_IRUSR <> 0 then Result[1] := 'R';
-    if Rec.FMode and S_IWUSR <> 0 then Result[2] := 'W';
-    if Rec.FMode and S_IXUSR <> 0 then Result[3] := 'X';
-    if Rec.FMode and S_IRGRP <> 0 then Result[4] := 'R';
-    if Rec.FMode and S_IWGRP <> 0 then Result[5] := 'W';
-    if Rec.FMode and S_IXGRP <> 0 then Result[6] := 'X';
-    if Rec.FMode and S_IROTH <> 0 then Result[7] := 'R';
-    if Rec.FMode and S_IWOTH <> 0 then Result[8] := 'W';
-    if Rec.FMode and S_IXOTH <> 0 then Result[9] := 'X';
+    Result := OctStr(Rec.Mode, 3);
   end;
 end;
 
-function StringToMode (const S: string): longint;
+function StringToMode(const S: string): longint;
+var
+  I : longint;
 begin
   Result := 0;
-  if Length(S) = 9 then
+  for I := 1 to Length(S) do
   begin
-    if UpCase(S[1]) = 'R' then Result := Result or S_IRUSR;
-    if UpCase(S[2]) = 'W' then Result := Result or S_IWUSR;
-    if UpCase(S[3]) = 'X' then Result := Result or S_IXUSR;
-    if UpCase(S[4]) = 'R' then Result := Result or S_IRGRP;
-    if UpCase(S[5]) = 'W' then Result := Result or S_IWGRP;
-    if UpCase(S[6]) = 'X' then Result := Result or S_IXGRP;
-    if UpCase(S[7]) = 'R' then Result := Result or S_IROTH;
-    if UpCase(S[8]) = 'W' then Result := Result or S_IWOTH;
-    if UpCase(S[9]) = 'X' then Result := Result or S_IXOTH;
+    Result := Result * 8 + StrToInt(Copy(S, I, 1));
   end;
 end;
 {$ENDIF}
@@ -453,19 +442,19 @@ end;
 procedure Clear_(var Rec: TGulpRec);
 begin
   Rec.FFlags := 0;
-  Rec.FVer   := 0;
+  Rec.FVersion   := 0;
   Rec.FName  := '';
   Rec.FTime  := 0.0;
-  Rec.FAttr  := 0;
+  Rec.FAttributes  := 0;
   Rec.FMode  := 0;
   Rec.FSize  := 0;
-  Rec.FLName := '';
-  Rec.FUID   := 0;
-  Rec.FUName := '';
-  Rec.FGID   := 0;
-  Rec.FGName := '';
-  Rec.FSSeek := 0;
-  Rec.FESeek := 0;
+  Rec.FLinkName := '';
+  Rec.FUserID   := 0;
+  Rec.FUserName := '';
+  Rec.FGroupID   := 0;
+  Rec.FGroupName := '';
+  Rec.FOffSet := 0;
+  Rec.FStoredSize := 0;
 end;
 
 procedure Include_(var Flags: longword; Flag: longword);
@@ -483,10 +472,10 @@ begin
   Result := AnsiCompareFileName(Item1.Name, Item2.Name);
   if Result = 0 then
   begin
-    if Item1.Ver < Item2.Ver then
+    if Item1.Version < Item2.Version then
       Result := - 1
     else
-      if Item1.Ver > Item2.Ver then
+      if Item1.Version > Item2.Version then
         Result := 1;
   end;
 end;
@@ -523,62 +512,86 @@ end;
 
 function TGulpStream.Read(Rec: TGulpRec): boolean;
 var
-  Marker    : TGulpMarker;
-  Digest    : TSHA1Digest;
-  DigestAux : TSHA1Digest;
+     Marker : TGulpMarker;
+     Digest : TSHA1Digest;
+  AuxDigest : TSHA1Digest;
 begin
   Clear_(Rec);
   SHA1Init (FCTX);
-  FillChar (Marker, SizeOf (Marker), 0);
-  Read     (Marker, SizeOf (Marker));
+  FillChar (Marker, SizeOf(Marker), 0);
+  Read     (Marker, SizeOf(Marker));
 
   Result := Marker = GulpMarker;
   if Result then
   begin
     Read (Rec.FFlags, SizeOf (Rec.FFlags));
 
-    if gfVer   and Rec.Flags <> 0 then Read(Rec.FVer,   SizeOf (Rec.FVer));
-    if gfName  and Rec.Flags <> 0 then Read(Rec.FName);
-    if gfTime  and Rec.Flags <> 0 then Read(Rec.FTime,  SizeOf (Rec.FTime ));
-    if gfAttr  and Rec.Flags <> 0 then Read(Rec.FAttr,  SizeOf (Rec.FAttr ));
-    if gfMode  and Rec.Flags <> 0 then Read(Rec.FMode,  SizeOf (Rec.FMode ));
-    if gfSize  and Rec.Flags <> 0 then Read(Rec.FSize,  SizeOf (Rec.FSize ));
-    if gfLName and Rec.Flags <> 0 then Read(Rec.FLName);
-    if gfUID   and Rec.Flags <> 0 then Read(Rec.FUID,   SizeOf (Rec.FUID));
-    if gfUName and Rec.Flags <> 0 then Read(Rec.FUName);
-    if gfGID   and Rec.Flags <> 0 then Read(Rec.FGID,   SizeOf (Rec.FGID));
-    if gfGName and Rec.Flags <> 0 then Read(Rec.FGName);
-    if gfSSeek and Rec.Flags <> 0 then Read(Rec.FSSeek, SizeOf (Rec.FSSeek));
-    if gfESeek and Rec.Flags <> 0 then Read(Rec.FESeek, SizeOf (Rec.FESeek));
+    if gfVersion    and Rec.Flags <> 0 then Read(Rec.FVersion,    SizeOf(Rec.FVersion));
+    if gfName       and Rec.Flags <> 0 then Read(Rec.FName);
+    if gfTime       and Rec.Flags <> 0 then Read(Rec.FTime,       SizeOf(Rec.FTime));
+    if gfAttributes and Rec.Flags <> 0 then Read(Rec.FAttributes, SizeOf(Rec.FAttributes));
+    if gfMode       and Rec.Flags <> 0 then Read(Rec.FMode,       SizeOf(Rec.FMode));
+    if gfSize       and Rec.Flags <> 0 then Read(Rec.FSize,       SizeOf(Rec.FSize));
+    if gfLinkName   and Rec.Flags <> 0 then Read(Rec.FLinkName);
+    if gfUserID     and Rec.Flags <> 0 then Read(Rec.FUserID,     SizeOf(Rec.FUserID));
+    if gfUserName   and Rec.Flags <> 0 then Read(Rec.FUserName);
+    if gfGroupID    and Rec.Flags <> 0 then Read(Rec.FGroupID,    SizeOf(Rec.FGroupID));
+    if gfGroupName  and Rec.Flags <> 0 then Read(Rec.FGroupName);
+    if gfOffSet     and Rec.Flags <> 0 then Read(Rec.FOffSet,     SizeOf(Rec.FOffSet));
+    if gfStoredSize and Rec.Flags <> 0 then Read(Rec.FStoredSize, SizeOf(Rec.FStoredSize));
 
     Rec.FName := GetName(Rec.FName);
 
     SHA1Final(FCTX, Digest);
-    FStream.Read(DigestAux, SizeOf(DigestAux));
-    Result := SHA1Match(DigestAux, Digest);
+    FillChar(AuxDigest, SizeOf(AuxDigest), 0);
+    FStream.Read(AuxDigest, SizeOf(AuxDigest));
+    Result := SHA1Match(AuxDigest, Digest);
   end;
 end;
 
 function TGulpStream.Read(Rec: TGulpRec; Stream: TStream; Size: int64): boolean;
 var
-  Buffer    : array[0..$FFFF] of byte;
-  Readed    : longint;
-  Digest    : TSHA1Digest;
-  DigestAux : TSHA1Digest;
+     Buffer : array[0..$FFFF] of byte;
+     Readed : longint;
+     Digest : TSHA1Digest;
+  AuxDigest : TSHA1Digest;
 begin
   SHA1Init(FCTX);
   while Size > 0 do
   begin
     Readed := Read(Buffer, Min(SizeOf(Buffer), Size));
     if Readed = 0 then
-      raise Exception.Create('Stream read error');
+      raise Exception.CreateFmt('Unable to read file "%s"', [Rec.Name]);
 
     Stream.Write(Buffer, Readed);
     Dec(Size, Readed);
   end;
   SHA1Final(FCTX, Digest);
-  FStream.Read(DigestAux, SizeOf(DigestAux));
-  Result := SHA1Match(DigestAux, Digest);
+  FillChar(AuxDigest, SizeOf(AuxDigest), 0);
+  FStream.Read(AuxDigest, SizeOf(AuxDigest));
+  Result := SHA1Match(AuxDigest, Digest);
+end;
+
+function TGulpStream.ReadOffSet(var OffSet: int64): boolean;
+var
+     Marker : TGulpMarker;
+     Digest : TSHA1Digest;
+  AuxDigest : TSHA1Digest;
+begin
+  SHA1Init(FCTX);
+  FillChar(Marker, SizeOf(Marker), 0);
+  Read    (Marker, SizeOf(Marker));
+
+  Result := Marker = GulpMarker;
+  if Result then
+  begin
+    Read(OffSet, SizeOf(OffSet));
+
+    SHA1Final(FCTX, Digest);
+    FillChar(AuxDigest, SizeOf(AuxDigest), 0);
+    FStream.Read(AuxDigest, SizeOf(AuxDigest));
+    Result := SHA1Match(AuxDigest, Digest);
+  end;
 end;
 
 function TGulpStream.Write(const Buffer; Count: longint): longint;
@@ -599,23 +612,23 @@ var
   Digest : TSHA1Digest;
 begin
   Result := TRUE;
-  SHA1Init (FCTX);
-  Write    (GulpMarker, SizeOf (GulpMarker));
-  Write    (Rec.FFlags, SizeOf (Rec.FFlags));
+  SHA1Init(FCTX);
+  Write   (GulpMarker, SizeOf(GulpMarker));
+  Write   (Rec.FFlags, SizeOf(Rec.FFlags));
 
-  if gfVer   and Rec.Flags <> 0 then Write(Rec.FVer,   SizeOf (Rec.FVer));
-  if gfName  and Rec.Flags <> 0 then Write(Rec.FName);
-  if gfTime  and Rec.Flags <> 0 then Write(Rec.FTime,  SizeOf (Rec.FTime));
-  if gfAttr  and Rec.Flags <> 0 then Write(Rec.FAttr,  SizeOf (Rec.FAttr));
-  if gfMode  and Rec.Flags <> 0 then Write(Rec.FMode,  SizeOf (Rec.FMode));
-  if gfSize  and Rec.Flags <> 0 then Write(Rec.FSize,  SizeOf (Rec.FSize));
-  if gfLName and Rec.Flags <> 0 then Write(Rec.FLName);
-  if gfUID   and Rec.Flags <> 0 then Write(Rec.FUID,   SizeOf (Rec.FUID));
-  if gfUName and Rec.Flags <> 0 then Write(Rec.FUName);
-  if gfGID   and Rec.Flags <> 0 then Write(Rec.FGID,   SizeOf (Rec.FGID));
-  if gfGName and Rec.Flags <> 0 then Write(Rec.FGName);
-  if gfSSeek and Rec.Flags <> 0 then Write(Rec.FSSeek, SizeOf (Rec.FSSeek));
-  if gfESeek and Rec.Flags <> 0 then Write(Rec.FESeek, SizeOf (Rec.FESeek));
+  if gfVersion    and Rec.Flags <> 0 then Write(Rec.FVersion,    SizeOf(Rec.FVersion));
+  if gfName       and Rec.Flags <> 0 then Write(Rec.FName);
+  if gfTime       and Rec.Flags <> 0 then Write(Rec.FTime,       SizeOf(Rec.FTime));
+  if gfAttributes and Rec.Flags <> 0 then Write(Rec.FAttributes, SizeOf(Rec.FAttributes));
+  if gfMode       and Rec.Flags <> 0 then Write(Rec.FMode,       SizeOf(Rec.FMode));
+  if gfSize       and Rec.Flags <> 0 then Write(Rec.FSize,       SizeOf(Rec.FSize));
+  if gfLinkName   and Rec.Flags <> 0 then Write(Rec.FLinkName);
+  if gfUserID     and Rec.Flags <> 0 then Write(Rec.FUserID,     SizeOf(Rec.FUserID));
+  if gfUserName   and Rec.Flags <> 0 then Write(Rec.FUserName);
+  if gfGroupID    and Rec.Flags <> 0 then Write(Rec.FGroupID,    SizeOf(Rec.FGroupID));
+  if gfGroupName  and Rec.Flags <> 0 then Write(Rec.FGroupName);
+  if gfOffSet     and Rec.Flags <> 0 then Write(Rec.FOffSet,     SizeOf(Rec.FOffSet));
+  if gfStoredSize and Rec.Flags <> 0 then Write(Rec.FStoredSize, SizeOf(Rec.FStoredSize));
 
   SHA1Final(FCTX, Digest);
   FStream.Write(Digest, SizeOf(Digest));
@@ -627,17 +640,32 @@ var
   Readed : longint;
   Digest : TSHA1Digest;
 begin
-  Result := TRUE;
+  Result      := TRUE;
+  Rec.FOffSet := FStream.Seek(0, soCurrent);
   SHA1Init(FCTX);
   while Size > 0 do
   begin
     Readed := Stream.Read (Buffer, Min(SizeOf(Buffer), Size));
     if Readed = 0 then
-      raise Exception.Create('Stream read error');
+      raise Exception.CreateFmt('Unable to write record "%s"', [Rec.Name]);
 
     Write(Buffer, Readed);
     Dec(Size, Readed);
   end;
+  SHA1Final(FCTX, Digest);
+  FStream.Write(Digest, SizeOf(Digest));
+  Rec.FStoredSize := FStream.Seek(0, soCurrent) - Rec.FOffSet;
+end;
+
+function TGulpStream.WriteOffSet(const OffSet: int64): boolean;
+var
+  Digest : TSHA1Digest;
+begin
+  Result := TRUE;
+
+  SHA1Init(FCTX);
+  Write(GulpMarker, SizeOf(GulpMarker));
+  Write(OffSet,     SizeOf(OffSet));
   SHA1Final(FCTX, Digest);
   FStream.Write(Digest, SizeOf(Digest));
 end;
@@ -649,10 +677,10 @@ end;
 constructor TGulpLib.Create(Stream: TStream);
 begin
   inherited Create(Stream);
-  FAdd        := TList.Create;
-  FList       := TList.Create;
-  FSimpleList := FALSE;
-  FVersion    := 0;
+  FAdd     := TList.Create;
+  FList    := TList.Create;
+  FHistory := FALSE;
+  FVersion := 0;
 end;
 
 destructor TGulpLib.Destroy;
@@ -668,31 +696,31 @@ begin
   if FStreamSize = -1 then
   begin
     FStreamSize := FStream.Seek(0, soEnd);
-    FStream.Write(FStreamSize, SizeOf(FStreamSize));
+    WriteOffSet(FStreamSize);
   end;
 end;
 
 procedure TGulpLib.EndUpdate;
 var
-  I    : longint;
-  Rec  : TGulpRec;
+     I : longint;
+   Rec : TGulpRec;
   Size : int64;
 begin
   if not (FStreamSize = -1) then
   begin
     Size := FStream.Seek(0, soEnd);
-    FStream.Seek (FStreamSize, soBeginning);
-    FStream.Write(Size, SizeOf(Size));
-    FStream.Seek(0, soEnd);
+    FStream.Seek(FStreamSize, soBeginning);
+    WriteOffSet(Size);
 
     Rec := TGulpRec.Create;
     Clear_(Rec);
 
-    Include_(Rec.FFlags, gfFIX  );
-    Include_(Rec.FFlags, gfVer  );
-    Rec.FVer := FVersion + 1;
+    Include_(Rec.FFlags, gfFIX);
+    Include_(Rec.FFlags, gfVersion);
+    Rec.FVersion := FVersion + 1;
     FAdd.Add(Rec);
 
+    FStream.Seek(0, soEnd);
     for I := 0 to FAdd.Count - 1 do
       Write(TGulpRec(FAdd[I]));
     FStreamSize := -1;
@@ -701,7 +729,7 @@ end;
 
 procedure TGulpLib.CloseArchive;
 var
-  I: longint;
+  I : longint;
 begin
   EndUpdate;
   for I := 0 to FAdd .Count - 1 do TGulpRec(FAdd [I]).Destroy;
@@ -709,26 +737,25 @@ begin
   FAdd.Clear;
   FList.Clear;
 
-  FSimpleList := FALSE;
+  FHistory    := FALSE;
   FStreamSize := -1;
   FVersion    :=  0;
 end;
 
 function TGulpLib.OpenArchive(Version: longword): boolean;
 var
-  I    : longint;
-  Rec  : TGulpRec;
-  Seek : int64 = 0;
-  Size : int64 = 0;
+       I : longint;
+     Rec : TGulpRec;
+  OffSet : int64 = 0;
+    Size : int64 = 0;
 begin
   Result := FALSE;
 
   CloseArchive;
+  FHistory := Version = longword(-1);
   FStream.Seek(0, soBeginning);
-  if FStream.Read(Seek, Sizeof(Seek)) = SizeOf(Seek) then
-    FStream.Seek(Seek, soBeginning);
-
-  FSimpleList := Version = longword(-1);
+  if ReadOffSet(OffSet) = TRUE then
+    FStream.Seek(OffSet, soBeginning);
 
   Rec := TGulpRec.Create;
   while Read(Rec) = TRUE do
@@ -737,17 +764,17 @@ begin
     if Result then
     begin
       Size := FStream.Seek(0, soCurrent);
-      if FStream.Read(Seek, Sizeof(Seek)) = SizeOf(Seek) then
-        FStream.Seek(Seek, soBeginning);
+      if ReadOffSet(OffSet) = TRUE then
+        FStream.Seek(OffSet, soBeginning);
     end;
 
-    FVersion := Max(FVersion, Rec.Ver);
-    if FSimpleList = TRUE then
+    FVersion := Max(FVersion, Rec.Version);
+    if FHistory = TRUE then
     begin
       AddItem(Rec);
       Rec := TGulpRec.Create;
     end else
-      if Rec.Ver <= Version then
+      if Rec.Version <= Version then
         case Rec.Flags and $FF of
           gfADD: begin
             AddItem(Rec);
@@ -761,9 +788,7 @@ begin
   end;
 
   if Result = TRUE then
-  begin
     Result := FStream.Seek(0, soEnd) = Size;
-  end;
 end;
 
 function TGulpLib.FindItem(const FileName: string): longint;
@@ -818,7 +843,7 @@ begin
       if I > 0 then
         FList.Insert(M, Rec)
       else
-        raise Exception.Create('Duplicated item error.');
+        raise Exception.Create('Duplicates not allowed');
   end else
     FList.Add(Rec);
 end;
@@ -831,7 +856,7 @@ end;
 
 procedure TGulpLib.AddItem(Rec: TGulpRec);
 begin
-  if FSimpleList = FALSE then
+  if FHistory = FALSE then
     InsertItem(Rec)
   else
     FList.Add(Rec);
@@ -841,7 +866,7 @@ function TGulpLib.Find(const FileName: string): longint;
 var
   I : longint;
 begin
-  if FSimpleList = TRUE then
+  if FHistory = TRUE then
   begin
     Result := -1;
     for I  := FList.Count - 1 downto 0 do
@@ -894,8 +919,8 @@ end;
 {$IFDEF UNIX}
 procedure TGulpLib.Add(const FileName: string);
 var
-  Rec    : TGulpRec;
-  SR     : TSearchRec;
+     Rec : TGulpRec;
+      SR : TSearchRec;
   Stream : TStream;
 begin
   BeginUpdate;
@@ -906,41 +931,36 @@ begin
     Rec := TGulpRec.Create;
     Clear_(Rec);
 
-    Include_(Rec.FFlags, gfADD  );
-    Include_(Rec.FFlags, gfVer  );  Rec.FVer   := FVersion + 1;
-    Include_(Rec.FFlags, gfName );  Rec.FName  := FileName;
-    Include_(Rec.FFlags, gfTime );  Rec.FTime  := GetTime(SR);
-    Include_(Rec.FFlags, gfAttr );  Rec.FAttr  := GetAttr(SR);
-    Include_(Rec.FFlags, gfMode );  Rec.FMode  := GetMode(FileName);
+    Include_(Rec.FFlags, gfADD);
+    Include_(Rec.FFlags, gfVersion);     Rec.FVersion    := FVersion + 1;
+    Include_(Rec.FFlags, gfName);        Rec.FName       := FileName;
+    Include_(Rec.FFlags, gfTime);        Rec.FTime       := GetTime(SR);
+    Include_(Rec.FFlags, gfAttributes);  Rec.FAttributes := GetAttr(SR);
+    Include_(Rec.FFlags, gfSize);        Rec.FSize       := GetSize(SR);
+    Include_(Rec.FFlags, gfMode);        Rec.FMode       := GetMode(FileName);
 
-    if FpS_ISLNK(Rec.FMode) then
-    begin
-      Include_(Rec.FFlags, gfLName);
-      Rec.FLName := fpReadLink(FileName);
-    end;
-    Include_(Rec.FFlags, gfUID);  Rec.FUID := GetUID(FileName);
-    Include_(Rec.FFlags, gfGID);  Rec.FGID := GetGID(FileName);
+    Include_(Rec.FFlags, gfUserID);      Rec.FUserID     := GetUID(FileName);
+    Include_(Rec.FFlags, gfGroupID);     Rec.FGroupID    := GetGID(FileName);
 
-    Stream := nil;
     if FpS_ISREG(Rec.FMode) then
-      try
-        Stream := TFileStream.Create(Rec.Name, fmOpenRead);
-
-        Include_(Rec.FFlags, gfSize );
-        Rec.FSize  := GetSize(SR);
-      except
-        Stream := nil;
-      end;
-
-    if Assigned(Stream) then
     begin
-      Include_(Rec.FFlags, gfSSeek);
-      Include_(Rec.FFlags, gfESeek);
-      Rec.FSSeek := FStream.Seek(0, soCurrent);
+      Stream := TFileStream.Create(Rec.Name, fmOpenRead);
+      Include_(Rec.FFlags, gfOffSet);
+      Include_(Rec.FFlags, gfStoredSize);
       Write(Rec, Stream, Rec.FSize);
-      Rec.FESeek := FStream.Seek(0, soCurrent);
       FreeAndNil(Stream);
-    end;
+    end else
+      if FpS_ISDIR(Rec.FMode) then
+      begin
+        // nothing to do
+      end else
+        if FpS_ISLNK(Rec.FMode) then
+        begin
+          Include_(Rec.FFlags, gfLinkName);
+          Rec.FLinkName := fpReadLink(FileName);
+        end else
+          raise Exception.CreateFmt('Unsupported file "%s"', [Rec.Name]);
+
     FAdd.Add(Rec);
   end;
   SysUtils.FindClose(SR);
@@ -955,17 +975,48 @@ begin
   Rec := TGulpRec.Create;
   Clear_(Rec);
 
-  Include_(Rec.FFlags, gfDEL  );
-  Include_(Rec.FFlags, gfVer  );  Rec.FVer   := FVersion + 1;
-  Include_(Rec.FFlags, gfName );  Rec.FName  := Items[Index].Name;
+  Include_(Rec.FFlags, gfDEL);
+  Include_(Rec.FFlags, gfVersion);
+  Include_(Rec.FFlags, gfName);
+  Rec.FVersion := FVersion + 1;
+  Rec.FName    := Items[Index].Name;
 
   FAdd.Add(Rec);
 end;
 
 procedure TGulpLib.Extract(Index: longint);
+var
+  Rec  : TGulpRec;
+  Dest : TFileStream;
 begin
+  Rec := Items[Index];
+  if FpS_ISREG(Rec.FMode) then
+  begin
+    if DirectoryExists(ExtractFileDir(Rec.Name)) then
+      ForceDirectories(ExtractFileDir(Rec.Name));
+    Dest := TFileStream.Create(Rec.Name, fmCreate);
+
+    FStream.Seek(Rec.Offset, soBeginning);
+    if Read(Rec, Dest, Rec.Size) = FALSE then
+      raise Exception.CreateFmt('Mismatched checksum for "%s"', [Rec.Name]);
+    FreeAndNil(Dest);
+  end else
+    if FpS_ISDIR(Rec.Mode) then
+    begin
+      if DirectoryExists(ExtractFileDir(Rec.Name)) then
+        ForceDirectories(ExtractFileDir(Rec.Name));
+      ForceDirectories(Rec.Name);
+    end else
+      if FpS_ISLNK(Rec.Mode) then
+      begin
 
 
+      end else
+        raise Exception.CreateFmt('Unsupported file "%s"', [Rec.Name]);
+
+  FpChmod    (Rec.Name, Rec.Mode);
+  FileSetAttr(Rec.Name, Rec.Attributes);
+  FileSetDate(Rec.Name, DateTimeToFileDate(UniversalTimeToLocal(Rec.Time)));
 end;
 
 procedure TGulpLib.ExtractTo(Index: longint; Stream: TStream);
@@ -973,11 +1024,11 @@ var
   Rec : TGulpRec;
 begin
   Rec := Items[Index];
-  FStream.Seek(Rec.SSeek, soBeginning);
+  FStream.Seek(Rec.Offset, soBeginning);
   if Rec.Size > 0 then
   begin
     if Read(Rec, Stream, Rec.Size) = FALSE then
-      raise Exception.Create('Mismatched checksum for ' + Rec.Name);
+      raise Exception.CreateFmt('Mismatched checksum for "%s"', [Rec.Name]);
   end;
 end;
 
@@ -991,39 +1042,31 @@ begin
   Result := FList.Count;
 end;
 
-
 // =============================================================================
 // Advanced routines
 // =============================================================================
 
-procedure CheckArchive(Stream: TStream);
-begin
-
-
-end;
-
 procedure FixArchive(Stream: TStream);
 var
-   Lib : TGulpLib;
-   Rec : TGulpRec;
-  Seek : int64 = 0;
-  Size : int64 = 0;
+     Lib : TGulpLib;
+     Rec : TGulpRec;
+  OffSet : int64 = 0;
+    Size : int64 = 0;
 begin
   Stream.Seek(0, soBeginning);
-  if Stream.Read(Seek, Sizeof(Seek)) = SizeOf(Seek) then
-    Stream.Seek(Seek, soBeginning);
-
   Lib := TGulpLib.Create(Stream);
+  if Lib.ReadOffSet(OffSet) = TRUE then
+    Stream.Seek(OffSet, soBeginning);
+
   Rec := TGulpRec.Create;
   try
     while Lib.Read(Rec) = TRUE do
       if (Rec.FFlags and $FF) = gfFIX then
       begin
         Size := Stream.Seek(0, soCurrent);
-        if Stream.Read(Seek, Sizeof(Seek)) = SizeOf(Seek) then
-          Stream.Seek(Seek, soBeginning);
+        if Lib.ReadOffSet(OffSet) = TRUE then
+          Stream.Seek(OffSet, soBeginning);
       end;
-
   except
     // nothing to do
   end;
@@ -1033,58 +1076,58 @@ begin
   if Size > 0 then
     Stream.Size := Size
   else
-    raise Exception.Create('Zero size error');
+    raise Exception.Create('Stream is not a valid archive');
 end;
 
 procedure PurgeArchive(Source, Dest: TStream);
 var
-     I : longint;
-   Lib : TGulpLib;
-   Rec : TGulpRec;
-  Size : int64 = 0;
-  Strm : TGulpStream;
+       I : longint;
+     Lib : TGulpLib;
+  OffSet : int64 = 0;
+     Rec : TGulpRec;
+  Stream : TGulpStream;
 begin
+  Dest.Seek(0, soBeginning);
+  Stream := TGulpStream.Create(Dest);
+
   Lib:= TGulpLib.Create(Source);
   if Lib.OpenArchive(longword(-2)) = FALSE then
   begin
     if Source.Size <> 0 then
-      raise Exception.Create('FIX point error');
+      raise Exception.Create('Invalid signature value');
   end;
 
-  Dest.Seek (0, soBeginning);
-  Dest.Write(Size, SizeOf(Size));
+  Stream.WriteOffSet(OffSet);
   for I := 0 to Lib.Count - 1 do
   begin
-    Rec  := Lib.Items[I];
-    Size := Rec.ESeek - Rec.SSeek;
-    if Size > 0 then
+    Rec := Lib.Items[I];
+    if Rec.StoredSize > 0 then
     begin
-      Source.Seek(Rec.SSeek, soBeginning);
-      Rec.FSSeek := Dest.Seek(0, soCurrent);
-      Dest.CopyFrom(Source, Size);
-      Rec.FESeek := Dest.Seek(0, soCurrent);
+      Source.Seek(Rec.FOffset, soBeginning);
+      Rec.FOffSet := Dest.Seek(0, soCurrent);
+      Dest.CopyFrom(Source, Rec.FStoredSize);
     end;
   end;
 
-  Size := Dest.Seek(0, soEnd);
-  Dest.Seek (0, soBeginning);
-  Dest.Write(Size, SizeOf(Size));
-  Dest.Seek (0, soEnd);
+  OffSet := Dest.Seek(0, soEnd);
+  Dest.Seek(0, soBeginning);
+  Stream.WriteOffSet(OffSet);
 
-  Strm  := TGulpStream.Create(Dest);
+  Dest.Seek(0, soEnd);
   for I := 0 to Lib.Count - 1 do
-    Strm.Write(Lib.Items[I]);
+    Stream.Write(Lib.Items[I]);
 
   Rec := TGulpRec.Create;
   Clear_(Rec);
 
   Include_(Rec.FFlags, gfFIX);
-  Include_(Rec.FFlags, gfVer);
-  Rec.FVer := Lib.FVersion;
-  Strm.Write(Rec);
+  Include_(Rec.FFlags, gfVersion);
+  Rec.FVersion := Lib.FVersion;
+  Stream.Write(Rec);
+
   FreeAndNil(Rec);
-  FreeAndNil(Strm);
   FreeAndNil(Lib);
+  FreeAndNil(Stream);
 end;
 
 end.

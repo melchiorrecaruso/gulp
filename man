@@ -1,12 +1,12 @@
 .\" Manpage for GULP.
 .\" Contact melchiorrecaruso@gmail.com to correct errors or typos.
-.TH man 1 "25 JAN 2015" "0.0.2" "GULP man page"
+.TH man 1 "16 FEB 2015" "0.0.2" "GULP man page"
 .SH NAME
 .B gulp
-\- A simple incremental command-line archiver.
+\- A simple journaling archiver.
 .SH SYNOPSIS
 .BR gulp " [-] s --synch | r --restore | p --purge | l --list | c --check | f --fix 
-.RI " [" options "] [ " files " ...]"
+.RI " [ " options " ...] [ " files " ...]"
 .SH DESCRIPTION
 .B gulp
 stores and extracts files from a disk archive. A GULP archive is a sequence of timestamped updates, each listing the files and directories that have been added, changed, or deleted since the previous transacted update, normally based on changes to the last-modified dates.
@@ -65,7 +65,7 @@ ignore any part of the archive updated after version number.
 gulp -l backup files -until 20
 .RE
 
-show files added before version 20.
+show files added before version 21.
 .RE
 
 .SH EXAMPLES
@@ -83,8 +83,8 @@ gulp -r archive.gulp
 .RE
 
 
-.SH SEE ALSO
-No
+.SH EXIT STATUS
+Returns 0 if successful or 1 in case of an error.
 .SH BUGS
 The archive format does not save sufficient information for backing up and restoring the operating system.
 .SH AUTHOR
