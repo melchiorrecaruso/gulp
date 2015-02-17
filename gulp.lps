@@ -3,7 +3,7 @@
   <ProjectSession>
     <PathDelim Value="\"/>
     <Version Value="9"/>
-    <BuildModes Active="Release"/>
+    <BuildModes Active="Debug"/>
     <Units Count="4">
       <Unit0>
         <Filename Value="gulp.pas"/>
@@ -21,8 +21,8 @@
         <UnitName Value="Application"/>
         <EditorIndex Value="1"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="504"/>
-        <CursorPos X="3" Y="521"/>
+        <TopLine Value="118"/>
+        <CursorPos X="37" Y="132"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
@@ -33,9 +33,9 @@
         <UnitName Value="LibGulp"/>
         <IsVisibleTab Value="True"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="1085"/>
-        <CursorPos X="34" Y="1108"/>
-        <FoldState Value=" T3la03B piZjN0A[94cjc0G9 pj7k40K7]IajX0701115O"/>
+        <TopLine Value="947"/>
+        <CursorPos X="6" Y="925"/>
+        <FoldState Value=" T3lZ03B piZjN0A2431A*"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
@@ -47,7 +47,7 @@
         <WindowIndex Value="1"/>
         <CursorPos X="38" Y="22"/>
         <FoldState Value=" T3j1086 pidjI0351111i"/>
-        <UsageCount Value="183"/>
+        <UsageCount Value="184"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit3>
     </Units>

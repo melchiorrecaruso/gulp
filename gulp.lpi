@@ -56,6 +56,11 @@
               <OptimizationLevel Value="0"/>
             </Optimizations>
           </CodeGeneration>
+          <Linking>
+            <Debugging>
+              <UseHeaptrc Value="True"/>
+            </Debugging>
+          </Linking>
         </CompilerOptions>
       </Item2>
       <Item3 Name="Release">

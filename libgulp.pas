@@ -146,10 +146,9 @@ type
     function  OpenArchive(Version: longword): boolean;
     procedure CloseArchive;
 
+    function  Find(const FileName: string): longint;
     procedure Add(const FileName: string);
     procedure Delete(Index: longint);
-    function  Find(const FileName: string): longint;
-
     procedure Extract(Index: longint);
     procedure ExtractTo(Index: longint; Stream: TStream);
 
@@ -344,16 +343,16 @@ end;
 function FlagToString(var Rec: TGulpRec): string;
 begin
   case Rec.Flags and $FF of
-    gfFix: Result := 'FIX';
-    gfAdd: Result := 'ADD';
-    gfDel: Result := 'DEL';
+    gfFIX: Result := 'FIX';
+    gfADD: Result := 'ADD';
+    gfDEL: Result := 'DEL';
     else   Result := '???';
   end;
 end;
 
 function TimeToString(var Rec: TGulpRec): string;
 begin
-  if Rec.Flags and $FF in [gfAdd] then
+  if Rec.Flags and $FF in [gfADD] then
     Result := FormatDateTime(
       DefaultFormatSettings.LongDateFormat + ' ' +
       DefaultFormatSettings.LongTimeFormat, Rec.Time)
@@ -364,7 +363,7 @@ end;
 function SizeToString(var Rec: TGulpRec): string;
 begin
   Result := '';
-  if (Rec.Flags and $FF) in [gfAdd] then
+  if (Rec.Flags and $FF) in [gfADD] then
     if (Rec.Flags and gfSize) = gfSize then
     begin
       Result := Format('%u', [Rec.Size])
@@ -374,7 +373,7 @@ end;
 function AttrToString(var Rec: TGulpRec): string;
 begin
   Result := '.......';
-  if Rec.Flags and $FF in [gfAdd] then
+  if Rec.Flags and $FF in [gfADD] then
   begin
     if Rec.Attributes and faReadOnly  <> 0 then Result[1] := 'R';
     if Rec.Attributes and faHidden    <> 0 then Result[2] := 'H';
@@ -417,7 +416,7 @@ end;
 function ModeToString(var Rec: TGulpRec): string;
 begin
   Result := '...';
-  if Rec.Flags and $FF in [gfAdd] then
+  if Rec.Flags and $FF in [gfADD] then
   begin
     Result := OctStr(Rec.Mode, 3);
   end;
@@ -786,6 +785,7 @@ begin
           end;
         end;
   end;
+  FreeAndNil(Rec);
 
   if Result = TRUE then
     Result := FStream.Seek(0, soEnd) = Size;
@@ -1107,6 +1107,7 @@ begin
       Rec.FOffSet := Dest.Seek(0, soCurrent);
       Dest.CopyFrom(Source, Rec.FStoredSize);
     end;
+    Rec.FVersion := 1;
   end;
 
   OffSet := Dest.Seek(0, soEnd);
@@ -1122,7 +1123,7 @@ begin
 
   Include_(Rec.FFlags, gfFIX);
   Include_(Rec.FFlags, gfVersion);
-  Rec.FVersion := Lib.FVersion;
+  Rec.FVersion := 1;
   Stream.Write(Rec);
 
   FreeAndNil(Rec);

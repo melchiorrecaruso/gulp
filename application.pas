@@ -292,7 +292,7 @@ begin
   writeln(Description);
   writeln(#13, #13: 80, 'Purge the content of ' + GetOptionValue('p', 'purge'));
   write  (#13, #13: 80, 'Opening archive... ');
-  TmpName := GetTempFileName(GetCurrentDir, '');
+  TmpName := GetTempFileName(ExtractFileDir(GetOptionValue('p', 'purge')), '');
   Tmp     := TFileStream.Create(TmpName, fmCreate);
   FStream := TFileStream.Create(GetOptionValue('p', 'purge'), fmOpenRead);
 
