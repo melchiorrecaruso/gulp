@@ -47,6 +47,7 @@ const
   gfFIX        = $00000000;
   gfADD        = $00000001;
   gfDEL        = $00000002;
+  gfUPD        = $00000003;
 
   gfFlags      = $00000100;
   gfVersion    = $00000200;
@@ -133,10 +134,12 @@ type
     FVersion : longword;
     function GetCount: longint;
     function GetItem(Index: longint): TGulpRec;
-    procedure AddItem(Rec: TGulpRec);
-    procedure InsertItem(Rec: TGulpRec);
-    procedure DeleteItem(Index: longint);
+
     function  FindItem(const FileName: string): longint;
+    procedure DeleteItem(Index: longint);
+    procedure InsertItem(Rec: TGulpRec);
+    procedure AddItem(Rec: TGulpRec);
+
     procedure BeginUpdate;
     procedure EndUpdate;
   public
@@ -346,13 +349,14 @@ begin
     gfFIX: Result := 'FIX';
     gfADD: Result := 'ADD';
     gfDEL: Result := 'DEL';
+    gfUPD: Result := 'UPD';
     else   Result := '???';
   end;
 end;
 
 function TimeToString(var Rec: TGulpRec): string;
 begin
-  if Rec.Flags and $FF in [gfADD] then
+  if Rec.Flags and $FF in [gfADD, gfUPD] then
     Result := FormatDateTime(
       DefaultFormatSettings.LongDateFormat + ' ' +
       DefaultFormatSettings.LongTimeFormat, Rec.Time)
@@ -363,7 +367,7 @@ end;
 function SizeToString(var Rec: TGulpRec): string;
 begin
   Result := '';
-  if (Rec.Flags and $FF) in [gfADD] then
+  if (Rec.Flags and $FF) in [gfADD, gfUPD] then
     if (Rec.Flags and gfSize) = gfSize then
     begin
       Result := Format('%u', [Rec.Size])
@@ -373,7 +377,7 @@ end;
 function AttrToString(var Rec: TGulpRec): string;
 begin
   Result := '.......';
-  if Rec.Flags and $FF in [gfADD] then
+  if Rec.Flags and $FF in [gfADD, gfUPD] then
   begin
     if Rec.Attributes and faReadOnly  <> 0 then Result[1] := 'R';
     if Rec.Attributes and faHidden    <> 0 then Result[2] := 'H';
@@ -416,7 +420,7 @@ end;
 function ModeToString(var Rec: TGulpRec): string;
 begin
   Result := '...';
-  if Rec.Flags and $FF in [gfADD] then
+  if Rec.Flags and $FF in [gfADD, gfUPD] then
   begin
     Result := OctStr(Rec.Mode, 3);
   end;
@@ -782,6 +786,13 @@ begin
           gfDEL: begin
             I := Find(Rec.Name);
             if I <> - 1 then DeleteItem(I);
+          end;
+          gfUPD: begin
+            I := Find(Rec.Name);
+            if I <> - 1 then DeleteItem(I);
+
+            AddItem(Rec);
+            Rec := TGulpRec.Create;
           end;
         end;
   end;
