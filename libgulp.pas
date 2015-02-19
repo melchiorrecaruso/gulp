@@ -47,7 +47,6 @@ const
   gfFIX        = $00000000;
   gfADD        = $00000001;
   gfDEL        = $00000002;
-  gfUPD        = $00000003;
 
   gfFlags      = $00000100;
   gfVersion    = $00000200;
@@ -128,20 +127,18 @@ type
   // --- The Gulp Lib CLASS ---
   TGulpLib = class(TGulpStream)
   private
-    FAdd     : TList;
-    FList    : TList;
-    FHistory : boolean;
-    FVersion : longword;
-    function GetCount: longint;
-    function GetItem(Index: longint): TGulpRec;
-
-    function  FindItem(const FileName: string): longint;
-    procedure DeleteItem(Index: longint);
-    procedure InsertItem(Rec: TGulpRec);
-    procedure AddItem(Rec: TGulpRec);
-
+    FAdd         : TList;
+    FList        : TList;
+    FFullLoad    : boolean;
+    FCurrVersion : longword;
     procedure BeginUpdate;
     procedure EndUpdate;
+    procedure AddItem(Rec: TGulpRec);
+    procedure InsertItem(Rec: TGulpRec);
+    procedure DeleteItem(Index: longint);
+    function  FindItem(const FileName: string): longint;
+    function GetItem(Index: longint): TGulpRec;
+    function GetCount: longint;
   public
     constructor Create(Stream: TStream);
     destructor  Destroy; override;
@@ -149,11 +146,11 @@ type
     function  OpenArchive(Version: longword): boolean;
     procedure CloseArchive;
 
-    function  Find(const FileName: string): longint;
     procedure Add(const FileName: string);
     procedure Delete(Index: longint);
-    procedure Extract(Index: longint);
+    function  Find(const FileName: string): longint;
     procedure ExtractTo(Index: longint; Stream: TStream);
+    procedure Extract(Index: longint);
 
     property Items[Index: longint]: TGulpRec read GetItem;
     property Count: longint read GetCount;
@@ -201,7 +198,7 @@ uses
   Math;
 
 const
-  GulpMarker : TGulpMarker = ('G', 'U','L','P',' ', ' ', ' ', '0','0','2');
+  GulpMarker : TGulpMarker = ('G', 'U','L','P','/', '0', '0', '2',' ',' ');
 
 // =============================================================================
 // Library routines
@@ -349,14 +346,13 @@ begin
     gfFIX: Result := 'FIX';
     gfADD: Result := 'ADD';
     gfDEL: Result := 'DEL';
-    gfUPD: Result := 'UPD';
     else   Result := '???';
   end;
 end;
 
 function TimeToString(var Rec: TGulpRec): string;
 begin
-  if Rec.Flags and $FF in [gfADD, gfUPD] then
+  if Rec.Flags and $FF in [gfADD] then
     Result := FormatDateTime(
       DefaultFormatSettings.LongDateFormat + ' ' +
       DefaultFormatSettings.LongTimeFormat, Rec.Time)
@@ -367,7 +363,7 @@ end;
 function SizeToString(var Rec: TGulpRec): string;
 begin
   Result := '';
-  if (Rec.Flags and $FF) in [gfADD, gfUPD] then
+  if (Rec.Flags and $FF) in [gfADD] then
     if (Rec.Flags and gfSize) = gfSize then
     begin
       Result := Format('%u', [Rec.Size])
@@ -377,7 +373,7 @@ end;
 function AttrToString(var Rec: TGulpRec): string;
 begin
   Result := '.......';
-  if Rec.Flags and $FF in [gfADD, gfUPD] then
+  if Rec.Flags and $FF in [gfADD] then
   begin
     if Rec.Attributes and faReadOnly  <> 0 then Result[1] := 'R';
     if Rec.Attributes and faHidden    <> 0 then Result[2] := 'H';
@@ -420,7 +416,7 @@ end;
 function ModeToString(var Rec: TGulpRec): string;
 begin
   Result := '...';
-  if Rec.Flags and $FF in [gfADD, gfUPD] then
+  if Rec.Flags and $FF in [gfADD] then
   begin
     Result := OctStr(Rec.Mode, 3);
   end;
@@ -444,19 +440,19 @@ end;
 
 procedure Clear_(var Rec: TGulpRec);
 begin
-  Rec.FFlags := 0;
-  Rec.FVersion   := 0;
-  Rec.FName  := '';
-  Rec.FTime  := 0.0;
-  Rec.FAttributes  := 0;
-  Rec.FMode  := 0;
-  Rec.FSize  := 0;
-  Rec.FLinkName := '';
-  Rec.FUserID   := 0;
-  Rec.FUserName := '';
-  Rec.FGroupID   := 0;
-  Rec.FGroupName := '';
-  Rec.FOffSet := 0;
+  Rec.FFlags      := 0;
+  Rec.FVersion    := 0;
+  Rec.FName       := '';
+  Rec.FTime       := 0.0;
+  Rec.FAttributes := 0;
+  Rec.FMode       := 0;
+  Rec.FSize       := 0;
+  Rec.FLinkName   := '';
+  Rec.FUserID     := 0;
+  Rec.FUserName   := '';
+  Rec.FGroupID    := 0;
+  Rec.FGroupName  := '';
+  Rec.FOffSet     := 0;
   Rec.FStoredSize := 0;
 end;
 
@@ -496,7 +492,6 @@ end;
 
 destructor TGulpStream.Destroy;
 begin
-  FStream := nil;
   inherited Destroy;
 end;
 
@@ -680,10 +675,10 @@ end;
 constructor TGulpLib.Create(Stream: TStream);
 begin
   inherited Create(Stream);
-  FAdd     := TList.Create;
-  FList    := TList.Create;
-  FHistory := FALSE;
-  FVersion := 0;
+  FAdd         := TList.Create;
+  FList        := TList.Create;
+  FFullLoad    := FALSE;
+  FCurrVersion := 0;
 end;
 
 destructor TGulpLib.Destroy;
@@ -720,7 +715,7 @@ begin
 
     Include_(Rec.FFlags, gfFIX);
     Include_(Rec.FFlags, gfVersion);
-    Rec.FVersion := FVersion + 1;
+    Rec.FVersion := FCurrVersion + 1;
     FAdd.Add(Rec);
 
     FStream.Seek(0, soEnd);
@@ -730,101 +725,12 @@ begin
   end;
 end;
 
-procedure TGulpLib.CloseArchive;
-var
-  I : longint;
+procedure TGulpLib.AddItem(Rec: TGulpRec);
 begin
-  EndUpdate;
-  for I := 0 to FAdd .Count - 1 do TGulpRec(FAdd [I]).Destroy;
-  for I := 0 to FList.Count - 1 do TGulpRec(FList[I]).Destroy;
-  FAdd.Clear;
-  FList.Clear;
-
-  FHistory    := FALSE;
-  FStreamSize := -1;
-  FVersion    :=  0;
-end;
-
-function TGulpLib.OpenArchive(Version: longword): boolean;
-var
-       I : longint;
-     Rec : TGulpRec;
-  OffSet : int64 = 0;
-    Size : int64 = 0;
-begin
-  Result := FALSE;
-
-  CloseArchive;
-  FHistory := Version = longword(-1);
-  FStream.Seek(0, soBeginning);
-  if ReadOffSet(OffSet) = TRUE then
-    FStream.Seek(OffSet, soBeginning);
-
-  Rec := TGulpRec.Create;
-  while Read(Rec) = TRUE do
-  begin
-    Result := (Rec.Flags and $FF) = gfFIX;
-    if Result then
-    begin
-      Size := FStream.Seek(0, soCurrent);
-      if ReadOffSet(OffSet) = TRUE then
-        FStream.Seek(OffSet, soBeginning);
-    end;
-
-    FVersion := Max(FVersion, Rec.Version);
-    if FHistory = TRUE then
-    begin
-      AddItem(Rec);
-      Rec := TGulpRec.Create;
-    end else
-      if Rec.Version <= Version then
-        case Rec.Flags and $FF of
-          gfADD: begin
-            AddItem(Rec);
-            Rec := TGulpRec.Create;
-          end;
-          gfDEL: begin
-            I := Find(Rec.Name);
-            if I <> - 1 then DeleteItem(I);
-          end;
-          gfUPD: begin
-            I := Find(Rec.Name);
-            if I <> - 1 then DeleteItem(I);
-
-            AddItem(Rec);
-            Rec := TGulpRec.Create;
-          end;
-        end;
-  end;
-  FreeAndNil(Rec);
-
-  if Result = TRUE then
-    Result := FStream.Seek(0, soEnd) = Size;
-end;
-
-function TGulpLib.FindItem(const FileName: string): longint;
-var
-  L, M, H, I: longint;
-begin
-  L := 0;
-  H := FList.Count - 1;
-  while H >= L do
-  begin
-    M := (L + H) div 2;
-    I := AnsiCompareFileName(Items[M].Name, FileName);
-    if I < 0 then
-      L := M + 1
-    else
-      if I > 0 then
-        H := M - 1
-      else
-        H := -2;
-  end;
-
-  if H = -2 then
-    Result  := M
+  if FFullLoad = TRUE then
+    FList.Add(Rec)
   else
-    Result := -1;
+    InsertItem(Rec);
 end;
 
 procedure TGulpLib.InsertItem(Rec: TGulpRec);
@@ -865,29 +771,97 @@ begin
   FList.Delete(Index);
 end;
 
-procedure TGulpLib.AddItem(Rec: TGulpRec);
+function TGulpLib.FindItem(const FileName: string): longint;
+var
+  L, M, H, I: longint;
 begin
-  if FHistory = FALSE then
-    InsertItem(Rec)
+  L := 0;
+  H := FList.Count - 1;
+  while H >= L do
+  begin
+    M := (L + H) div 2;
+    I := AnsiCompareFileName(Items[M].Name, FileName);
+    if I < 0 then
+      L := M + 1
+    else
+      if I > 0 then
+        H := M - 1
+      else
+        H := -2;
+  end;
+
+  if H = -2 then
+    Result  := M
   else
-    FList.Add(Rec);
+    Result := -1;
 end;
 
-function TGulpLib.Find(const FileName: string): longint;
+function TGulpLib.OpenArchive(Version: longword): boolean;
+var
+       I : longint;
+     Rec : TGulpRec;
+  OffSet : int64 = 0;
+    Size : int64 = 0;
+begin
+  Result := FALSE;
+
+  CloseArchive;
+  FFullLoad := Version = longword(-1);
+  FStream.Seek(0, soBeginning);
+  if ReadOffSet(OffSet) = TRUE then
+    FStream.Seek(OffSet, soBeginning);
+
+  Rec := TGulpRec.Create;
+  while Read(Rec) = TRUE do
+  begin
+    Result := (Rec.Flags and $FF) = gfFIX;
+    if Result then
+    begin
+      Size := FStream.Seek(0, soCurrent);
+      if ReadOffSet(OffSet) = TRUE then
+        FStream.Seek(OffSet, soBeginning);
+    end;
+
+    FCurrVersion := Max(FCurrVersion, Rec.Version);
+    if FFullLoad = TRUE then
+    begin
+      AddItem(Rec);
+      Rec := TGulpRec.Create;
+    end else
+      if Rec.Version <= Version then
+        case Rec.Flags and $FF of
+          gfADD: begin
+            AddItem(Rec);
+            Rec := TGulpRec.Create;
+          end;
+          gfDEL: begin
+            I := Find(Rec.Name);
+            if I <> - 1 then DeleteItem(I);
+          end;
+        end;
+  end;
+  FreeAndNil(Rec);
+
+  if Result = TRUE then
+    Result := FStream.Seek(0, soEnd) = Size;
+end;
+
+procedure TGulpLib.CloseArchive;
 var
   I : longint;
 begin
-  if FHistory = TRUE then
-  begin
-    Result := -1;
-    for I  := FList.Count - 1 downto 0 do
-      if AnsiCompareFileName(FileName, Items[I].Name) = 0 then
-      begin
-        Result := I;
-        Break;
-      end;
-  end else
-    Result := FindItem(FileName);
+  EndUpdate;
+  for I := 0 to FAdd .Count - 1 do
+    TGulpRec(FAdd [I]).Destroy;
+   FAdd.Clear;
+
+  for I := 0 to FList.Count - 1 do
+    TGulpRec(FList[I]).Destroy;
+  FList.Clear;
+
+  FFullLoad    := FALSE;
+  FCurrVersion :=  0;
+  FStreamSize  := -1;
 end;
 
 {$IFDEF MSWINDOWS}
@@ -896,11 +870,15 @@ var
   Rec : TGulpRec;
   SR  : TSearchRec;
 begin
-  BeginUpdate;
+  if FFullLoad = TRUE then
+    raise Exception.Create('Internal error');
+
   if SysUtils.FindFirst(FileName,
     faReadOnly  or faHidden  or faSysFile or faVolumeId  or
     faDirectory or faArchive or faSymLink or faAnyFile,  SR) = 0 then
   begin
+    BeginUpdate;
+
     Rec := TGulpRec.Create;
     Clean(Rec);
 
@@ -934,20 +912,23 @@ var
       SR : TSearchRec;
   Stream : TStream;
 begin
-  BeginUpdate;
+  if FFullLoad = TRUE then
+    raise Exception.Create('Internal error');
+
   if SysUtils.FindFirst(FileName,
     faReadOnly  or faHidden  or faSysFile or faVolumeId or
     faDirectory or faArchive or faSymLink or faAnyFile, SR) = 0 then
   begin
+    BeginUpdate;
+
     Rec := TGulpRec.Create;
     Clear_(Rec);
 
     Include_(Rec.FFlags, gfADD);
-    Include_(Rec.FFlags, gfVersion);     Rec.FVersion    := FVersion + 1;
+    Include_(Rec.FFlags, gfVersion);     Rec.FVersion    := FCurrVersion + 1;
     Include_(Rec.FFlags, gfName);        Rec.FName       := FileName;
     Include_(Rec.FFlags, gfTime);        Rec.FTime       := GetTime(SR);
     Include_(Rec.FFlags, gfAttributes);  Rec.FAttributes := GetAttr(SR);
-    Include_(Rec.FFlags, gfSize);        Rec.FSize       := GetSize(SR);
     Include_(Rec.FFlags, gfMode);        Rec.FMode       := GetMode(FileName);
 
     Include_(Rec.FFlags, gfUserID);      Rec.FUserID     := GetUID(FileName);
@@ -956,6 +937,9 @@ begin
     if FpS_ISREG(Rec.FMode) then
     begin
       Stream := TFileStream.Create(Rec.Name, fmOpenRead);
+      Include_(Rec.FFlags, gfSize);
+      Rec.FSize := GetSize(SR);
+
       Include_(Rec.FFlags, gfOffSet);
       Include_(Rec.FFlags, gfStoredSize);
       Write(Rec, Stream, Rec.FSize);
@@ -982,17 +966,49 @@ procedure TGulpLib.Delete(Index: longint);
 var
   Rec : TGulpRec;
 begin
+  if FFullLoad = TRUE then
+    raise Exception.Create('Internal error');
+
   BeginUpdate;
+
   Rec := TGulpRec.Create;
   Clear_(Rec);
 
   Include_(Rec.FFlags, gfDEL);
-  Include_(Rec.FFlags, gfVersion);
-  Include_(Rec.FFlags, gfName);
-  Rec.FVersion := FVersion + 1;
-  Rec.FName    := Items[Index].Name;
+  Include_(Rec.FFlags, gfVersion);  Rec.FVersion := FCurrVersion + 1;
+  Include_(Rec.FFlags, gfName);     Rec.FName    := Items[Index].Name;
 
   FAdd.Add(Rec);
+end;
+
+function TGulpLib.Find(const FileName: string): longint;
+var
+  I : longint;
+begin
+  if FFullLoad = TRUE then
+  begin
+    Result := -1;
+    for I  := FList.Count - 1 downto 0 do
+      if AnsiCompareFileName(FileName, Items[I].Name) = 0 then
+      begin
+        Result := I;
+        Break;
+      end;
+  end else
+    Result := FindItem(FileName);
+end;
+
+procedure TGulpLib.ExtractTo(Index: longint; Stream: TStream);
+var
+  Rec : TGulpRec;
+begin
+  Rec := Items[Index];
+  FStream.Seek(Rec.Offset, soBeginning);
+  if Rec.Size > 0 then
+  begin
+    if Read(Rec, Stream, Rec.Size) = FALSE then
+      raise Exception.CreateFmt('Mismatched checksum for "%s"', [Rec.Name]);
+  end;
 end;
 
 procedure TGulpLib.Extract(Index: longint);
@@ -1028,19 +1044,6 @@ begin
   FpChmod    (Rec.Name, Rec.Mode);
   FileSetAttr(Rec.Name, Rec.Attributes);
   FileSetDate(Rec.Name, DateTimeToFileDate(UniversalTimeToLocal(Rec.Time)));
-end;
-
-procedure TGulpLib.ExtractTo(Index: longint; Stream: TStream);
-var
-  Rec : TGulpRec;
-begin
-  Rec := Items[Index];
-  FStream.Seek(Rec.Offset, soBeginning);
-  if Rec.Size > 0 then
-  begin
-    if Read(Rec, Stream, Rec.Size) = FALSE then
-      raise Exception.CreateFmt('Mismatched checksum for "%s"', [Rec.Name]);
-  end;
 end;
 
 function TGulpLib.GetItem(Index: longint): TGulpRec;
