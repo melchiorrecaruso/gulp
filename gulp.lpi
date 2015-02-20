@@ -91,7 +91,6 @@
             <Debugging>
               <GenerateDebugInfo Value="False"/>
               <UseLineInfoUnit Value="False"/>
-              <StripSymbols Value="True"/>
             </Debugging>
             <LinkSmart Value="True"/>
           </Linking>
@@ -132,6 +131,7 @@
       <Unit3>
         <Filename Value="common.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="Common"/>
       </Unit3>
     </Units>
   </ProjectOptions>

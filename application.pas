@@ -63,7 +63,6 @@ type
 implementation
 
 uses
-  DateUtils,
   LibGulp,
   SysUtils;
 
@@ -398,7 +397,7 @@ writeln('                                                                       
 writeln('FUNCTION LETTERS                                                          ');
 writeln('       Main operation mode:                                               ');
 writeln('                                                                          ');
-writeln('       -s, --sinch                                                        ');
+writeln('       -s, --synch                                                        ');
 writeln('              append changes in files to archive, or create archive if  it');
 writeln('              does  not exist. files is a list of file and directory names');
 writeln('              separated by spaces. If a  name  is  a  directory,  then  it');

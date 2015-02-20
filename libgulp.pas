@@ -33,7 +33,6 @@ interface
 uses
   {$IFDEF UNIX}
   BaseUnix,
-  Unix,
   {$ENDIF}
   {$IFDEF MSWINDOWS}
   Windows,
@@ -133,10 +132,12 @@ type
     FCurrVersion : longword;
     procedure BeginUpdate;
     procedure EndUpdate;
+
     procedure AddItem(Rec: TGulpRec);
     procedure InsertItem(Rec: TGulpRec);
     procedure DeleteItem(Index: longint);
     function  FindItem(const FileName: string): longint;
+
     function GetItem(Index: longint): TGulpRec;
     function GetCount: longint;
   public
@@ -194,8 +195,7 @@ function StringToMode(const S: string  ): longint;
 implementation
 
 uses
-  DateUtils,
-  Math;
+  DateUtils, Math;
 
 const
   GulpMarker : TGulpMarker = ('G', 'U','L','P','/', '0', '0', '2',' ',' ');
@@ -554,6 +554,8 @@ var
      Digest : TSHA1Digest;
   AuxDigest : TSHA1Digest;
 begin
+  FStream.Seek(Rec.Offset, soBeginning);
+
   SHA1Init(FCTX);
   while Size > 0 do
   begin
@@ -638,8 +640,11 @@ var
   Readed : longint;
   Digest : TSHA1Digest;
 begin
-  Result      := TRUE;
+  Result := TRUE;
+
+  Include_(Rec.FFlags, gfOffSet);
   Rec.FOffSet := FStream.Seek(0, soCurrent);
+
   SHA1Init(FCTX);
   while Size > 0 do
   begin
@@ -652,6 +657,8 @@ begin
   end;
   SHA1Final(FCTX, Digest);
   FStream.Write(Digest, SizeOf(Digest));
+
+  Include_(Rec.FFlags, gfStoredSize);
   Rec.FStoredSize := FStream.Seek(0, soCurrent) - Rec.FOffSet;
 end;
 
@@ -936,12 +943,9 @@ begin
 
     if FpS_ISREG(Rec.FMode) then
     begin
-      Stream := TFileStream.Create(Rec.Name, fmOpenRead);
-      Include_(Rec.FFlags, gfSize);
-      Rec.FSize := GetSize(SR);
+      Include_(Rec.FFlags, gfSize);  Rec.FSize := GetSize(SR);
 
-      Include_(Rec.FFlags, gfOffSet);
-      Include_(Rec.FFlags, gfStoredSize);
+      Stream := TFileStream.Create(Rec.Name, fmOpenRead);
       Write(Rec, Stream, Rec.FSize);
       FreeAndNil(Stream);
     end else
@@ -951,8 +955,7 @@ begin
       end else
         if FpS_ISLNK(Rec.FMode) then
         begin
-          Include_(Rec.FFlags, gfLinkName);
-          Rec.FLinkName := fpReadLink(FileName);
+          Include_(Rec.FFlags, gfLinkName);  Rec.FLinkName := fpReadLink(FileName);
         end else
           raise Exception.CreateFmt('Unsupported file "%s"', [Rec.Name]);
 
@@ -1021,9 +1024,8 @@ begin
   begin
     if DirectoryExists(ExtractFileDir(Rec.Name)) then
       ForceDirectories(ExtractFileDir(Rec.Name));
-    Dest := TFileStream.Create(Rec.Name, fmCreate);
 
-    FStream.Seek(Rec.Offset, soBeginning);
+    Dest := TFileStream.Create(Rec.Name, fmCreate);
     if Read(Rec, Dest, Rec.Size) = FALSE then
       raise Exception.CreateFmt('Mismatched checksum for "%s"', [Rec.Name]);
     FreeAndNil(Dest);

@@ -17,7 +17,7 @@ The first argument to gulp should be a function; either one of the letters
 .SH FUNCTION LETTERS
 Main operation mode:
 
-.BR \-s ", " --sinch
+.BR \-s ", " --synch
 .RS
 append changes in 
 .IR files " to archive, or create archive if it does not exist. " files " is a list of file and directory names separated by spaces. If a name is a directory, then it recursively includes all files and subdirectories within. In Windows, files may contain wildcards * and ? in the last component of the path (after the last slash). * matches any string and ? matches any character."

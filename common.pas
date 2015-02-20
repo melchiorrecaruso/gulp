@@ -78,7 +78,6 @@ implementation
 uses
   {$IFDEF UNIX}
   BaseUnix,
-  Unix,
   {$ENDIF}
   SysUtils,
   Masks;
