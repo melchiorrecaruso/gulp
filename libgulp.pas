@@ -1006,7 +1006,6 @@ var
   Rec : TGulpRec;
 begin
   Rec := Items[Index];
-  FStream.Seek(Rec.Offset, soBeginning);
   if Rec.Size > 0 then
   begin
     if Read(Rec, Stream, Rec.Size) = FALSE then
@@ -1026,14 +1025,14 @@ begin
       ForceDirectories(ExtractFileDir(Rec.Name));
 
     Dest := TFileStream.Create(Rec.Name, fmCreate);
-    if Read(Rec, Dest, Rec.Size) = FALSE then
-      raise Exception.CreateFmt('Mismatched checksum for "%s"', [Rec.Name]);
+    ExtractTo(Index, Dest);
     FreeAndNil(Dest);
   end else
     if FpS_ISDIR(Rec.Mode) then
     begin
       if DirectoryExists(ExtractFileDir(Rec.Name)) then
         ForceDirectories(ExtractFileDir(Rec.Name));
+
       ForceDirectories(Rec.Name);
     end else
       if FpS_ISLNK(Rec.Mode) then

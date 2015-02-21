@@ -91,6 +91,7 @@
             <Debugging>
               <GenerateDebugInfo Value="False"/>
               <UseLineInfoUnit Value="False"/>
+              <StripSymbols Value="True"/>
             </Debugging>
             <LinkSmart Value="True"/>
           </Linking>
@@ -117,6 +118,7 @@
       <Unit0>
         <Filename Value="gulp.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="Gulp"/>
       </Unit0>
       <Unit1>
         <Filename Value="application.pas"/>
