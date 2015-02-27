@@ -23,25 +23,21 @@
 
   Modified:
 
-    v0.0.2 - 2015.02.14 by Melchiorre Caruso.
+    v0.0.2 - 2015.02.21 by Melchiorre Caruso.
 }
 
 program Gulp;
 
 uses
-  {$IFDEF UNIX}
-  cthreads,
-  BaseUnix,
-  {$ENDIF}
-  {$IFDEF MSWINDOWS}
-  Windows,
-  {$ENDIF}
+  {$IFDEF UNIX} cthreads, {$ENDIF}
+  {$IFDEF UNIX} BaseUnix, {$ENDIF}
+  {$IFDEF MSWINDOWS} Windows, {$ENDIF}
   Application;
 
 var
   App: TGulpApplication;
 
-{ control+c event }
+{ Control+c event }
 
 {$IFDEF MSWINDOWS}
 function CtrlHandler(CtrlType: longword): longbool;
@@ -61,10 +57,10 @@ end;
 procedure CtrlHandler(sig: cint);
 begin
   case sig of
-    SIGINT:  App.Kill;
-    SIGQUIT: App.Kill;
-    SIGKILL: App.Kill;
-    SIGSTOP: App.Kill;
+    SIGINT:  App.Abort;
+    SIGQUIT: App.Abort;
+    SIGKILL: App.Abort;
+    SIGSTOP: App.Abort;
   end;
 end;
 {$ENDIF}

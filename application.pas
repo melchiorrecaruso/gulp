@@ -23,7 +23,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.02.14 by Melchiorre Caruso.
+    v0.0.2 - 2015.02.21 by Melchiorre Caruso.
 }
 
 unit Application;
@@ -43,8 +43,6 @@ type
     FFileNames : TStringList;
     FSwitches  : TStringList;
     FScanner   : TSysScanner;
-    FStream    : TFileStream;
-    FStart     : TDateTime;
     procedure Synch;
     procedure Restore;
     procedure Purge;
@@ -57,7 +55,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor  Destroy; override;
-    procedure   Kill;
+    procedure   Abort;
   end;
 
 implementation
@@ -77,12 +75,19 @@ const
 constructor TGulpApplication.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  CaseSensitiveOptions := TRUE;
-  StopOnException      := TRUE;
-  FFileNames           := TStringList.Create;
-  FSwitches            := TStringList.Create;
-  FScanner             := TSysScanner.Create;
-  FStart               := Now;
+  {$IFDEF UNIX}
+    CaseSensitiveOptions := TRUE;
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+      CaseSensitiveOptions := FALSE;
+    {$ELSE}
+      Unsupported platform...
+    {$ENDIF}
+  {$ENDIF}
+  StopOnException := TRUE;
+  FFileNames      := TStringList.Create;
+  FSwitches       := TStringList.Create;
+  FScanner        := TSysScanner.Create;
 end;
 
 destructor TGulpApplication.Destroy;
@@ -98,6 +103,7 @@ var
      I, J : longint;
     Count : longint;
   GulpLib : TGulpLib;
+   Stream : TStream;
 begin
   writeln(Description);
   writeln(#13, #13: 80, 'Synch the content of ' + GetOptionValue('s', 'synch'));
@@ -109,15 +115,15 @@ begin
 
   write(#13, #13: 80, 'Opening archive... ');
   if FileExists(GetOptionValue('s', 'synch')) then
-    FStream := TFileStream.Create (GetOptionValue('s', 'synch'), fmOpenReadWrite)
+    Stream := TFileStream.Create (GetOptionValue('s', 'synch'), fmOpenReadWrite)
   else
-    FStream := TFileStream.Create (GetOptionValue('s', 'synch'), fmCreate);;
+    Stream := TFileStream.Create (GetOptionValue('s', 'synch'), fmCreate);;
 
   write(#13, #13: 80, 'Reading records... ');
-  GulpLib := TGulpLib.Create(FStream);
+  GulpLib := TGulpLib.Create(Stream);
   if GulpLib.OpenArchive(longword(-2)) = FALSE then
   begin
-    if FStream.Size <> 0 then
+    if Stream.Size <> 0 then
       raise Exception.Create('Invalid signature value');
   end;
 
@@ -149,7 +155,7 @@ begin
 
   write(#13, #13: 80, 'Finished (', Count, ' added records)');
   FreeAndNil(GulpLib);
-  FreeAndNil(FStream);
+  FreeAndNil(Stream);
   writeln;
 end;
 
@@ -158,6 +164,7 @@ var
      I, J : longint;
     Count : longint;
   GulpLib : TGulpLib;
+   Stream : TStream;
   Version : longword;
 begin
   writeln(Description);
@@ -168,9 +175,6 @@ begin
   for I := 0 to FFileNames.Count - 1 do
     FScanner.Add(FFileNames[I]);
 
-  write(#13, #13: 80, 'Opening archive... ');
-  FStream := TFileStream.Create(GetOptionValue('r', 'restore'), fmOpenRead);
-
   Version := longword(-2);
   if GetOptionValue('u', 'until') <> '' then
   begin
@@ -180,11 +184,14 @@ begin
       Version := StrToInt(GetOptionValue('u', 'until'));
   end;
 
+  write(#13, #13: 80, 'Opening archive... ');
+  Stream := TFileStream.Create(GetOptionValue('r', 'restore'), fmOpenRead);
+
   write(#13, #13: 80, 'Reading records... ');
-  GulpLib := TGulpLib.Create(FStream);
+  GulpLib := TGulpLib.Create(Stream);
   if GulpLib.OpenArchive(Version) = FALSE then
   begin
-    if FStream.Size <> 0 then
+    if Stream.Size <> 0 then
       raise Exception.Create('Invalid signature value');
   end;
 
@@ -224,25 +231,26 @@ begin
 
   write(#13, #13: 80, 'Finished (', Count, ' extracted records)');
   FreeAndNil(GulpLib);
-  FreeAndNil(FStream);
+  FreeAndNil(Stream);
   writeln;
 end;
 
 procedure TGulpApplication.Fix;
 var
-  Size : int64;
+    Size : int64;
+  Stream : TStream;
 begin
   writeln(Description);
   writeln(#13, #13: 80, 'Fix the content of ' + GetOptionValue('f', 'fix'));
   write  (#13, #13: 80, 'Opening archive... ');
-  FStream := TFileStream.Create (GetOptionValue('f', 'fix'), fmOpenReadWrite);
-  Size    := FStream.Seek(0, soEnd);
+  Stream := TFileStream.Create (GetOptionValue('f', 'fix'), fmOpenReadWrite);
+  Size   := Stream.Seek(0, soEnd);
 
   write(#13, #13: 80, 'Fixing archive... ');
-  FixArchive(FStream);
+  FixArchive(Stream);
 
-  write(#13, #13: 80, 'Finished (', Size - FStream.Size, ' removed bytes)');
-  FreeAndNil(FStream);
+  write(#13, #13: 80, 'Finished (', Size - Stream.Size, ' removed bytes)');
+  FreeAndNil(Stream);
   writeln;
 end;
 
@@ -251,19 +259,20 @@ var
         I : longint;
     Count : longint;
   GulpLib : TGulpLib;
-      Nul : TNulStream;
+      Nul : TStream;
+   Stream : TStream;
 begin
   writeln(Description);
   writeln(#13, #13: 80, 'Check the content of ' + GetOptionValue('c', 'check'));
   write  (#13, #13: 80, 'Opening archive... ');
-  FStream := TFileStream.Create (GetOptionValue('c', 'check'), fmOpenRead);
-  Nul     := TNulStream.Create;
+  Stream := TFileStream.Create (GetOptionValue('c', 'check'), fmOpenRead);
+  Nul    := TNulStream.Create;
 
   write(#13, #13: 80, 'Reading records... ');
-  GulpLib := TGulpLib.Create(FStream);
+  GulpLib := TGulpLib.Create(Stream);
   if GulpLib.OpenArchive(longword(-1)) = FALSE then
   begin
-    if FStream.Size <> 0 then
+    if Stream.Size <> 0 then
       raise Exception.Create('Invalid signature value');
   end;
 
@@ -278,13 +287,14 @@ begin
 
   write(#13, #13: 80, 'Finished (', Count, ' checked records)');
   FreeAndNil(GulpLib);
-  FreeAndNil(FStream);
+  FreeAndNil(Stream);
   FreeAndNil(Nul);
   writeln;
 end;
 
 procedure TGulpApplication.Purge;
 var
+   Stream : TStream;
       Tmp : TStream;
   TmpName : string;
 begin
@@ -293,13 +303,13 @@ begin
   write  (#13, #13: 80, 'Opening archive... ');
   TmpName := GetTempFileName(ExtractFileDir(GetOptionValue('p', 'purge')), '');
   Tmp     := TFileStream.Create(TmpName, fmCreate);
-  FStream := TFileStream.Create(GetOptionValue('p', 'purge'), fmOpenRead);
+  Stream  := TFileStream.Create(GetOptionValue('p', 'purge'), fmOpenRead);
 
   write(#13, #13: 80, 'Moving records... ');
-  PurgeArchive(FStream, Tmp);
+  PurgeArchive(Stream, Tmp);
 
-  write(#13, #13: 80, 'Finished (', FStream.Size - Tmp.Size, ' bytes removed)');
-  FreeAndNil(FStream);
+  write(#13, #13: 80, 'Finished (', Stream.Size - Tmp.Size, ' removed bytes)');
+  FreeAndNil(Stream);
   FreeAndNil(Tmp);
 
   if DeleteFile(GetOptionValue('p', 'purge')) = FALSE then
@@ -316,12 +326,14 @@ var
     Count : longint;
   GulpLib : TGulpLib;
   GulpRec : TGulpRec;
+   Stream : TStream;
   Version : longword;
 begin
   writeln(Description);
   writeln(#13, #13: 80, 'List the content of ' + GetOptionValue('l', 'list'));
-  write  (#13, #13: 80, 'Opening archive... ');
-  FStream := TFileStream.Create (GetOptionValue('l', 'list'), fmOpenRead);
+
+  if FFileNames.Count = 0 then
+    FFileNames.Add('*');
 
   Version := longword(-1);
   if GetOptionValue('u', 'until') <> '' then
@@ -332,14 +344,14 @@ begin
       Version := StrToInt(GetOptionValue('u', 'until'));
   end;
 
-  if FFileNames.Count = 0 then
-    FFileNames.Add('*');
+  write(#13, #13: 80, 'Opening archive... ');
+  Stream := TFileStream.Create (GetOptionValue('l', 'list'), fmOpenRead);
 
   write(#13, #13: 80, 'Reading records... ');
-  GulpLib := TGulpLib.Create(FStream);
+  GulpLib := TGulpLib.Create(Stream);
   if GulpLib.OpenArchive(Version) = FALSE then
   begin
-    if FStream.Size <> 0 then
+    if Stream.Size <> 0 then
       raise Exception.Create('Invalid signature value');
   end;
 
@@ -352,7 +364,7 @@ begin
        if FileNameMatch(GulpRec.Name, FFileNames[J])  then
        begin
          writeln(#13, #13: 80, Format('%4s %3s %3s %7s %19s %12s %s', [
-            VerTostring(Gulprec),
+            VerTostring(GulpRec),
            FlagToString(GulpRec),
            ModeToString(GulpRec),
            AttrToString(GulpRec),
@@ -366,7 +378,7 @@ begin
 
   writeln(#13, #13: 80, 'Finished (', Count, ' listed records)');
   FreeAndNil(GulpLib);
-  FreeAndNil(FStream);
+  FreeAndNil(Stream);
   writeln;
 end;
 
@@ -484,24 +496,27 @@ writeln('       The archive format does not save sufficient information for back
 writeln('       up and restoring the operating system.                             ');
 writeln('                                                                          ');
 writeln('AUTHOR                                                                    ');
-writeln('       gulp is copyright (C) 2014-2015, Melchiorre Caruso. It is  licensed');
+writeln('       gulp is copyright (c) 2014-2015, Melchiorre Caruso. It is  licensed');
 writeln('       under    GPL    v2.   For   information   on   the   license,   see');
 writeln('       <http://www.gnu.org/copyleft/gpl.html>. Program was written by Mel‐');
 writeln('       chiorre Caruso <melchiorrecaruso at gmail dot com>"                ');
 end;
 
-procedure TGulpApplication.Kill;
+procedure TGulpApplication.Abort;
 begin
   raise Exception.Create('User abort');
 end;
 
 procedure TGulpApplication.DoRun;
 var
-  Error         : string;
+          Error : string;
+   LongSwitches : TStringList;
   ShortSwitches : string;
-  LongSwitches  : TStringList;
+      StartTime : TDateTime;
 begin
   inherited DoRun;
+  StartTime := Now;
+
   DefaultFormatSettings.LongDateFormat  := 'yyyy-mm-dd';
   DefaultFormatSettings.ShortDateFormat := 'yyyy-mm-dd';
 
@@ -516,9 +531,9 @@ begin
   LongSwitches.Add('help');
   LongSwitches.Add('until:');
 
-  ExitCode := 1;
+  ExitCode  := 1;
   try
-    Error  := CheckOptions(ShortSwitches, LongSwitches, FSwitches, FFileNames);
+    Error   := CheckOptions(ShortSwitches, LongSwitches, FSwitches, FFileNames);
     if Error = '' then
     begin
       if HasOption('s', 'synch'  ) then Synch   else
@@ -535,13 +550,14 @@ begin
       writeln(Description);
       writeln(#13, #13: 80, Error);
     end;
+
   except
     on E: Exception do
       writeln(#13, #13: 80, Format('An exception was raised: "%s"', [E.Message]));
   end;
   FreeAndNil(LongSwitches);
   writeln(#13, #13: 80, 'Elapsed ',
-    Format('%0.2f', [(Now - FStart) * (24 * 60 * 60)]) , ' sec');
+    Format('%0.2f', [(Now - StartTime) * (24 * 60 * 60)]) , ' sec');
   Terminate;
 end;
 

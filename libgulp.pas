@@ -23,7 +23,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.02.14 by Melchiorre Caruso.
+    v0.0.2 - 2015.02.21 by Melchiorre Caruso.
 }
 
 unit LibGulp;
@@ -31,15 +31,11 @@ unit LibGulp;
 interface
 
 uses
-  {$IFDEF UNIX}
-  BaseUnix,
-  {$ENDIF}
-  {$IFDEF MSWINDOWS}
-  Windows,
-  {$ENDIF}
+  {$IFDEF UNIX} BaseUnix, {$ENDIF}
+  {$IFDEF MSWINDOWS} Windows, {$ENDIF}
   Classes,
-  SysUtils,
-  SHA1;
+  Sha1,
+  SysUtils;
 
 const
   // --- Gulp Flags ---
@@ -73,7 +69,7 @@ type
     FVersion    : longword;   // File version
     FName       : ansistring; // File path and name
     FTime       : TDateTime;  // Last modification date and time (UTC)
-    FAttributes : longint;    // File Attributes (Windows)
+    FAttributes : longint;    // File Attributes (MSWindows)
     FMode       : longword;   // File Mode (Unix)
     FSize       : int64;      // File size in bytes
     FLinkName   : ansistring; // Name of linked file
@@ -204,19 +200,18 @@ const
 // Library routines
 // =============================================================================
 
-{$IFDEF MSWINDOWS}
 function GetName(const FileName: string): string;
 begin
-  Result := StringReplace(Filename, '/', '\', [rfReplaceAll]);
+  {$IFDEF UNIX}
+    Result := StringReplace(FileName, '\', '/', [rfReplaceAll]);
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+      Result := StringReplace(Filename, '/', '\', [rfReplaceAll]);
+    {$ELSE}
+      Unsupported platform...
+    {$ENDIF}
+  {$ENDIF}
 end;
-{$ENDIF}
-
-{$IFDEF UNIX}
-function GetName(const FileName: string): string;
-begin
-  Result := StringReplace(FileName, '\', '/', [rfReplaceAll]);
-end;
-{$ENDIF}
 
 function GetTime(var SR: TSearchRec): TDateTime;
 begin
@@ -400,39 +395,40 @@ begin
   end;
 end;
 
-{$IFDEF MSWINDOWS}
 function ModeToString(var Rec: TGulpRec): string;
 begin
-  Result := '.........';
-end;
-
-function StringToMode(const S: string): longint;
-begin
-  Result := 0;
-end;
-{$ENDIF}
-
-{$IFDEF UNIX}
-function ModeToString(var Rec: TGulpRec): string;
-begin
-  Result := '...';
+  {$IFDEF UNIX}
   if Rec.Flags and $FF in [gfADD] then
-  begin
-    Result := OctStr(Rec.Mode, 3);
-  end;
+    Result := OctStr(Rec.Mode, 3)
+  else
+    Result := '...';
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+      Result := '...';
+    {$ENLSE}
+      Unsupported platform...
+    {$ENDIF}
+  {$ENDIF}
 end;
 
 function StringToMode(const S: string): longint;
+{$IFDEF UNIX}
 var
   I : longint;
-begin
-  Result := 0;
-  for I := 1 to Length(S) do
-  begin
-    Result := Result * 8 + StrToInt(Copy(S, I, 1));
-  end;
-end;
 {$ENDIF}
+begin
+  {$IFDEF UNIX}
+    Result := 0;
+    for I  := 1 to Length(S) do
+      Result := Result * 8 + StrToInt(Copy(S, I, 1));
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+      Result := 0;
+    {$ENLSE}
+      Unsupported platform...
+    {$ENDIF}
+  {$ENDIF}
+end;
 
 // =============================================================================
 // Internal rutines
@@ -477,6 +473,45 @@ begin
       if Item1.Version > Item2.Version then
         Result := 1;
   end;
+end;
+
+function IsFILE_(Rec: TGulpRec): boolean;
+begin
+  {$IFDEF UNIX}
+    Result := FpS_ISREG(Rec.Mode);
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+      Result := Rec.Attributes and (faDirectory or faVolumeId) = 0;
+    {$ELSE}
+      Unsupported platform...
+    {$ENDIF}
+  {$ENDIF}
+end;
+
+function IsDIR_(Rec: TGulpRec): boolean;
+begin
+  {$IFDEF UNIX}
+    Result := FpS_ISDIR(Rec.Mode);
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+      Result := Rec.Attributes and (faDirectory) = faDirectory;
+    {$ELSE}
+      Unsupported platform...
+    {$ENDIF}
+  {$ENDIF}
+end;
+
+function IsLNK_(Rec: TGulpRec): boolean;
+begin
+  {$IFDEF UNIX}
+    Result := FpS_ISLNK(Rec.Mode);
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+      Result := Rec.Attributes and (faSymLink) = faSymLink;
+    {$ELSE}
+      Unsupported platform...
+    {$ENDIF}
+  {$ENDIF}
 end;
 
 // =============================================================================
@@ -871,48 +906,6 @@ begin
   FStreamSize  := -1;
 end;
 
-{$IFDEF MSWINDOWS}
-procedure TGulpLib.Add(const FileName: string);
-var
-  Rec : TGulpRec;
-  SR  : TSearchRec;
-begin
-  if FFullLoad = TRUE then
-    raise Exception.Create('Internal error');
-
-  if SysUtils.FindFirst(FileName,
-    faReadOnly  or faHidden  or faSysFile or faVolumeId  or
-    faDirectory or faArchive or faSymLink or faAnyFile,  SR) = 0 then
-  begin
-    BeginUpdate;
-
-    Rec := TGulpRec.Create;
-    Clean(Rec);
-
-    IncludeFlag(Rec.FFlags, gfADD  );
-    IncludeFlag(Rec.FFlags, gfVer  );  Rec.FVer   := FVersion + 1;
-    IncludeFlag(Rec.FFlags, gfName );  Rec.FName  := FileName;
-
-    IncludeFlag(Rec.FFlags, gfMTime);  Rec.FMTime := GetTime(SR);
-    IncludeFlag(Rec.FFlags, gfAttr );  Rec.FAttr  := GetAttr(SR);
-    (*
-    Stream := nil;
-    if SR.Attr and (faDirectory or faVolumeId or faSymLink) = 0 then
-      try
-        Stream := TFileStream.Create(FileName, fmOpenRead);
-
-        IncludeFlag(Rec.FFlags, gfSize);  Rec.FSize := SR.Size;
-      except
-        Stream := nil;
-      end;
-    *)
-    FToDo.Add(Rec);
-  end;
-  SysUtils.FindClose(SR);
-end;
-{$ENDIF}
-
-{$IFDEF UNIX}
 procedure TGulpLib.Add(const FileName: string);
 var
      Rec : TGulpRec;
@@ -936,34 +929,40 @@ begin
     Include_(Rec.FFlags, gfName);        Rec.FName       := FileName;
     Include_(Rec.FFlags, gfTime);        Rec.FTime       := GetTime(SR);
     Include_(Rec.FFlags, gfAttributes);  Rec.FAttributes := GetAttr(SR);
-    Include_(Rec.FFlags, gfMode);        Rec.FMode       := GetMode(FileName);
 
-    Include_(Rec.FFlags, gfUserID);      Rec.FUserID     := GetUID(FileName);
-    Include_(Rec.FFlags, gfGroupID);     Rec.FGroupID    := GetGID(FileName);
+    {$IFDEF UNIX}
+      Include_(Rec.FFlags, gfMode   );   Rec.FMode       := GetMode(FileName);
+      Include_(Rec.FFlags, gfUserID );   Rec.FUserID     := GetUID(FileName);
+      Include_(Rec.FFlags, gfGroupID);   Rec.FGroupID    := GetGID(FileName);
+    {$ENDIF}
 
-    if FpS_ISREG(Rec.FMode) then
+    if IsLNK_(Rec) = TRUE then
     begin
-      Include_(Rec.FFlags, gfSize);  Rec.FSize := GetSize(SR);
-
-      Stream := TFileStream.Create(Rec.Name, fmOpenRead);
-      Write(Rec, Stream, Rec.FSize);
-      FreeAndNil(Stream);
+      {$IFDEF UNIX}
+        Include_(Rec.FFlags, gfLinkName);  Rec.FLinkName := fpReadLink(FileName);
+      {$ELSE}
+        {$IFDEF MSWINDOWS}
+          raise Exception.Create('- Link -');
+        {$ELSE}
+          Unsupported platform...
+        {$ENDIF}
+      {$ENDIF}
     end else
-      if FpS_ISDIR(Rec.FMode) then
+      if IsFILE_(Rec) = TRUE then
       begin
-        // nothing to do
+        Include_(Rec.FFlags, gfSize);  Rec.FSize := GetSize(SR);
+
+        Stream := TFileStream.Create(Rec.Name, fmOpenRead);
+        Write(Rec, Stream, Rec.FSize);
+        FreeAndNil(Stream);
       end else
-        if FpS_ISLNK(Rec.FMode) then
-        begin
-          Include_(Rec.FFlags, gfLinkName);  Rec.FLinkName := fpReadLink(FileName);
-        end else
+        if IsDIR_(Rec) = FALSE then
           raise Exception.CreateFmt('Unsupported file "%s"', [Rec.Name]);
 
     FAdd.Add(Rec);
   end;
   SysUtils.FindClose(SR);
 end;
-{$ENDIF}
 
 procedure TGulpLib.Delete(Index: longint);
 var
@@ -1015,34 +1014,42 @@ end;
 
 procedure TGulpLib.Extract(Index: longint);
 var
-  Rec  : TGulpRec;
+   Rec : TGulpRec;
   Dest : TFileStream;
 begin
   Rec := Items[Index];
-  if FpS_ISREG(Rec.FMode) then
+  if IsLNK_(Rec) then
   begin
-    if DirectoryExists(ExtractFileDir(Rec.Name)) then
-      ForceDirectories(ExtractFileDir(Rec.Name));
 
-    Dest := TFileStream.Create(Rec.Name, fmCreate);
-    ExtractTo(Index, Dest);
-    FreeAndNil(Dest);
+
   end else
-    if FpS_ISDIR(Rec.Mode) then
+    if IsFILE_(Rec) then
     begin
       if DirectoryExists(ExtractFileDir(Rec.Name)) then
         ForceDirectories(ExtractFileDir(Rec.Name));
 
-      ForceDirectories(Rec.Name);
+      Dest := TFileStream.Create(Rec.Name, fmCreate);
+      ExtractTo(Index, Dest);
+      FreeAndNil(Dest);
     end else
-      if FpS_ISLNK(Rec.Mode) then
+      if IsDIR_(Rec) then
       begin
+        if DirectoryExists(ExtractFileDir(Rec.Name)) then
+          ForceDirectories(ExtractFileDir(Rec.Name));
 
-
+        ForceDirectories(Rec.Name);
       end else
         raise Exception.CreateFmt('Unsupported file "%s"', [Rec.Name]);
 
-  FpChmod    (Rec.Name, Rec.Mode);
+  {$IFDEF UNIX}
+    FpChmod(Rec.Name, Rec.Mode);
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+
+    {$ELSE}
+      Unsupported platform...
+    {$ENDIF}
+  {$ENDIF}
   FileSetAttr(Rec.Name, Rec.Attributes);
   FileSetDate(Rec.Name, DateTimeToFileDate(UniversalTimeToLocal(Rec.Time)));
 end;

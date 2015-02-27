@@ -23,7 +23,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.02.14 by Melchiorre Caruso.
+    v0.0.2 - 2015.02.21 by Melchiorre Caruso.
 }
 
 unit Common;
@@ -76,11 +76,9 @@ type
 implementation
 
 uses
-  {$IFDEF UNIX}
-  BaseUnix,
-  {$ENDIF}
-  SysUtils,
-  Masks;
+  {$IFDEF UNIX} BaseUnix, {$ENDIF}
+  Masks,
+  SysUtils;
 
 { TSysScanner class }
 
@@ -88,9 +86,15 @@ constructor TSysScanner.Create;
 begin
   inherited Create;
   FList := TStringList.Create;
-  {$IFDEF MSWINDOWS}  FList.CaseSensitive := FALSE; {$ENDIF}
-  {$IFDEF UNIX}       FList.CaseSensitive := TRUE;  {$ENDIF}
-  {$IFDEF MAC}        FList.CaseSensitive := TRUE;  {$ENDIF}
+  {$IFDEF UNIX}
+    FList.CaseSensitive := TRUE;
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+      FList.CaseSensitive := FALSE;
+    {$ELSE}
+      Unsupported platform...
+    {$ENDIF}
+  {$ENDIF}
   FList.Sorted := TRUE;
 end;
 
@@ -114,14 +118,14 @@ end;
 
 procedure TSysScanner.Scan(const FileMask: string; Recursive: boolean);
 var
-  Error    : longint;
-  Rec      : TSearchRec;
-  ScanPath : string;
+     Error : longint;
+       Rec : TSearchRec;
   ScanMask : string;
+  ScanPath : string;
 begin
   ScanPath := ExtractFilePath(FileMask);
   ScanMask := ExtractFileName(FileMask);
-  // search filemask ...
+  // Search filemask...
   Error := SysUtils.FindFirst(ScanPath + '*',
     faReadOnly  or faHidden  or faSysFile or faVolumeId  or
     faDirectory or faArchive or faSymLink or faAnyFile,  Rec);
@@ -136,7 +140,7 @@ begin
         if Recursive then
         begin
           AddItem(ScanPath + Rec.Name);
-          if Rec.Attr and faSymLink = 0 then
+          if (Rec.Attr and faSymLink) = 0 then
             Scan(ScanPath + Rec.Name + PathDelim + ScanMask, TRUE);
         end else
         begin
@@ -157,7 +161,7 @@ end;
 procedure TSysScanner.Add(const FileMask: string);
 begin
   if FileMask = '' then Exit;
-  // directory and recursive mode ...
+  // Directory and recursive mode ...
   if DirectoryExists(FileMask) then
   begin
     AddItem(FileMask);
@@ -179,7 +183,7 @@ end;
 
 procedure TSysScanner.Delete(const FileMask: string);
 var
-  I: longint;
+  I : longint;
 begin
   for I := Count - 1 downto 0 do
     if FileNameMatch(Items[I], FileMask) then
@@ -196,9 +200,7 @@ end;
 function TSysScanner.Find(const FileName: string): longint;
 begin
   if FList.Find(FileName, Result) = FALSE then
-  begin
     Result := -1;
-  end;
 end;
 
 function TSysScanner.GetItem(Index: longint): string;
@@ -227,40 +229,44 @@ end;
 
 function FileNameMatch(const FileName, FileMask: string): boolean;
 begin
-  {$IFDEF MSWINDOWS} Result := MatchesMask(FileName, FileMask, FALSE); {$ENDIF}
-  {$IFDEF UNIX}      Result := MatchesMask(FileName, FileMask, TRUE ); {$ENDIF}
-  {$IFDEF MAC}       Result := MatchesMask(FileName, FileMask, TRUE ); {$ENDIF}
+  {$IFDEF UNIX}
+    Result := MatchesMask(FileName, FileMask, TRUE);
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+      Result := MatchesMask(FileName, FileMask, FALSE);
+    {$ELSE}
+      Unsupported platform...
+    {$ENDIF}
+  {$ENDIF}
 end;
 
 { Priority routines }
 
-{$IFDEF MSWINDOWS}
 function SetIdlePriority: boolean;
 begin
-  Result := SetPriorityClass(GetCurrentProcess, IDLE_PRIORITY_CLASS);
+  {$IFDEF UNIX}
+    Result := FpNice(5) = 0;
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+      Result := SetPriorityClass(GetCurrentProcess, IDLE_PRIORITY_CLASS);
+    {$ELSE}
+      Unsupported platform...
+    {$ENDIF}
+  {$ENDIF}
 end;
-{$ENDIF}
 
-{$IFDEF UNIX}
-function SetIdlePriority: boolean;
-begin
-  Result := FpNice(5) = 0;
-end;
-{$ENDIF}
-
-{$IFDEF MSWINDOWS}
 function SetNormalPriority: boolean;
 begin
-  Result := SetPriorityClass(GetCurrentProcess, NORMAL_PRIORITY_CLASS);
+  {$IFDEF UNIX}
+    Result := FpNice(10) = 0;
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+      Result := SetPriorityClass(GetCurrentProcess, NORMAL_PRIORITY_CLASS);
+    {$ELSE}
+      Unsupported platform...
+    {$ENDIF}
+  {$ENDIF}
 end;
-{$ENDIF}
-
-{$IFDEF UNIX}
-function SetNormalPriority: boolean;
-begin
-  Result := FpNice(10) = 0;
-end;
-{$ENDIF}
 
 end.
-
+
