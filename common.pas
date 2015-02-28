@@ -23,7 +23,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.02.21 by Melchiorre Caruso.
+    v0.0.2 - 2015.02.28 by Melchiorre Caruso.
 }
 
 unit Common;
@@ -187,9 +187,7 @@ var
 begin
   for I := Count - 1 downto 0 do
     if FileNameMatch(Items[I], FileMask) then
-    begin
       Delete(I);
-    end;
 end;
 
 procedure TSysScanner.Delete(Index: longint);
