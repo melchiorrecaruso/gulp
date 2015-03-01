@@ -1014,7 +1014,7 @@ begin
     {$IFDEF UNIX}
     //if FpLink(Rec.LinkName, Rec.Name) <> 0 then
     //  raise Exception.CreateFmt('Unable to create hardlink %s', [Rec.Name]);
-    if FpSymLink(PChar(Rec.LinkName), PChar(Rec.Name)) <> 0 then
+    if FpSymLink(pchar(Rec.LinkName), pchar(Rec.Name)) <> 0 then
       raise Exception.CreateFmt('Unable to create symlink "%s"', [Rec.Name]);
     {$ELSE}
       {$IFDEF MSWINDOWS}
