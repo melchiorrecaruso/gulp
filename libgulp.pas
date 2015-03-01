@@ -101,22 +101,21 @@ type
   // --- The Gulp Stream ---
   TGulpStream = class(TObject)
   protected
-    FCTX        : TSHA1Context;
-    FStream     : TStream;
-    FStreamSize : int64;
+    FCTX    : TSHA1Context;
+    FStream : TStream;
   public
     constructor Create(Stream: TStream);
     destructor Destroy; override;
     function Read(var Buffer: string): longint; overload;
     function Read(var Buffer; Count: longint): longint; overload;
     function ReadRec(var Rec: TGulpRec): boolean;
-    function ReadStream(Rec: TGulpRec; Stream: TStream; Size: int64): boolean;
+    function ReadStream(Stream: TStream; Size: int64): boolean;
     function ReadOffSet(var OffSet: int64): boolean;
 
     function Write(const Buffer: string): longint; overload;
     function Write(const Buffer; Count: longint): longint; overload;
     function WriteRec(Rec: TGulpRec): boolean;
-    function WriteStream(Rec: TGulpRec; Stream: TStream; Size: int64): boolean;
+    function WriteStream(Stream: TStream; Size: int64): boolean;
     function WriteOffSet(const OffSet: int64): boolean;
   end;
 
@@ -127,6 +126,7 @@ type
     FList        : TList;
     FFullLoad    : boolean;
     FCurrVersion : longword;
+    FStreamSize  : int64;
     procedure BeginUpdate;
     procedure EndUpdate;
     procedure AddItem(Rec: TGulpRec);
@@ -516,8 +516,7 @@ end;
 constructor TGulpStream.Create(Stream: TStream);
 begin
   inherited Create;
-  FStream     := Stream;
-  FStreamSize := -1;
+  FStream := Stream;
 end;
 
 destructor TGulpStream.Destroy;
@@ -577,21 +576,19 @@ begin
   end;
 end;
 
-function TGulpStream.ReadStream(Rec: TGulpRec; Stream: TStream; Size: int64): boolean;
+function TGulpStream.ReadStream(Stream: TStream; Size: int64): boolean;
 var
      Buffer : array[0..$FFFF] of byte;
   AuxDigest : TSHA1Digest;
      Digest : TSHA1Digest;
      Readed : longint;
 begin
-  FStream.Seek(Rec.Offset, soBeginning);
-
   SHA1Init(FCTX);
   while Size > 0 do
   begin
     Readed := Read(Buffer, Min(SizeOf(Buffer), Size));
     if Readed = 0 then
-      raise Exception.CreateFmt('Unable to read file "%s"', [Rec.Name]);
+      raise Exception.Create('Unable to read stream');
 
     Stream.Write(Buffer, Readed);
     Dec(Size, Readed);
@@ -664,32 +661,25 @@ begin
   FStream.Write(Digest, SizeOf(Digest));
 end;
 
-function TGulpStream.WriteStream(Rec: TGulpRec; Stream: TStream; Size: int64): boolean;
+function TGulpStream.WriteStream(Stream: TStream; Size: int64): boolean;
 var
   Buffer : array[0..$FFFF] of byte;
   Digest : TSHA1Digest;
   Readed : longint;
 begin
   Result := TRUE;
-
-  Include_(Rec.FFlags, gfOffSet);
-  Rec.FOffSet := FStream.Seek(0, soCurrent);
-
   SHA1Init(FCTX);
   while Size > 0 do
   begin
     Readed := Stream.Read (Buffer, Min(SizeOf(Buffer), Size));
     if Readed = 0 then
-      raise Exception.CreateFmt('Unable to write record "%s"', [Rec.Name]);
+      raise Exception.Create('Unable to write stream');
 
     Write(Buffer, Readed);
     Dec(Size, Readed);
   end;
   SHA1Final(FCTX, Digest);
   FStream.Write(Digest, SizeOf(Digest));
-
-  Include_(Rec.FFlags, gfStoredSize);
-  Rec.FStoredSize := FStream.Seek(0, soCurrent) - Rec.FOffSet;
 end;
 
 function TGulpStream.WriteOffSet(const OffSet: int64): boolean;
@@ -697,7 +687,6 @@ var
   Digest : TSHA1Digest;
 begin
   Result := TRUE;
-
   SHA1Init(FCTX);
   Write(GulpMarker, SizeOf(GulpMarker));
   Write(OffSet,     SizeOf(OffSet));
@@ -715,7 +704,8 @@ begin
   FAdd         := TList.Create;
   FList        := TList.Create;
   FFullLoad    := FALSE;
-  FCurrVersion := 0;
+  FCurrVersion :=  0;
+  FStreamSize  := -1;
 end;
 
 destructor TGulpLib.Destroy;
@@ -741,7 +731,7 @@ var
    Rec : TGulpRec;
   Size : int64;
 begin
-  if not (FStreamSize = -1) then
+  if FStreamSize <> -1 then
   begin
     Size := FStream.Seek(0, soEnd);
     FStream.Seek(FStreamSize, soBeginning);
@@ -866,7 +856,7 @@ begin
       Rec := TGulpRec.Create;
     end else
       if Rec.Version <= Version then
-        case Rec.Flags and $FF of
+        case (Rec.Flags and $FF) of
           gfADD: begin
             AddItem(Rec);
             Rec := TGulpRec.Create;
@@ -934,7 +924,8 @@ begin
     if IsLNK_(Rec) = TRUE then
     begin
       {$IFDEF UNIX}
-        Include_(Rec.FFlags, gfLinkName);  Rec.FLinkName := fpReadLink(FileName);
+        Include_(Rec.FFlags, gfLinkName);
+        Rec.FLinkName := fpReadLink(FileName);
       {$ELSE}
         {$IFDEF MSWINDOWS}
           raise Exception.Create('- Link -');
@@ -945,14 +936,18 @@ begin
     end else
       if IsFILE_(Rec) = TRUE then
       begin
-        Include_(Rec.FFlags, gfSize);  Rec.FSize := GetSize(SR);
-
         Stream := TFileStream.Create(Rec.Name, fmOpenRead);
-        WriteStream(Rec, Stream, Rec.FSize);
+        Include_(Rec.FFlags, gfSize);
+        Rec.FSize := GetSize(SR);
+        Include_(Rec.FFlags, gfOffSet);
+        Rec.FOffSet := FStream.Seek(0, soCurrent);
+        WriteStream(Stream, Rec.FSize);
+        Include_(Rec.FFlags, gfStoredSize);
+        Rec.FStoredSize := FStream.Seek(0, soCurrent) - Rec.FOffSet;
         FreeAndNil(Stream);
       end else
         if IsDIR_(Rec) = FALSE then
-          raise Exception.CreateFmt('Unsupported file "%s"', [Rec.Name]);
+          raise Exception.CreateFmt('Unsupported file "%s"', [FileName]);
 
     FAdd.Add(Rec);
   end;
@@ -1002,21 +997,32 @@ begin
   Rec := Items[Index];
   if Rec.Size > 0 then
   begin
-    if ReadStream(Rec, Stream, Rec.Size) = FALSE then
+    FStream.Seek(Rec.Offset, soBeginning);
+    if ReadStream(Stream, Rec.Size) = FALSE then
       raise Exception.CreateFmt('Mismatched checksum for "%s"', [Rec.Name]);
   end;
 end;
 
 procedure TGulpLib.Extract(Index: longint);
 var
-   Rec : TGulpRec;
   Dest : TFileStream;
+   Rec : TGulpRec;
 begin
   Rec := Items[Index];
   if IsLNK_(Rec) then
   begin
-
-
+    {$IFDEF UNIX}
+    //if FpLink(Rec.LinkName, Rec.Name) <> 0 then
+    //  raise Exception.CreateFmt('Unable to create hardlink %s', [Rec.Name]);
+    if FpSymLink(PChar(Rec.LinkName), PChar(Rec.Name)) <> 0 then
+      raise Exception.CreateFmt('Unable to create symlink "%s"', [Rec.Name]);
+    {$ELSE}
+      {$IFDEF MSWINDOWS}
+        raise Exception.Create('- Link -');
+      {$ELSE}
+        Unsupported platform...
+      {$ENDIF}
+    {$ENDIF}
   end else
     if IsFILE_(Rec) then
     begin
@@ -1029,10 +1035,11 @@ begin
     end else
       if IsDIR_(Rec) then
       begin
-        if DirectoryExists(ExtractFileDir(Rec.Name)) then
+        if DirectoryExists(ExtractFileDir(Rec.Name)) = FALSE then
           ForceDirectories(ExtractFileDir(Rec.Name));
 
-        ForceDirectories(Rec.Name);
+        if DirectoryExists(Rec.Name) = FALSE then
+          ForceDirectories(Rec.Name);
       end else
         raise Exception.CreateFmt('Unsupported file "%s"', [Rec.Name]);
 
@@ -1040,7 +1047,7 @@ begin
     FpChmod(Rec.Name, Rec.Mode);
   {$ELSE}
     {$IFDEF MSWINDOWS}
-
+      // nothing to do...
     {$ELSE}
       Unsupported platform...
     {$ENDIF}
