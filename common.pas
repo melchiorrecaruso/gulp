@@ -78,6 +78,8 @@ implementation
 uses
   {$IFDEF UNIX} BaseUnix, {$ENDIF}
   Masks,
+  Math,
+  Process,
   SysUtils;
 
 { TSysScanner class }

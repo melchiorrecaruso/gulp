@@ -23,7 +23,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.02.28 by Melchiorre Caruso.
+    v0.0.2 - 2015.03.06 by Melchiorre Caruso.
 }
 
 unit LibGulp;
@@ -39,24 +39,24 @@ uses
 
 const
   // --- Gulp Flags ---
-  gfFIX        = $00000000;
-  gfADD        = $00000001;
-  gfDEL        = $00000002;
+  gfFIX          = $00000000;
+  gfADD          = $00000001;
+  gfDEL          = $00000002;
 
-  gfFlags      = $00000100;
-  gfVersion    = $00000200;
-  gfName       = $00000400;
-  gfTime       = $00000800;
-  gfAttributes = $00001000;
-  gfMode       = $00002000;
-  gfSize       = $00004000;
-  gfLinkName   = $00008000;
-  gfUserID     = $00010000;
-  gfUserName   = $00020000;
-  gfGroupID    = $00040000;
-  gfGroupName  = $00080000;
-  gfOffSet     = $00100000;
-  gfStoredSize = $00200000;
+  gfFlags        = $00000100;
+  gfVersion      = $00000200;
+  gfName         = $00000400;
+  gfTime         = $00000800;
+  gfAttributes   = $00001000;
+  gfMode         = $00002000;
+  gfSize         = $00004000;
+  gfLinkName     = $00008000;
+  gfUserID       = $00010000;
+  gfUserName     = $00020000;
+  gfGroupID      = $00040000;
+  gfGroupName    = $00080000;
+  gfOffSet       = $00100000;
+  gfStoredSize   = $00200000;
 
 type
   // --- Gulp Marker ---
@@ -77,10 +77,11 @@ type
     FUserName   : ansistring; // User Name
     FGroupID    : longword;   // Group ID
     FGroupName  : ansistring; // Group Name
-                              // Rec SHA digest
-    FOffSet     : int64;      // Data stream offset
-    FStoredSize : int64;      // Data stream size
-                              // Data SHA digest
+                              // Record SHA digest
+    FOffSet     : int64;      // Data offset
+    FStoredSize : int64;      // Stored data size
+                              // Stored data method
+                              // Stored data SHA digest
   public
     property Flags      : longword   read FFlags;
     property Version    : longword   read FVersion;
@@ -115,7 +116,7 @@ type
     function Write(const Buffer: string): longint; overload;
     function Write(const Buffer; Count: longint): longint; overload;
     function WriteRec(Rec: TGulpRec): boolean;
-    function WriteStream(Stream: TStream; Size: int64): boolean;
+    function WriteStream(Stream: TStream; Size: int64; Method: longword): boolean;
     function WriteOffSet(const OffSet: int64): boolean;
   end;
 
@@ -126,6 +127,7 @@ type
     FList        : TList;
     FFullLoad    : boolean;
     FCurrVersion : longword;
+    FMethod      : longword;
     FStreamSize  : int64;
     procedure BeginUpdate;
     procedure EndUpdate;
@@ -145,6 +147,7 @@ type
     function  Find(const FileName: string): longint;
     procedure ExtractTo(Index: longint; Stream: TStream);
     procedure Extract(Index: longint);
+    property Method: longword read FMethod write FMethod;
     property Items[Index: longint]: TGulpRec read GetItem;
     property Count: longint read GetCount;
   end;
@@ -188,7 +191,8 @@ implementation
 
 uses
   DateUtils,
-  Math;
+  Math,
+  Process;
 
 const
   GulpMarker : TGulpMarker = ('G', 'U','L','P','/', '0', '0', '2',' ',' ');
@@ -581,18 +585,57 @@ var
      Buffer : array[0..$FFFF] of byte;
   AuxDigest : TSHA1Digest;
      Digest : TSHA1Digest;
+     Method : longword;
+       Proc : TProcess;
      Readed : longint;
 begin
+  FStream.Read(Method, SizeOf(Method));
   SHA1Init(FCTX);
-  while Size > 0 do
+  if Method = 0 then
   begin
-    Readed := Read(Buffer, Min(SizeOf(Buffer), Size));
-    if Readed = 0 then
-      raise Exception.Create('Unable to read stream');
+    while Size > 0 do
+    begin
+      Readed := FStream.Read(Buffer, Min(SizeOf(Buffer), Size));
+      if Readed = 0 then
+        raise Exception.Create('Unable to read stream');
+      SHA1Update(FCTX, Buffer, Readed);
+      Stream.Write(Buffer, Readed);
+      Dec(Size, Readed);
+    end;
+  end else
+  begin
+    Proc         := TProcess.Create(nil);
+    Proc.Options := [poUsePipes, poStderrToOutPut];
 
-    Stream.Write(Buffer, Readed);
-    Dec(Size, Readed);
+    if Method = 1 then
+    begin
+      {$IFDEF UNIX}
+        Proc.Executable :=  'xz';
+        Proc.Parameters.Add('-d');
+        Proc.Parameters.Add('-c');
+      {$ELSE}
+        {$IFDEF MSWINDOWS}
+          raise Exception.Create('- Link -');
+        {$ELSE}
+          Unsupported platform...
+        {$ENDIF}
+      {$ENDIF}
+    end else
+      raise Exception.Create('Mismatched method');
+
+    Proc.Execute;
+    while Size > 0 do
+    begin
+
+
+
+
+
+    end;
+
+    Proc.Free;;
   end;
+
   SHA1Final(FCTX, Digest);
   FillChar(AuxDigest, SizeOf(AuxDigest), 0);
   FStream.Read(AuxDigest, SizeOf(AuxDigest));
@@ -661,25 +704,103 @@ begin
   FStream.Write(Digest, SizeOf(Digest));
 end;
 
-function TGulpStream.WriteStream(Stream: TStream; Size: int64): boolean;
+function TGulpStream.WriteStream(Stream: TStream; Size: int64; Method: longword): boolean;
 var
   Buffer : array[0..$FFFF] of byte;
   Digest : TSHA1Digest;
+    Proc : TProcess;
   Readed : longint;
+  J : longint;
 begin
-  Result := TRUE;
+  FStream.Write(Method, SizeOf(Method));
   SHA1Init(FCTX);
-  while Size > 0 do
+  if Method = 0 then
   begin
-    Readed := Stream.Read (Buffer, Min(SizeOf(Buffer), Size));
-    if Readed = 0 then
-      raise Exception.Create('Unable to write stream');
+    while Size > 0 do
+    begin
+      Readed := Stream.Read(Buffer, Min(SizeOf(Buffer), Size));
+      if Readed = 0 then
+        raise Exception.Create('Unable to read stream');
+      SHA1Update(FCTX, Buffer, Readed);
+      FStream.Write(Buffer, Readed);
+      Dec(Size, Readed);
+    end;
+  end else
+  begin
+    Proc         := TProcess.Create(nil);
+    Proc.Options := [poUsePipes, poStderrToOutPut];
 
-    Write(Buffer, Readed);
-    Dec(Size, Readed);
+    if Method = 1 then
+    begin
+      {$IFDEF UNIX}
+        // Proc.Executable :=  'xz';
+        // Proc.Parameters.Add('-z');
+        // Proc.Parameters.Add('-c');
+        // Proc.Parameters.Add('-0');
+        Proc.Executable := 'zpipe';
+        Proc.Parameters.Add('-1');
+      {$ELSE}
+        {$IFDEF MSWINDOWS}
+          ToDo...
+        {$ELSE}
+          Unsupported platform...
+        {$ENDIF}
+      {$ENDIF}
+    end else
+      raise Exception.Create('Mismatched method');
+
+    Proc.Execute;
+    while Size > 0 do
+    begin
+      Readed := Stream.Read(Buffer, Min(SizeOf(Buffer), Size));
+      if Readed = 0 then
+        raise Exception.Create('Unable to read stream');
+      SHA1Update(FCTX, Buffer, Readed);
+      // Proc.Input.Write(Buffer, Readed);
+      Dec(Size, Readed);
+      if Size = 0 then
+        Proc.CloseInput;
+
+      Sleep(1000);
+
+      // main loop to read output from stdout
+      while Proc.Output.NumBytesAvailable > 0 do
+      begin
+        writeln('MyReaded');
+        Readed := Proc.Output.Read(Buffer,
+          Min(SizeOf(Buffer), Proc.Output.NumBytesAvailable));
+
+        for J := 0 to Readed - 1 do
+          system.writeln(char(Buffer[J]));
+        if Readed > 0 then
+          FStream.Write(Buffer, Readed);
+        writeln('writed ', Readed);
+      end;
+    end;
+
+    // loop to read the last part from stdout
+
+
+    while Proc.Running do
+    begin
+      if Proc.Output.NumBytesAvailable > 0 then
+      begin
+        Readed := Proc.Output.Read(Buffer,
+          Min(SizeOf(Buffer), Proc.Output.NumBytesAvailable));
+
+        for J := 0 to Readed - 1 do
+          system.writeln(char(Buffer[J]));
+        if Readed > 0 then
+          FStream.Write(Buffer, Readed);
+        writeln('writed ', Readed);
+      end;
+    end;
+    Proc.Free;
   end;
+
   SHA1Final(FCTX, Digest);
   FStream.Write(Digest, SizeOf(Digest));
+  Result := TRUE;
 end;
 
 function TGulpStream.WriteOffSet(const OffSet: int64): boolean;
@@ -705,6 +826,7 @@ begin
   FList        := TList.Create;
   FFullLoad    := FALSE;
   FCurrVersion :=  0;
+  FMethod      :=  0;
   FStreamSize  := -1;
 end;
 
@@ -936,12 +1058,12 @@ begin
     end else
       if IsFILE_(Rec) = TRUE then
       begin
-        Stream := TFileStream.Create(Rec.Name, fmOpenRead);
+        Stream := TFileStream.Create(Rec.Name, fmOpenRead or fmShareDenyNone);
         Include_(Rec.FFlags, gfSize);
         Rec.FSize := GetSize(SR);
         Include_(Rec.FFlags, gfOffSet);
         Rec.FOffSet := FStream.Seek(0, soCurrent);
-        WriteStream(Stream, Rec.FSize);
+        WriteStream(Stream, Rec.FSize, FMethod);
         Include_(Rec.FFlags, gfStoredSize);
         Rec.FStoredSize := FStream.Seek(0, soCurrent) - Rec.FOffSet;
         FreeAndNil(Stream);

@@ -22,7 +22,8 @@
         <UnitName Value="Application"/>
         <EditorIndex Value="3"/>
         <WindowIndex Value="1"/>
-        <CursorPos X="26" Y="19"/>
+        <TopLine Value="105"/>
+        <CursorPos X="30" Y="136"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
@@ -33,9 +34,9 @@
         <UnitName Value="LibGulp"/>
         <IsVisibleTab Value="True"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="992"/>
-        <CursorPos X="31" Y="1020"/>
-        <FoldState Value=" T3lR0BB pigjZ038[95P0G]IjHkI0L6]Ieja08[94ZjE0N3]RdkR0H214g"/>
+        <TopLine Value="744"/>
+        <CursorPos X="20" Y="769"/>
+        <FoldState Value=" T3lV0BB pigjZ038[95P0G81214174"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
@@ -46,8 +47,8 @@
         <UnitName Value="Common"/>
         <EditorIndex Value="1"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="16"/>
-        <CursorPos X="15" Y="28"/>
+        <TopLine Value="217"/>
+        <CursorPos X="34" Y="239"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>

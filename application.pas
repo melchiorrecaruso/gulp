@@ -146,6 +146,8 @@ begin
   end;
 
   write(#13, #13: 80, 'Adding records... ');
+  if GetOptionValue('m', 'method') <> '' then
+    GulpLib.Method := StrToInt(GetOptionValue('m', 'method'));
   for I := 0 to FScanner.Count - 1 do
   begin
     Inc(Count);
@@ -520,7 +522,7 @@ begin
   DefaultFormatSettings.LongDateFormat  := 'yyyy-mm-dd';
   DefaultFormatSettings.ShortDateFormat := 'yyyy-mm-dd';
 
-  ShortSwitches := 's:r:p:l:c:f:u:h';
+  ShortSwitches := 's:r:p:l:c:f:u:m:h';
   LongSwitches  :=  TStringList.Create;
   LongSwitches.Add('synch:');
   LongSwitches.Add('restore:');
@@ -530,6 +532,7 @@ begin
   LongSwitches.Add('fix:');
   LongSwitches.Add('help');
   LongSwitches.Add('until:');
+  LongSwitches.Add('method:');
 
   ExitCode  := 1;
   try
