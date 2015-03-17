@@ -145,9 +145,15 @@ begin
         FScanner.Delete(J);
   end;
 
-  write(#13, #13: 80, 'Adding records... ');
   if GetOptionValue('m', 'method') <> '' then
-    GulpLib.Method := StrToInt(GetOptionValue('m', 'method'));
+  begin
+    if GetOptionValue('m', 'method') = 'gzfast' then GulpLib.Method := $0101 else
+    if GetOptionValue('m', 'method') = 'gz'     then GulpLib.Method := $0201 else
+    if GetOptionValue('m', 'method') = 'gzmax'  then GulpLib.Method := $0301 else
+      raise Exception.Create('Wrong method value');
+  end;
+
+  write(#13, #13: 80, 'Adding records... ');
   for I := 0 to FScanner.Count - 1 do
   begin
     Inc(Count);

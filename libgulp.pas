@@ -192,7 +192,7 @@ implementation
 uses
   DateUtils,
   Math,
-  Process;
+  ZStream;
 
 const
   GulpMarker : TGulpMarker = ('G', 'U','L','P','/', '0', '0', '2',' ',' ');
@@ -585,58 +585,32 @@ var
      Buffer : array[0..$FFFF] of byte;
   AuxDigest : TSHA1Digest;
      Digest : TSHA1Digest;
-     Method : longword;
-       Proc : TProcess;
+     Method : longword = 0;
      Readed : longint;
+    ZStream : TStream;
 begin
   FStream.Read(Method, SizeOf(Method));
-  SHA1Init(FCTX);
-  if Method = 0 then
-  begin
-    while Size > 0 do
-    begin
-      Readed := FStream.Read(Buffer, Min(SizeOf(Buffer), Size));
-      if Readed = 0 then
-        raise Exception.Create('Unable to read stream');
-      SHA1Update(FCTX, Buffer, Readed);
-      Stream.Write(Buffer, Readed);
-      Dec(Size, Readed);
-    end;
-  end else
-  begin
-    Proc         := TProcess.Create(nil);
-    Proc.Options := [poUsePipes, poStderrToOutPut];
-
-    if Method = 1 then
-    begin
-      {$IFDEF UNIX}
-        Proc.Executable :=  'xz';
-        Proc.Parameters.Add('-d');
-        Proc.Parameters.Add('-c');
-      {$ELSE}
-        {$IFDEF MSWINDOWS}
-          raise Exception.Create('- Link -');
-        {$ELSE}
-          Unsupported platform...
-        {$ENDIF}
-      {$ENDIF}
-    end else
-      raise Exception.Create('Mismatched method');
-
-    Proc.Execute;
-    while Size > 0 do
-    begin
-
-
-
-
-
-    end;
-
-    Proc.Free;;
+  case Method and $FF of
+    0: ZStream := FStream;
+    1: ZStream := TDecompressionStream.Create(FStream);
   end;
 
+  SHA1Init(FCTX);
+  while Size > 0 do
+  begin
+    Readed := ZStream.Read(Buffer, Min(SizeOf(Buffer), Size));
+    if Readed = 0 then
+      raise Exception.Create('Unable to read stream');
+    SHA1Update(FCTX, Buffer, Readed);
+    Stream.Write(Buffer, Readed);
+    Dec(Size, Readed);
+  end;
   SHA1Final(FCTX, Digest);
+
+  case Method and $FF of
+    1: FreeAndNil(ZStream);
+    0: ZStream := nil;
+  end;
   FillChar(AuxDigest, SizeOf(AuxDigest), 0);
   FStream.Read(AuxDigest, SizeOf(AuxDigest));
   Result := SHA1Match(AuxDigest, Digest);
@@ -706,99 +680,34 @@ end;
 
 function TGulpStream.WriteStream(Stream: TStream; Size: int64; Method: longword): boolean;
 var
-  Buffer : array[0..$FFFF] of byte;
-  Digest : TSHA1Digest;
-    Proc : TProcess;
-  Readed : longint;
-  J : longint;
+   Buffer : array[0..$FFFF] of byte;
+   Digest : TSHA1Digest;
+   Readed : longint;
+  ZStream : TStream;
 begin
   FStream.Write(Method, SizeOf(Method));
-  SHA1Init(FCTX);
-  if Method = 0 then
-  begin
-    while Size > 0 do
-    begin
-      Readed := Stream.Read(Buffer, Min(SizeOf(Buffer), Size));
-      if Readed = 0 then
-        raise Exception.Create('Unable to read stream');
-      SHA1Update(FCTX, Buffer, Readed);
-      FStream.Write(Buffer, Readed);
-      Dec(Size, Readed);
-    end;
-  end else
-  begin
-    Proc         := TProcess.Create(nil);
-    Proc.Options := [poUsePipes, poStderrToOutPut];
-
-    if Method = 1 then
-    begin
-      {$IFDEF UNIX}
-        // Proc.Executable :=  'xz';
-        // Proc.Parameters.Add('-z');
-        // Proc.Parameters.Add('-c');
-        // Proc.Parameters.Add('-0');
-        Proc.Executable := 'zpipe';
-        Proc.Parameters.Add('-1');
-      {$ELSE}
-        {$IFDEF MSWINDOWS}
-          ToDo...
-        {$ELSE}
-          Unsupported platform...
-        {$ENDIF}
-      {$ENDIF}
-    end else
-      raise Exception.Create('Mismatched method');
-
-    Proc.Execute;
-    while Size > 0 do
-    begin
-      Readed := Stream.Read(Buffer, Min(SizeOf(Buffer), Size));
-      if Readed = 0 then
-        raise Exception.Create('Unable to read stream');
-      SHA1Update(FCTX, Buffer, Readed);
-      // Proc.Input.Write(Buffer, Readed);
-      Dec(Size, Readed);
-      if Size = 0 then
-        Proc.CloseInput;
-
-      Sleep(1000);
-
-      // main loop to read output from stdout
-      while Proc.Output.NumBytesAvailable > 0 do
-      begin
-        writeln('MyReaded');
-        Readed := Proc.Output.Read(Buffer,
-          Min(SizeOf(Buffer), Proc.Output.NumBytesAvailable));
-
-        for J := 0 to Readed - 1 do
-          system.writeln(char(Buffer[J]));
-        if Readed > 0 then
-          FStream.Write(Buffer, Readed);
-        writeln('writed ', Readed);
-      end;
-    end;
-
-    // loop to read the last part from stdout
-
-
-    while Proc.Running do
-    begin
-      if Proc.Output.NumBytesAvailable > 0 then
-      begin
-        Readed := Proc.Output.Read(Buffer,
-          Min(SizeOf(Buffer), Proc.Output.NumBytesAvailable));
-
-        for J := 0 to Readed - 1 do
-          system.writeln(char(Buffer[J]));
-        if Readed > 0 then
-          FStream.Write(Buffer, Readed);
-        writeln('writed ', Readed);
-      end;
-    end;
-    Proc.Free;
+  case Method and $FF of
+    0: ZStream := FStream;
+    1: ZStream := TCompressionStream.Create(
+         TCompressionLevel((Method and $FF00) shr 8), FStream);
   end;
 
+  SHA1Init(FCTX);
+  while Size > 0 do
+  begin
+    Readed := Stream.Read(Buffer, Min(SizeOf(Buffer), Size));
+    if Readed = 0 then
+      raise Exception.Create('Unable to read stream');
+    SHA1Update(FCTX, Buffer, Readed);
+    ZStream.Write(Buffer, Readed);
+    Dec(Size, Readed);
+  end;
   SHA1Final(FCTX, Digest);
+
+  case Method and $FF of
+    1: FreeAndNil(ZStream);
+    0: ZStream := nil;
+  end;
   FStream.Write(Digest, SizeOf(Digest));
   Result := TRUE;
 end;
