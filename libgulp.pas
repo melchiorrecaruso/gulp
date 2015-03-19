@@ -23,7 +23,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.03.06 by Melchiorre Caruso.
+    v0.0.2 - 2015.03.19 by Melchiorre Caruso.
 }
 
 unit LibGulp;
@@ -99,57 +99,47 @@ type
     property StoredSize : int64      read FStoredSize;
   end;
 
-  // --- The Gulp Stream ---
-  TGulpStream = class(TObject)
-  protected
-    FCTX    : TSHA1Context;
-    FStream : TStream;
-  public
-    constructor Create(Stream: TStream);
-    destructor Destroy; override;
-    function Read(var Buffer: string): longint; overload;
-    function Read(var Buffer; Count: longint): longint; overload;
-    function ReadRec(var Rec: TGulpRec): boolean;
-    function ReadStream(Stream: TStream; Size: int64): boolean;
-    function ReadOffSet(var OffSet: int64): boolean;
-
-    function Write(const Buffer: string): longint; overload;
-    function Write(const Buffer; Count: longint): longint; overload;
-    function WriteRec(Rec: TGulpRec): boolean;
-    function WriteStream(Stream: TStream; Size: int64; Method: longword): boolean;
-    function WriteOffSet(const OffSet: int64): boolean;
-  end;
-
   // --- The Gulp Library ---
-  TGulpLib = class(TGulpStream)
+  TGulpLib = class(TObject)
   private
     FAdd         : TList;
     FList        : TList;
     FFullLoad    : boolean;
     FCurrVersion : longword;
     FMethod      : longword;
+    FPassword    : string;
+    FStream      : TStream;
     FStreamSize  : int64;
     procedure BeginUpdate;
     procedure EndUpdate;
-    procedure AddItem(Rec: TGulpRec);
+
+    procedure AddItem   (Rec: TGulpRec);
     procedure InsertItem(Rec: TGulpRec);
     procedure DeleteItem(Index: longint);
-    function  FindItem(const FileName: string): longint;
-    function GetItem(Index: longint): TGulpRec;
+    function  FindItem  (const FileName: string): longint;
+
+    function GetItem    (Index: longint): TGulpRec;
     function GetCount: longint;
+
+    function WriteStream(Stream: TStream; Size: int64): boolean;
+    function ReadStream (Stream: TStream; Size: int64): boolean;
   public
     constructor Create(Stream: TStream);
     destructor  Destroy; override;
+
     function  OpenArchive(Version: longword): boolean;
     procedure CloseArchive;
-    procedure Add(const FileName: string);
-    procedure Delete(Index: longint);
+
+    procedure Add (const FileName: string);
     function  Find(const FileName: string): longint;
     procedure ExtractTo(Index: longint; Stream: TStream);
-    procedure Extract(Index: longint);
-    property Method: longword read FMethod write FMethod;
+    procedure Extract  (Index: longint);
+    procedure Delete   (Index: longint);
+
     property Items[Index: longint]: TGulpRec read GetItem;
-    property Count: longint read GetCount;
+    property Password: string read FPassword write FPassword;
+    property Method: longword read FMethod   write FMethod;
+    property Count:  longint  read GetCount;
   end;
 
   procedure FixArchive(Stream: TStream);
@@ -190,6 +180,7 @@ function StringToMode(const S: string  ): longint;
 implementation
 
 uses
+  BlowFish,
   DateUtils,
   Math,
   ZStream;
@@ -433,7 +424,69 @@ end;
 // Internal rutines
 // =============================================================================
 
-procedure Clear_(var Rec: TGulpRec);
+function IsFILE(const Rec: TGulpRec): boolean; inline;
+begin
+  {$IFDEF UNIX}
+    Result := FpS_ISREG(Rec.Mode);
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+      Result := Rec.Attributes and (faDirectory or faVolumeId) = 0;
+    {$ELSE}
+      Unsupported platform...
+    {$ENDIF}
+  {$ENDIF}
+end;
+
+function IsDIR(const Rec: TGulpRec): boolean; inline;
+begin
+  {$IFDEF UNIX}
+    Result := FpS_ISDIR(Rec.Mode);
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+      Result := Rec.Attributes and (faDirectory) = faDirectory;
+    {$ELSE}
+      Unsupported platform...
+    {$ENDIF}
+  {$ENDIF}
+end;
+
+function IsLNK(const Rec: TGulpRec): boolean; inline;
+begin
+  {$IFDEF UNIX}
+    Result := FpS_ISLNK(Rec.Mode);
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+      Result := Rec.Attributes and (faSymLink) = faSymLink;
+    {$ELSE}
+      Unsupported platform...
+    {$ENDIF}
+  {$ENDIF}
+end;
+
+procedure IncludeFlag(var Flags: longword; Flag: longword); inline;
+begin
+  Flags := Flags or Flag;
+end;
+
+procedure ExcludeFlag(var Flags: longword; Flag: longword); inline;
+begin
+  Flags := Flags and (Flag xor $FFFFFFFF);
+end;
+
+function CompareRec(const Rec1, Rec2: TGulpRec): longint; inline;
+begin
+  Result := AnsiCompareFileName(Rec1.Name, Rec2.Name);
+  if Result = 0 then
+  begin
+    if Rec1.Version < Rec2.Version then
+      Result := - 1
+    else
+      if Rec1.Version > Rec2.Version then
+        Result := 1;
+  end;
+end;
+
+procedure ClearRec(var Rec: TGulpRec); inline;
 begin
   Rec.FFlags      := 0;
   Rec.FVersion    := 0;
@@ -451,277 +504,176 @@ begin
   Rec.FStoredSize := 0;
 end;
 
-procedure Include_(var Flags: longword; Flag: longword);
-begin
-  Flags := Flags or Flag;
-end;
-
-procedure Exclude_(var Flags: longword; Flag: longword);
-begin
-  Flags := Flags and (Flag xor $FFFFFFFF);
-end;
-
-function Compare_(Item1, Item2: TGulpRec): longint;
-begin
-  Result := AnsiCompareFileName(Item1.Name, Item2.Name);
-  if Result = 0 then
-  begin
-    if Item1.Version < Item2.Version then
-      Result := - 1
-    else
-      if Item1.Version > Item2.Version then
-        Result := 1;
-  end;
-end;
-
-function IsFILE_(Rec: TGulpRec): boolean;
-begin
-  {$IFDEF UNIX}
-    Result := FpS_ISREG(Rec.Mode);
-  {$ELSE}
-    {$IFDEF MSWINDOWS}
-      Result := Rec.Attributes and (faDirectory or faVolumeId) = 0;
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
-  {$ENDIF}
-end;
-
-function IsDIR_(Rec: TGulpRec): boolean;
-begin
-  {$IFDEF UNIX}
-    Result := FpS_ISDIR(Rec.Mode);
-  {$ELSE}
-    {$IFDEF MSWINDOWS}
-      Result := Rec.Attributes and (faDirectory) = faDirectory;
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
-  {$ENDIF}
-end;
-
-function IsLNK_(Rec: TGulpRec): boolean;
-begin
-  {$IFDEF UNIX}
-    Result := FpS_ISLNK(Rec.Mode);
-  {$ELSE}
-    {$IFDEF MSWINDOWS}
-      Result := Rec.Attributes and (faSymLink) = faSymLink;
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
-  {$ENDIF}
-end;
-
-// =============================================================================
-// TGulpStream
-// =============================================================================
-
-constructor TGulpStream.Create(Stream: TStream);
-begin
-  inherited Create;
-  FStream := Stream;
-end;
-
-destructor TGulpStream.Destroy;
-begin
-  inherited Destroy;
-end;
-
-function TGulpStream.Read(var Buffer; Count: longint): longint;
-begin
-  Result := FStream.Read(Buffer, Count);
-  SHA1Update(FCTX, Buffer, Result);
-end;
-
-function TGulpStream.Read(var Buffer: string): longint;
-begin
-  Read(Result, SizeOf(Result));
-  SetLength(Buffer, Result);
-  Read(Pointer(Buffer)^, Result);
-end;
-
-function TGulpStream.ReadRec(var Rec: TGulpRec): boolean;
+function DigestRec(const Rec: TGulpRec): TSha1Digest; inline;
 var
-  AuxDigest : TSHA1Digest;
-     Digest : TSHA1Digest;
-     Marker : TGulpMarker;
+  Context : TSHA1Context;
 begin
-  Clear_  (Rec);
-  SHA1Init(FCTX);
-  FillChar(Marker, SizeOf(Marker), 0);
-  Read    (Marker, SizeOf(Marker));
-
-  Result := Marker = GulpMarker;
-  if Result then
-  begin
-    Read(Rec.FFlags, SizeOf(Rec.FFlags));
-
-    if gfVersion    and Rec.Flags <> 0 then Read(Rec.FVersion,    SizeOf(Rec.FVersion));
-    if gfName       and Rec.Flags <> 0 then Read(Rec.FName);
-    if gfTime       and Rec.Flags <> 0 then Read(Rec.FTime,       SizeOf(Rec.FTime));
-    if gfAttributes and Rec.Flags <> 0 then Read(Rec.FAttributes, SizeOf(Rec.FAttributes));
-    if gfMode       and Rec.Flags <> 0 then Read(Rec.FMode,       SizeOf(Rec.FMode));
-    if gfSize       and Rec.Flags <> 0 then Read(Rec.FSize,       SizeOf(Rec.FSize));
-    if gfLinkName   and Rec.Flags <> 0 then Read(Rec.FLinkName);
-    if gfUserID     and Rec.Flags <> 0 then Read(Rec.FUserID,     SizeOf(Rec.FUserID));
-    if gfUserName   and Rec.Flags <> 0 then Read(Rec.FUserName);
-    if gfGroupID    and Rec.Flags <> 0 then Read(Rec.FGroupID,    SizeOf(Rec.FGroupID));
-    if gfGroupName  and Rec.Flags <> 0 then Read(Rec.FGroupName);
-    if gfOffSet     and Rec.Flags <> 0 then Read(Rec.FOffSet,     SizeOf(Rec.FOffSet));
-    if gfStoredSize and Rec.Flags <> 0 then Read(Rec.FStoredSize, SizeOf(Rec.FStoredSize));
-
-    Rec.FName := GetName(Rec.FName);
-
-    SHA1Final(FCTX, Digest);
-    FillChar(AuxDigest, SizeOf(AuxDigest), 0);
-    FStream.Read(AuxDigest, SizeOf(AuxDigest));
-    Result := SHA1Match(AuxDigest, Digest);
-  end;
+  SHA1Init  (Context);
+  SHA1Update(Context,         Rec.FFlags,       SizeOf(Rec.FFlags     ));
+  SHA1Update(Context,         Rec.FVersion,     SizeOf(Rec.FVersion   ));
+  SHA1Update(Context, Pointer(Rec.FName)^,      Length(Rec.FName      ));
+  SHA1Update(Context,         Rec.FTime,        SizeOf(Rec.FTime      ));
+  SHA1Update(Context,         Rec.FAttributes,  SizeOf(Rec.FAttributes));
+  SHA1Update(Context,         Rec.FMode,        SizeOf(Rec.FMode      ));
+  SHA1Update(Context,         Rec.FSize,        SizeOf(Rec.FSize      ));
+  SHA1Update(Context, Pointer(Rec.FLinkName)^,  Length(Rec.FLinkName  ));
+  SHA1Update(Context,         Rec.FUserID,      SizeOf(Rec.FUserID    ));
+  SHA1Update(Context, Pointer(Rec.FUserName)^,  Length(Rec.FUserName  ));
+  SHA1Update(Context,         Rec.FGroupID,     SizeOf(Rec.FGroupID   ));
+  SHA1Update(Context, Pointer(Rec.FGroupName)^, Length(Rec.FGroupName ));
+  SHA1Update(Context,         Rec.FOffSet,      SizeOf(Rec.FOffSet    ));
+  SHA1Update(Context,         Rec.FStoredSize,  SizeOf(Rec.FStoredSize));
+  SHA1Final (Context, Result);
 end;
 
-function TGulpStream.ReadStream(Stream: TStream; Size: int64): boolean;
-var
-     Buffer : array[0..$FFFF] of byte;
-  AuxDigest : TSHA1Digest;
-     Digest : TSHA1Digest;
-     Method : longword = 0;
-     Readed : longint;
-    ZStream : TStream;
-begin
-  FStream.Read(Method, SizeOf(Method));
-  case Method and $FF of
-    0: ZStream := FStream;
-    1: ZStream := TDecompressionStream.Create(FStream);
-  end;
-
-  SHA1Init(FCTX);
-  while Size > 0 do
-  begin
-    Readed := ZStream.Read(Buffer, Min(SizeOf(Buffer), Size));
-    if Readed = 0 then
-      raise Exception.Create('Unable to read stream');
-    SHA1Update(FCTX, Buffer, Readed);
-    Stream.Write(Buffer, Readed);
-    Dec(Size, Readed);
-  end;
-  SHA1Final(FCTX, Digest);
-
-  case Method and $FF of
-    1: FreeAndNil(ZStream);
-    0: ZStream := nil;
-  end;
-  FillChar(AuxDigest, SizeOf(AuxDigest), 0);
-  FStream.Read(AuxDigest, SizeOf(AuxDigest));
-  Result := SHA1Match(AuxDigest, Digest);
-end;
-
-function TGulpStream.ReadOffSet(var OffSet: int64): boolean;
-var
-  AuxDigest : TSHA1Digest;
-     Digest : TSHA1Digest;
-     Marker : TGulpMarker;
-begin
-  SHA1Init(FCTX);
-  FillChar(Marker, SizeOf(Marker), 0);
-  Read    (Marker, SizeOf(Marker));
-
-  Result := Marker = GulpMarker;
-  if Result then
-  begin
-    Read(OffSet, SizeOf(OffSet));
-
-    SHA1Final(FCTX, Digest);
-    FillChar(AuxDigest, SizeOf(AuxDigest), 0);
-    FStream.Read(AuxDigest, SizeOf(AuxDigest));
-    Result := SHA1Match(AuxDigest, Digest);
-  end;
-end;
-
-function TGulpStream.Write(const Buffer; Count: longint): longint;
-begin
-  Result := FStream.Write(Buffer, Count);
-  SHA1Update(FCTX, Buffer, Result);
-end;
-
-function TGulpStream.Write(const Buffer: string): longint;
-begin
-  Result := Length(Buffer);
-  Write(Result, SizeOf(Result));
-  Write(Pointer(Buffer)^, Result);
-end;
-
-function TGulpStream.WriteRec(Rec: TGulpRec): boolean;
+function ReadRec(Source: TStream; var Rec: TGulpRec): boolean; inline;
 var
   Digest : TSHA1Digest;
+  Marker : TGulpMarker;
 begin
-  Result := TRUE;
-  SHA1Init(FCTX);
-  Write   (GulpMarker, SizeOf(GulpMarker));
-  Write   (Rec.FFlags, SizeOf(Rec.FFlags));
+  FillChar   (Marker, SizeOf(Marker), 0);
+  Source.Read(Marker, SizeOf(Marker));
 
-  if gfVersion    and Rec.Flags <> 0 then Write(Rec.FVersion,    SizeOf(Rec.FVersion));
-  if gfName       and Rec.Flags <> 0 then Write(Rec.FName);
-  if gfTime       and Rec.Flags <> 0 then Write(Rec.FTime,       SizeOf(Rec.FTime));
-  if gfAttributes and Rec.Flags <> 0 then Write(Rec.FAttributes, SizeOf(Rec.FAttributes));
-  if gfMode       and Rec.Flags <> 0 then Write(Rec.FMode,       SizeOf(Rec.FMode));
-  if gfSize       and Rec.Flags <> 0 then Write(Rec.FSize,       SizeOf(Rec.FSize));
-  if gfLinkName   and Rec.Flags <> 0 then Write(Rec.FLinkName);
-  if gfUserID     and Rec.Flags <> 0 then Write(Rec.FUserID,     SizeOf(Rec.FUserID));
-  if gfUserName   and Rec.Flags <> 0 then Write(Rec.FUserName);
-  if gfGroupID    and Rec.Flags <> 0 then Write(Rec.FGroupID,    SizeOf(Rec.FGroupID));
-  if gfGroupName  and Rec.Flags <> 0 then Write(Rec.FGroupName);
-  if gfOffSet     and Rec.Flags <> 0 then Write(Rec.FOffSet,     SizeOf(Rec.FOffSet));
-  if gfStoredSize and Rec.Flags <> 0 then Write(Rec.FStoredSize, SizeOf(Rec.FStoredSize));
+  Result := Marker = GulpMarker;
+  if Result then
+  begin
+    ClearRec(Rec);
 
-  SHA1Final(FCTX, Digest);
-  FStream.Write(Digest, SizeOf(Digest));
+    Source.Read(Rec.FFlags, SizeOf(Rec.FFlags));
+
+    if gfVersion    and Rec.Flags <> 0 then
+      Source.Read(Rec.FVersion, SizeOf(Rec.FVersion));
+
+    if gfName       and Rec.Flags <> 0 then
+      Rec.FName := Source.ReadAnsiString;
+
+    if gfTime       and Rec.Flags <> 0 then
+      Source.Read(Rec.FTime, SizeOf(Rec.FTime));
+
+    if gfAttributes and Rec.Flags <> 0 then
+      Source.Read(Rec.FAttributes, SizeOf(Rec.FAttributes));
+
+    if gfMode       and Rec.Flags <> 0 then
+      Source.Read(Rec.FMode, SizeOf(Rec.FMode));
+
+    if gfSize       and Rec.Flags <> 0 then
+      Source.Read(Rec.FSize, SizeOf(Rec.FSize));
+
+    if gfLinkName   and Rec.Flags <> 0 then
+      Rec.FLinkName := Source.ReadAnsiString;
+
+    if gfUserID     and Rec.Flags <> 0 then
+      Source.Read(Rec.FUserID, SizeOf(Rec.FUserID));
+
+    if gfUserName   and Rec.Flags <> 0 then
+      Rec.FUserName := Source.ReadAnsiString;
+
+    if gfGroupID    and Rec.Flags <> 0 then
+      Source.Read(Rec.FGroupID, SizeOf(Rec.FGroupID));
+
+    if gfGroupName  and Rec.Flags <> 0 then
+      Rec.FGroupName := Source.ReadAnsiString;
+
+    if gfOffSet     and Rec.Flags <> 0 then
+      Source.Read(Rec.FOffSet, SizeOf(Rec.FOffSet));
+
+    if gfStoredSize and Rec.Flags <> 0 then
+      Source.Read(Rec.FStoredSize, SizeOf(Rec.FStoredSize));
+
+    FillChar   (Digest, SizeOf(Digest), 0);
+    Source.Read(Digest, SizeOf(Digest));
+
+    Result := SHA1Match(Digest, DigestRec(Rec));
+  end;
 end;
 
-function TGulpStream.WriteStream(Stream: TStream; Size: int64; Method: longword): boolean;
+function ReadOffSet(Source: TStream; var OffSet: int64): boolean; inline;
 var
-   Buffer : array[0..$FFFF] of byte;
+    Context : TSHA1Context;
+  AuxDigest : TSHA1Digest;
+     Digest : TSHA1Digest;
+     Marker : TGulpMarker;
+begin
+  FillChar   (Marker, SizeOf(Marker), 0);
+  Source.Read(Marker, SizeOf(Marker));
+
+  Result := Marker = GulpMarker;
+  if Result then
+  begin
+    SHA1Init   (Context);
+    Source.Read(         OffSet, SizeOf(OffSet));
+    SHA1Update (Context, OffSet, SizeOf(OffSet));
+    SHA1Final  (Context, Digest);
+
+    FillChar   (AuxDigest, SizeOf(AuxDigest), 0);
+    Source.Read(AuxDigest, SizeOf(AuxDigest));
+
+    Result := SHA1Match(AuxDigest, Digest);
+  end;
+end;
+
+function WriteRec(Dest: TStream; const Rec: TGulpRec): boolean; inline;
+begin
+  Dest.Write(GulpMarker, SizeOf(GulpMarker));
+  Dest.Write(Rec.FFlags, SizeOf(Rec.FFlags));
+
+  if gfVersion    and Rec.Flags <> 0 then
+    Dest.Write(Rec.FVersion, SizeOf(Rec.FVersion));
+
+  if gfName       and Rec.Flags <> 0 then
+    Dest.WriteAnsiString(Rec.FName);
+
+  if gfTime       and Rec.Flags <> 0 then
+    Dest.Write(Rec.FTime, SizeOf(Rec.FTime));
+
+  if gfAttributes and Rec.Flags <> 0 then
+    Dest.Write(Rec.FAttributes, SizeOf(Rec.FAttributes));
+
+  if gfMode       and Rec.Flags <> 0 then
+    Dest.Write(Rec.FMode, SizeOf(Rec.FMode));
+
+  if gfSize       and Rec.Flags <> 0 then
+    Dest.Write(Rec.FSize, SizeOf(Rec.FSize));
+
+  if gfLinkName   and Rec.Flags <> 0 then
+    Dest.WriteAnsiString(Rec.FLinkName);
+
+  if gfUserID     and Rec.Flags <> 0 then
+    Dest.Write(Rec.FUserID, SizeOf(Rec.FUserID));
+
+  if gfUserName   and Rec.Flags <> 0 then
+    Dest.WriteAnsiString(Rec.FUserName);
+
+  if gfGroupID    and Rec.Flags <> 0 then
+    Dest.Write(Rec.FGroupID, SizeOf(Rec.FGroupID));
+
+  if gfGroupName  and Rec.Flags <> 0 then
+    Dest.WriteAnsiString(Rec.FGroupName);
+
+  if gfOffSet     and Rec.Flags <> 0 then
+    Dest.Write(Rec.FOffSet, SizeOf(Rec.FOffSet));
+
+  if gfStoredSize and Rec.Flags <> 0 then
+    Dest.Write(Rec.FStoredSize, SizeOf(Rec.FStoredSize));
+
+  Dest.Write(DigestRec(Rec), SizeOf(TSHA1Digest));
+  Result := TRUE;
+end;
+
+function WriteOffSet(Dest: TStream; const OffSet: int64): boolean; inline;
+var
+  Context : TSHA1Context;
    Digest : TSHA1Digest;
-   Readed : longint;
-  ZStream : TStream;
 begin
-  FStream.Write(Method, SizeOf(Method));
-  case Method and $FF of
-    0: ZStream := FStream;
-    1: ZStream := TCompressionStream.Create(
-         TCompressionLevel((Method and $FF00) shr 8), FStream);
-  end;
+  Dest.Write(GulpMarker, SizeOf(GulpMarker));
 
-  SHA1Init(FCTX);
-  while Size > 0 do
-  begin
-    Readed := Stream.Read(Buffer, Min(SizeOf(Buffer), Size));
-    if Readed = 0 then
-      raise Exception.Create('Unable to read stream');
-    SHA1Update(FCTX, Buffer, Readed);
-    ZStream.Write(Buffer, Readed);
-    Dec(Size, Readed);
-  end;
-  SHA1Final(FCTX, Digest);
+  SHA1Init  (Context);
+  Dest.Write(         OffSet, SizeOf(OffSet));
+  SHA1Update(Context, OffSet, SizeOf(OffSet));
+  SHA1Final (Context, Digest);
 
-  case Method and $FF of
-    1: FreeAndNil(ZStream);
-    0: ZStream := nil;
-  end;
-  FStream.Write(Digest, SizeOf(Digest));
+  Dest.Write(Digest, SizeOf(Digest));
   Result := TRUE;
-end;
-
-function TGulpStream.WriteOffSet(const OffSet: int64): boolean;
-var
-  Digest : TSHA1Digest;
-begin
-  Result := TRUE;
-  SHA1Init(FCTX);
-  Write(GulpMarker, SizeOf(GulpMarker));
-  Write(OffSet,     SizeOf(OffSet));
-  SHA1Final(FCTX, Digest);
-  FStream.Write(Digest, SizeOf(Digest));
 end;
 
 // =============================================================================
@@ -730,12 +682,14 @@ end;
 
 constructor TGulpLib.Create(Stream: TStream);
 begin
-  inherited Create(Stream);
+  inherited Create;
   FAdd         := TList.Create;
   FList        := TList.Create;
   FFullLoad    := FALSE;
   FCurrVersion :=  0;
   FMethod      :=  0;
+  FPassword    := '';
+  FStream      := Stream;
   FStreamSize  := -1;
 end;
 
@@ -752,7 +706,7 @@ begin
   if FStreamSize = -1 then
   begin
     FStreamSize := FStream.Seek(0, soEnd);
-    WriteOffSet(FStreamSize);
+    WriteOffSet(FStream, FStreamSize);
   end;
 end;
 
@@ -766,21 +720,101 @@ begin
   begin
     Size := FStream.Seek(0, soEnd);
     FStream.Seek(FStreamSize, soBeginning);
-    WriteOffSet(Size);
+    WriteOffSet (FStream, Size);
 
     Rec := TGulpRec.Create;
-    Clear_(Rec);
+    ClearRec(Rec);
 
-    Include_(Rec.FFlags, gfFIX);
-    Include_(Rec.FFlags, gfVersion);
+    IncludeFlag(Rec.FFlags, gfFIX);
+    IncludeFlag(Rec.FFlags, gfVersion);
     Rec.FVersion := FCurrVersion + 1;
     FAdd.Add(Rec);
 
     FStream.Seek(0, soEnd);
     for I := 0 to FAdd.Count - 1 do
-      WriteRec(TGulpRec(FAdd[I]));
+      WriteRec(FStream, TGulpRec(FAdd[I]));
     FStreamSize := -1;
   end;
+end;
+
+function TGulpLib.WriteStream(Stream: TStream; Size: int64): boolean;
+var
+   Buffer : array[0..$FFFF] of byte;
+  Context : TSHA1Context;
+   Digest : TSHA1Digest;
+   Readed : longint;
+  ZStream : TStream;
+begin
+  FStream.Write(Method, SizeOf(Method));
+
+  case Method and $FF of
+    0: ZStream := FStream;
+    1: ZStream := TCompressionStream.Create(
+         TCompressionLevel((Method and $FF00) shr 8), FStream);
+    else Exception.Create('Internal error');
+  end;
+
+  SHA1Init(Context);
+  while Size > 0 do
+  begin
+    Readed := Stream.Read(Buffer, Min(SizeOf(Buffer), Size));
+    if Readed = 0 then
+      raise Exception.Create('Unable to read stream');
+    SHA1Update   (Context, Buffer, Readed);
+    ZStream.Write(         Buffer, Readed);
+    Dec(Size, Readed);
+  end;
+  SHA1Final(Context, Digest);
+
+  case Method and $FF of
+    1: FreeAndNil(ZStream);
+    0: ZStream := nil;
+  end;
+
+  FStream.Write(Digest, SizeOf(Digest));
+  Result := TRUE;
+end;
+
+function TGulpLib.ReadStream(Stream: TStream; Size: int64): boolean;
+var
+     Buffer : array[0..$FFFF] of byte;
+    Context : TSHA1Context;
+     Digest : TSHA1Digest;
+  AuxDigest : TSHA1Digest;
+     Method : longword;
+     Readed : longint;
+    ZStream : TStream;
+begin
+  FillChar    (Method, SizeOf(Method), 0);
+  FStream.Read(Method, SizeOf(Method));
+
+  case Method and $FF of
+    0: ZStream := FStream;
+    1: ZStream := TDecompressionStream.Create(FStream);
+    else Exception.Create('Internal error');
+  end;
+
+  SHA1Init(Context);
+  while Size > 0 do
+  begin
+    Readed := ZStream.Read(Buffer, Min(SizeOf(Buffer), Size));
+    if Readed = 0 then
+      raise Exception.Create('Unable to read stream');
+    SHA1Update  (Context, Buffer, Readed);
+    Stream.Write(         Buffer, Readed);
+    Dec(Size, Readed);
+  end;
+  SHA1Final(Context, Digest);
+
+  case Method and $FF of
+    1: FreeAndNil(ZStream);
+    0: ZStream := nil;
+  end;
+
+  FillChar    (AuxDigest, SizeOf(AuxDigest), 0);
+  FStream.Read(AuxDigest, SizeOf(AuxDigest));
+
+  Result := SHA1Match(AuxDigest, Digest);
 end;
 
 procedure TGulpLib.AddItem(Rec: TGulpRec);
@@ -800,7 +834,7 @@ begin
   while H >= L do
   begin
     M := (L + H) div 2;
-    I := Compare_(Items[M], Rec);
+    I := CompareRec(Items[M], Rec);
     if I < 0 then
       L := M + 1
     else
@@ -866,17 +900,17 @@ begin
   CloseArchive;
   FFullLoad := Version = longword(-1);
   FStream.Seek(0, soBeginning);
-  if ReadOffSet(OffSet) = TRUE then
+  if ReadOffSet(FStream, OffSet) = TRUE then
     FStream.Seek(OffSet, soBeginning);
 
   Rec := TGulpRec.Create;
-  while ReadRec(Rec) = TRUE do
+  while ReadRec(FStream, Rec) = TRUE do
   begin
     Result := (Rec.Flags and $FF) = gfFIX;
     if Result then
     begin
       Size := FStream.Seek(0, soCurrent);
-      if ReadOffSet(OffSet) = TRUE then
+      if ReadOffSet(FStream, OffSet) = TRUE then
         FStream.Seek(OffSet, soBeginning);
     end;
 
@@ -938,24 +972,24 @@ begin
     BeginUpdate;
 
     Rec := TGulpRec.Create;
-    Clear_(Rec);
+    ClearRec(Rec);
 
-    Include_(Rec.FFlags, gfADD);
-    Include_(Rec.FFlags, gfVersion);     Rec.FVersion    := FCurrVersion + 1;
-    Include_(Rec.FFlags, gfName);        Rec.FName       := FileName;
-    Include_(Rec.FFlags, gfTime);        Rec.FTime       := GetTime(SR);
-    Include_(Rec.FFlags, gfAttributes);  Rec.FAttributes := GetAttr(SR);
+    IncludeFlag(Rec.FFlags, gfADD);
+    IncludeFlag(Rec.FFlags, gfVersion);     Rec.FVersion    := FCurrVersion + 1;
+    IncludeFlag(Rec.FFlags, gfName);        Rec.FName       := FileName;
+    IncludeFlag(Rec.FFlags, gfTime);        Rec.FTime       := GetTime(SR);
+    IncludeFlag(Rec.FFlags, gfAttributes);  Rec.FAttributes := GetAttr(SR);
 
     {$IFDEF UNIX}
-      Include_(Rec.FFlags, gfMode   );   Rec.FMode       := GetMode(FileName);
-      Include_(Rec.FFlags, gfUserID );   Rec.FUserID     := GetUID(FileName);
-      Include_(Rec.FFlags, gfGroupID);   Rec.FGroupID    := GetGID(FileName);
+      IncludeFlag(Rec.FFlags, gfMode   );   Rec.FMode       := GetMode(FileName);
+      IncludeFlag(Rec.FFlags, gfUserID );   Rec.FUserID     := GetUID(FileName);
+      IncludeFlag(Rec.FFlags, gfGroupID);   Rec.FGroupID    := GetGID(FileName);
     {$ENDIF}
 
-    if IsLNK_(Rec) = TRUE then
+    if IsLNK(Rec) = TRUE then
     begin
       {$IFDEF UNIX}
-        Include_(Rec.FFlags, gfLinkName);
+        IncludeFlag(Rec.FFlags, gfLinkName);
         Rec.FLinkName := fpReadLink(FileName);
       {$ELSE}
         {$IFDEF MSWINDOWS}
@@ -965,19 +999,19 @@ begin
         {$ENDIF}
       {$ENDIF}
     end else
-      if IsFILE_(Rec) = TRUE then
+      if IsFILE(Rec) = TRUE then
       begin
         Stream := TFileStream.Create(Rec.Name, fmOpenRead or fmShareDenyNone);
-        Include_(Rec.FFlags, gfSize);
+        IncludeFlag(Rec.FFlags, gfSize);
         Rec.FSize := GetSize(SR);
-        Include_(Rec.FFlags, gfOffSet);
+        IncludeFlag(Rec.FFlags, gfOffSet);
         Rec.FOffSet := FStream.Seek(0, soCurrent);
-        WriteStream(Stream, Rec.FSize, FMethod);
-        Include_(Rec.FFlags, gfStoredSize);
+        WriteStream(Stream, Rec.FSize);
+        IncludeFlag(Rec.FFlags, gfStoredSize);
         Rec.FStoredSize := FStream.Seek(0, soCurrent) - Rec.FOffSet;
         FreeAndNil(Stream);
       end else
-        if IsDIR_(Rec) = FALSE then
+        if IsDIR(Rec) = FALSE then
           raise Exception.CreateFmt('Unsupported file "%s"', [FileName]);
 
     FAdd.Add(Rec);
@@ -995,11 +1029,11 @@ begin
   BeginUpdate;
 
   Rec := TGulpRec.Create;
-  Clear_(Rec);
+  ClearRec(Rec);
 
-  Include_(Rec.FFlags, gfDEL);
-  Include_(Rec.FFlags, gfVersion);  Rec.FVersion := FCurrVersion + 1;
-  Include_(Rec.FFlags, gfName);     Rec.FName    := Items[Index].Name;
+  IncludeFlag(Rec.FFlags, gfDEL);
+  IncludeFlag(Rec.FFlags, gfVersion);  Rec.FVersion := FCurrVersion + 1;
+  IncludeFlag(Rec.FFlags, gfName);     Rec.FName    := Items[Index].Name;
 
   FAdd.Add(Rec);
 end;
@@ -1040,7 +1074,7 @@ var
    Rec : TGulpRec;
 begin
   Rec := Items[Index];
-  if IsLNK_(Rec) then
+  if IsLNK(Rec) then
   begin
     {$IFDEF UNIX}
     //if FpLink(Rec.LinkName, Rec.Name) <> 0 then
@@ -1055,7 +1089,7 @@ begin
       {$ENDIF}
     {$ENDIF}
   end else
-    if IsFILE_(Rec) then
+    if IsFILE(Rec) then
     begin
       if DirectoryExists(ExtractFileDir(Rec.Name)) then
         ForceDirectories(ExtractFileDir(Rec.Name));
@@ -1064,7 +1098,7 @@ begin
       ExtractTo(Index, Dest);
       FreeAndNil(Dest);
     end else
-      if IsDIR_(Rec) then
+      if IsDIR(Rec) then
       begin
         if DirectoryExists(ExtractFileDir(Rec.Name)) = FALSE then
           ForceDirectories(ExtractFileDir(Rec.Name));
@@ -1103,30 +1137,27 @@ end;
 
 procedure FixArchive(Stream: TStream);
 var
-     Lib : TGulpLib;
   OffSet : int64 = 0;
      Rec : TGulpRec;
     Size : int64 = 0;
 begin
   Stream.Seek(0, soBeginning);
-  Lib := TGulpLib.Create(Stream);
-  if Lib.ReadOffSet(OffSet) = TRUE then
+  if ReadOffSet(Stream, OffSet) = TRUE then
     Stream.Seek(OffSet, soBeginning);
 
   Rec := TGulpRec.Create;
   try
-    while Lib.ReadRec(Rec) = TRUE do
+    while ReadRec(Stream, Rec) = TRUE do
       if (Rec.FFlags and $FF) = gfFIX then
       begin
         Size := Stream.Seek(0, soCurrent);
-        if Lib.ReadOffSet(OffSet) = TRUE then
+        if ReadOffSet(Stream, OffSet) = TRUE then
           Stream.Seek(OffSet, soBeginning);
       end;
   except
     // nothing to do
   end;
   FreeAndNil(Rec);
-  FreeAndNil(Lib);
 
   if Size > 0 then
     Stream.Size := Size
@@ -1140,10 +1171,8 @@ var
      Lib : TGulpLib;
   OffSet : int64 = 0;
      Rec : TGulpRec;
-  Stream : TGulpStream;
 begin
   Dest.Seek(0, soBeginning);
-  Stream := TGulpStream.Create(Dest);
 
   Lib:= TGulpLib.Create(Source);
   if Lib.OpenArchive(longword(-2)) = FALSE then
@@ -1152,13 +1181,13 @@ begin
       raise Exception.Create('Invalid signature value');
   end;
 
-  Stream.WriteOffSet(OffSet);
+  WriteOffSet(Dest, OffSet);
   for I := 0 to Lib.Count - 1 do
   begin
     Rec := Lib.Items[I];
     if Rec.StoredSize > 0 then
     begin
-      Source.Seek(Rec.FOffset, soBeginning);
+      Source.Seek (Rec.FOffset, soBeginning);
       Rec.FOffSet := Dest.Seek(0, soCurrent);
       Dest.CopyFrom(Source, Rec.FStoredSize);
     end;
@@ -1167,22 +1196,21 @@ begin
 
   OffSet := Dest.Seek(0, soEnd);
   Dest.Seek(0, soBeginning);
-  Stream.WriteOffSet(OffSet);
+  WriteOffSet(Dest, OffSet);
 
   Dest.Seek(0, soEnd);
   for I := 0 to Lib.Count - 1 do
-    Stream.WriteRec(Lib.Items[I]);
+    WriteRec(Dest, Lib.Items[I]);
 
   Rec := TGulpRec.Create;
-  Clear_(Rec);
+  ClearRec(Rec);
 
-  Include_(Rec.FFlags, gfFIX);
-  Include_(Rec.FFlags, gfVersion);  Rec.FVersion := 1;
-  Stream.WriteRec(Rec);
+  IncludeFlag(Rec.FFlags, gfFIX);
+  IncludeFlag(Rec.FFlags, gfVersion);  Rec.FVersion := 1;
+  WriteRec(Dest, Rec);
 
   FreeAndNil(Rec);
   FreeAndNil(Lib);
-  FreeAndNil(Stream);
 end;
 
 end.
