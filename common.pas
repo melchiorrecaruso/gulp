@@ -143,7 +143,7 @@ begin
         begin
           AddItem(ScanPath + Rec.Name);
           if (Rec.Attr and faSymLink) = 0 then
-            Scan(ScanPath + Rec.Name + PathDelim + ScanMask, TRUE);
+            Scan(ScanPath + IncludeTrailingPathDelimiter(Rec.Name) + ScanMask, TRUE);
         end else
         begin
           if FileNameMatch(ScanPath + Rec.Name, FileMask) then
@@ -167,7 +167,7 @@ begin
   if DirectoryExists(FileMask) then
   begin
     AddItem(FileMask);
-    Scan(FileMask + PathDelim + '*', TRUE);
+    Scan(IncludeTrailingPathDelimiter(FileMask) + '*', TRUE);
   end else
   begin
     if FileMask[Length(FileMask)] = PathDelim then
