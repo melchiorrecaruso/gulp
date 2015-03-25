@@ -147,9 +147,9 @@ begin
 
   if GetOptionValue('m', 'method') <> '' then
   begin
-    if GetOptionValue('m', 'method') = 'gzfast' then GulpLib.Method := $0101 else
-    if GetOptionValue('m', 'method') = 'gz'     then GulpLib.Method := $0201 else
-    if GetOptionValue('m', 'method') = 'gzmax'  then GulpLib.Method := $0301 else
+    if GetOptionValue('m', 'method') = 'gzfast' then GulpLib.Method := gmGZFast   else
+    if GetOptionValue('m', 'method') = 'gz'     then GulpLib.Method := gmGZNormal else
+    if GetOptionValue('m', 'method') = 'gzmax'  then GulpLib.Method := gmGZMax    else
       raise Exception.Create('Wrong method value');
   end;
 

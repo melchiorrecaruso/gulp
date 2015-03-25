@@ -51,7 +51,6 @@
               <OverflowChecks Value="True"/>
               <StackChecks Value="True"/>
             </Checks>
-            <VerifyObjMethodCallValidity Value="True"/>
             <Optimizations>
               <OptimizationLevel Value="0"/>
             </Optimizations>
@@ -79,6 +78,7 @@
               <CStyleOperator Value="False"/>
               <AllowLabel Value="False"/>
               <CPPInline Value="False"/>
+              <UseAnsiStrings Value="False"/>
             </SyntaxOptions>
           </Parsing>
           <CodeGeneration>
@@ -91,10 +91,12 @@
             <Debugging>
               <GenerateDebugInfo Value="False"/>
               <UseLineInfoUnit Value="False"/>
-              <StripSymbols Value="True"/>
             </Debugging>
             <LinkSmart Value="True"/>
           </Linking>
+          <Other>
+            <CustomOptions Value="-FcUTF8"/>
+          </Other>
         </CompilerOptions>
       </Item3>
     </BuildModes>

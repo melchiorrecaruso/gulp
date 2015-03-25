@@ -59,6 +59,11 @@ const
   gfStoredSize   = $00200000;
   gfStoredDigest = $00400000;
 
+  // Gulp Methods
+  gmGZFast       = $00000101;
+  gmGZNormal     = $00000102;
+  gmGZMax        = $00000103;
+
 type
   // --- Gulp Marker ---
   TGulpMarker = array [0..9] of char;
@@ -68,32 +73,32 @@ type
   private
     FFlags        : longword;    // Flags
     FVersion      : longword;    // File version
-    FName         : ansistring;  // File path and name
+    FName         : string;      // File path and name
     FTime         : TDateTime;   // Last modification date and time (UTC)
     FAttributes   : longint;     // File Attributes (MSWindows)
     FMode         : longint;     // File Mode (Unix)
     FSize         : int64;       // File size in bytes
-    FLinkName     : ansistring;  // Name of linked file
+    FLinkName     : string;      // Name of linked file
     FUserID       : longword;    // User ID
-    FUserName     : ansistring;  // User Name
+    FUserName     : string;      // User Name
     FGroupID      : longword;    // Group ID
-    FGroupName    : ansistring;  // Group Name
+    FGroupName    : string;      // Group Name
     FOffSet       : int64;       // Data offset        (reserved)
     FStoredSize   : int64;       // Stored data size   (reserved)
     FStoredDigest : string;      // Stored data digest (reserved)
   public
     property Flags      : longword   read FFlags;
     property Version    : longword   read FVersion;
-    property Name       : ansistring read FName;
+    property Name       : string     read FName;
     property Time       : TDateTime  read FTime;
     property Attributes : longint    read FAttributes;
     property Mode       : longint    read FMode;
     property Size       : int64      read FSize;
-    property LinkName   : ansistring read FLinkName;
+    property LinkName   : string     read FLinkName;
     property UserID     : longword   read FUserID;
-    property UserName   : ansistring read FUserName;
+    property UserName   : string     read FUserName;
     property GroupID    : longword   read FGroupID;
-    property GroupName  : ansistring read FGroupName;
+    property GroupName  : string     read FGroupName;
   end;
 
   // --- The Gulp Library ---
@@ -104,6 +109,7 @@ type
     FFullLoad    : boolean;
     FCurrVersion : longword;
     FMethod      : longword;
+    FFilter      : string;
     FStream      : TStream;
     FStreamSize  : int64;
     procedure BeginUpdate;
@@ -714,12 +720,12 @@ var
   ZStream : TStream;
 begin
   FStream.Write(FMethod, SizeOf(FMethod));
-  // FStream.WriteAnsiString(FFilter);
+  FStream.WriteAnsiString(FFilter);
 
-  case FMethod and $FF of
-    0: ZStream := FStream;
-    1: ZStream := TCompressionStream.Create(
-         TCompressionLevel((Method and $FF00) shr 8), FStream, FALSE);
+  case FMethod and $0000FF00 of
+    $0000: ZStream := FStream;
+    $0100: ZStream := TCompressionStream.Create(
+         TCompressionLevel(Method and $000000FF), FStream, FALSE);
   else Exception.Create('Internal error');
   end;
 
@@ -735,9 +741,9 @@ begin
   end;
   SHA1Final(Context, Digest);
 
-  case FMethod and $FF of
-    1: FreeAndNil(ZStream);
-    0: ZStream := nil;
+  case FMethod and $0000FF00 of
+    $0100: FreeAndNil(ZStream);
+    $0000: ZStream := nil;
   end;
 
   Result := SHA1Print(Digest);
@@ -753,11 +759,11 @@ var
 begin
   FillChar    (FMethod, SizeOf(FMethod), 0);
   FStream.Read(FMethod, SizeOf(FMethod));
-  // FFilter := FStream.ReadAnsiString;
+  FFilter := FStream.ReadAnsiString;
 
-  case FMethod and $FF of
-    0: ZStream := FStream;
-    1: ZStream := TDecompressionStream.Create(FStream, FALSE);
+  case FMethod and $0000FF00 of
+    $0000: ZStream := FStream;
+    $0100: ZStream := TDecompressionStream.Create(FStream, FALSE);
   else Exception.Create('Internal error');
   end;
 
@@ -773,9 +779,9 @@ begin
   end;
   SHA1Final(Context, Digest);
 
-  case Method and $FF of
-    1: FreeAndNil(ZStream);
-    0: ZStream := nil;
+  case Method and $0000FF00 of
+    $0100: FreeAndNil(ZStream);
+    $0000: ZStream := nil;
   end;
 
   Result := SHA1Print(Digest);
