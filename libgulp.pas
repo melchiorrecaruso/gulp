@@ -23,7 +23,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.03.23 by Melchiorre Caruso.
+    v0.0.2 - 2015.03.27 by Melchiorre Caruso.
 }
 
 unit LibGulp;
@@ -59,49 +59,48 @@ const
   gfStoredDigest = $00200000;
   gfComment      = $00400000;
 
-
-  // Gulp Methods
+  // --- Gulp Methods ---
   gmGZFast       = $00000101;
   gmGZNormal     = $00000102;
   gmGZMax        = $00000103;
 
 type
   // --- Gulp Marker ---
-  TGulpMarker = array [0..9] of char;
+  TGulpMarker = array [0..7] of char;
 
   // --- Gulp Record ---
   TGulpRec = class(TObject)
   private
-    FFlags        : longword;    // Flags
-    FVersion      : longword;    // File version
-    FName         : string;      // File path and name
-    FTime         : TDateTime;   // Last modification date and time (UTC)
-    FAttributes   : longint;     // File Attributes (MSWindows)
-    FMode         : longint;     // File Mode (Unix)
-    FSize         : int64;       // File size in bytes
-    FLinkName     : string;      // Name of linked file
-    FUserID       : longword;    // User ID
-    FUserName     : string;      // User Name
-    FGroupID      : longword;    // Group ID
-    FGroupName    : string;      // Group Name
-    FOffSet       : int64;       // Data offset        (reserved)
-    FStoredSize   : int64;       // Stored data size   (reserved)
-    FStoredDigest : string;      // Stored data digest (reserved)
-    FComment      : string;      // Comment
+    FFlags        : longword;  // Flags
+    FVersion      : longword;  // File version
+    FName         : string;    // File path and name
+    FTime         : TDateTime; // Last modification date and time (UTC)
+    FAttributes   : longint;   // File Attributes (MSWindows)
+    FMode         : longint;   // File Mode (Unix)
+    FSize         : int64;     // File size in bytes
+    FLinkName     : string;    // Name of linked file
+    FUserID       : longword;  // User ID
+    FUserName     : string;    // User Name
+    FGroupID      : longword;  // Group ID
+    FGroupName    : string;    // Group Name
+    FOffSet       : int64;     // Data offset        (reserved)
+    FStoredSize   : int64;     // Stored data size   (reserved)
+    FStoredDigest : string;    // Stored data digest (reserved)
+    FComment      : string;    // Comment
   public
-    property Flags      : longword   read FFlags;
-    property Version    : longword   read FVersion;
-    property Name       : string     read FName;
-    property Time       : TDateTime  read FTime;
-    property Attributes : longint    read FAttributes;
-    property Mode       : longint    read FMode;
-    property Size       : int64      read FSize;
-    property LinkName   : string     read FLinkName;
-    property UserID     : longword   read FUserID;
-    property UserName   : string     read FUserName;
-    property GroupID    : longword   read FGroupID;
-    property GroupName  : string     read FGroupName;
-    property Comment    : string     read FComment;
+    property Flags      : longword  read FFlags;
+    property Version    : longword  read FVersion;
+    property Name       : string    read FName;
+    property Time       : TDateTime read FTime;
+    property Attributes : longint   read FAttributes;
+    property Mode       : longint   read FMode;
+    property Size       : int64     read FSize;
+    property LinkName   : string    read FLinkName;
+    property UserID     : longword  read FUserID;
+    property UserName   : string    read FUserName;
+    property GroupID    : longword  read FGroupID;
+    property GroupName  : string    read FGroupName;
+    property Comment    : string    read FComment;
   end;
 
   // --- The Gulp Library ---
@@ -123,7 +122,7 @@ type
     procedure DeleteItem(Index: longint);
     function  FindItem  (const FileName: string): longint;
 
-    function GetItem    (Index: longint): TGulpRec;
+    function GetItem(Index: longint): TGulpRec;
     function GetCount: longint;
 
     function ReadStream (Stream: TStream; Size: int64): string;
@@ -190,7 +189,7 @@ uses
   ZStream;
 
 const
-  GulpMarker : TGulpMarker = ('G', 'U','L','P','/', '0', '0', '2',' ',' ');
+  GulpMarker : TGulpMarker = ('G','U','L','P',char(0),char(0),char(2),char(0));
 
 // =============================================================================
 // Library routines
@@ -399,7 +398,7 @@ begin
   {$ELSE}
     {$IFDEF MSWINDOWS}
       Result := '...';
-    {$ENLSE}
+    {$ELSE}
       Unsupported platform...
     {$ENDIF}
   {$ENDIF}
@@ -418,7 +417,7 @@ begin
   {$ELSE}
     {$IFDEF MSWINDOWS}
       Result := 0;
-    {$ENLSE}
+    {$ELSE}
       Unsupported platform...
     {$ENDIF}
   {$ENDIF}
@@ -447,7 +446,7 @@ begin
     Result := FpS_ISDIR(Rec.Mode);
   {$ELSE}
     {$IFDEF MSWINDOWS}
-      Result := Rec.Attributes and (faDirectory) = faDirectory;
+      Result := Rec.Attributes and faDirectory = faDirectory;
     {$ELSE}
       Unsupported platform...
     {$ENDIF}
@@ -460,7 +459,7 @@ begin
     Result := FpS_ISLNK(Rec.Mode);
   {$ELSE}
     {$IFDEF MSWINDOWS}
-      Result := Rec.Attributes and (faSymLink) = faSymLink;
+      Result := Rec.Attributes and faSymLink = faSymLink;
     {$ELSE}
       Unsupported platform...
     {$ENDIF}

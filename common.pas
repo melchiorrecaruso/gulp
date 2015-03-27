@@ -23,7 +23,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.02.28 by Melchiorre Caruso.
+    v0.0.2 - 2015.03.27 by Melchiorre Caruso.
 }
 
 unit Common;
@@ -77,6 +77,7 @@ implementation
 
 uses
   {$IFDEF UNIX} BaseUnix, {$ENDIF}
+  {$IFDEF MSWINDOWS} Windows, {$ENDIF}
   Masks,
   Math,
   Process,
@@ -114,8 +115,10 @@ end;
 
 procedure TSysScanner.AddItem(const FileName: string);
 begin
-  if FList.IndexOf(FileName) = - 1 then
+  if FList.IndexOf(FileName) = -1 then
+  begin
     FList.Add(FileName);
+  end;
 end;
 
 procedure TSysScanner.Scan(const FileMask: string; Recursive: boolean);
@@ -133,12 +136,10 @@ begin
     faDirectory or faArchive or faSymLink or faAnyFile,  Rec);
   while Error = 0 do
   begin
-
     if (Rec.Attr and faDirectory) <> 0 then
     begin
       if (Rec.Name <> '.') and (Rec.Name <> '..') then
       begin
-
         if Recursive then
         begin
           AddItem(ScanPath + Rec.Name);
@@ -149,7 +150,6 @@ begin
           if FileNameMatch(ScanPath + Rec.Name, FileMask) then
             AddItem(ScanPath + Rec.Name);
         end;
-
       end;
     end else
       if FileNameMatch(ScanPath + Rec.Name, FileMask) then
@@ -189,7 +189,9 @@ var
 begin
   for I := Count - 1 downto 0 do
     if FileNameMatch(Items[I], FileMask) then
+    begin
       Delete(I);
+    end;
 end;
 
 procedure TSysScanner.Delete(Index: longint);
@@ -200,7 +202,9 @@ end;
 function TSysScanner.Find(const FileName: string): longint;
 begin
   if FList.Find(FileName, Result) = FALSE then
+  begin
     Result := -1;
+  end;
 end;
 
 function TSysScanner.GetItem(Index: longint): string;

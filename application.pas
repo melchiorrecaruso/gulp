@@ -23,7 +23,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.02.28 by Melchiorre Caruso.
+    v0.0.2 - 2015.03.27 by Melchiorre Caruso.
 }
 
 unit Application;
@@ -251,7 +251,7 @@ begin
   writeln(Description);
   writeln(#13, #13: 80, 'Fix the content of ' + GetOptionValue('f', 'fix'));
   write  (#13, #13: 80, 'Opening archive... ');
-  Stream := TFileStream.Create (GetOptionValue('f', 'fix'), fmOpenReadWrite);
+  Stream := TFileStream.Create(GetOptionValue('f', 'fix'), fmOpenReadWrite);
   Size   := Stream.Seek(0, soEnd);
 
   write(#13, #13: 80, 'Fixing archive... ');
@@ -339,7 +339,6 @@ var
 begin
   writeln(Description);
   writeln(#13, #13: 80, 'List the content of ' + GetOptionValue('l', 'list'));
-
   if FFileNames.Count = 0 then
     FFileNames.Add('*');
 
@@ -536,9 +535,9 @@ begin
   LongSwitches.Add('list:');
   LongSwitches.Add('check:');
   LongSwitches.Add('fix:');
-  LongSwitches.Add('help');
   LongSwitches.Add('until:');
   LongSwitches.Add('method:');
+  LongSwitches.Add('help');
 
   ExitCode  := 1;
   try
@@ -551,7 +550,7 @@ begin
       if HasOption('l', 'list'   ) then List    else
       if HasOption('c', 'check'  ) then Check   else
       if HasOption('f', 'fix'    ) then Fix     else
-      if HasOption('h', 'help'   ) then Help    else  Help;
+      if HasOption('h', 'help'   ) then Help    else Help;
 
       ExitCode := 0;
     end else

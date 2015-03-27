@@ -23,7 +23,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.02.28 by Melchiorre Caruso.
+    v0.0.2 - 2015.03.27 by Melchiorre Caruso.
 }
 
 program Gulp;
@@ -43,11 +43,11 @@ var
 function CtrlHandler(CtrlType: longword): longbool;
 begin
   case CtrlType of
-    CTRL_C_EVENT:        App.Kill;
-    CTRL_BREAK_EVENT:    App.Kill;
-    CTRL_CLOSE_EVENT:    App.Kill;
-    CTRL_LOGOFF_EVENT:   App.Kill;
-    CTRL_SHUTDOWN_EVENT: App.Kill;
+    CTRL_C_EVENT:        App.Abort;
+    CTRL_BREAK_EVENT:    App.Abort;
+    CTRL_CLOSE_EVENT:    App.Abort;
+    CTRL_LOGOFF_EVENT:   App.Abort;
+    CTRL_SHUTDOWN_EVENT: App.Abort;
   end;
   Result := True;
 end;

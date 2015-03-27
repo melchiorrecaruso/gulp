@@ -60,6 +60,9 @@
               <UseHeaptrc Value="True"/>
             </Debugging>
           </Linking>
+          <Other>
+            <CompilerPath Value="$(CompPath)"/>
+          </Other>
         </CompilerOptions>
       </Item2>
       <Item3 Name="Release">
@@ -95,7 +98,9 @@
             <LinkSmart Value="True"/>
           </Linking>
           <Other>
+            <WriteFPCLogo Value="False"/>
             <CustomOptions Value="-FcUTF8"/>
+            <CompilerPath Value="$(CompPath)"/>
           </Other>
         </CompilerOptions>
       </Item3>
@@ -170,6 +175,9 @@
       </Debugging>
       <LinkSmart Value="True"/>
     </Linking>
+    <Other>
+      <CompilerPath Value="$(CompPath)"/>
+    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="3">
