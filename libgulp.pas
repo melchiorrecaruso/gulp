@@ -43,21 +43,22 @@ const
   gfADD          = $00000001;
   gfDEL          = $00000002;
 
-  gfFlags        = $00000100;
-  gfVersion      = $00000200;
-  gfName         = $00000400;
-  gfTime         = $00000800;
-  gfAttributes   = $00001000;
-  gfMode         = $00002000;
-  gfSize         = $00004000;
-  gfLinkName     = $00008000;
-  gfUserID       = $00010000;
-  gfUserName     = $00020000;
-  gfGroupID      = $00040000;
-  gfGroupName    = $00080000;
-  gfOffSet       = $00100000;
-  gfStoredSize   = $00200000;
-  gfStoredDigest = $00400000;
+  gfVersion      = $00000100;
+  gfName         = $00000200;
+  gfTime         = $00000400;
+  gfAttributes   = $00000800;
+  gfMode         = $00001000;
+  gfSize         = $00002000;
+  gfLinkName     = $00004000;
+  gfUserID       = $00008000;
+  gfUserName     = $00010000;
+  gfGroupID      = $00020000;
+  gfGroupName    = $00040000;
+  gfOffSet       = $00080000;
+  gfStoredSize   = $00100000;
+  gfStoredDigest = $00200000;
+  gfComment      = $00400000;
+
 
   // Gulp Methods
   gmGZFast       = $00000101;
@@ -86,6 +87,7 @@ type
     FOffSet       : int64;       // Data offset        (reserved)
     FStoredSize   : int64;       // Stored data size   (reserved)
     FStoredDigest : string;      // Stored data digest (reserved)
+    FComment      : string;      // Comment
   public
     property Flags      : longword   read FFlags;
     property Version    : longword   read FVersion;
@@ -99,6 +101,7 @@ type
     property UserName   : string     read FUserName;
     property GroupID    : longword   read FGroupID;
     property GroupName  : string     read FGroupName;
+    property Comment    : string     read FComment;
   end;
 
   // --- The Gulp Library ---
@@ -181,7 +184,7 @@ function StringToMode(const S: string  ): longint;
 implementation
 
 uses
-  BlowFish,
+  // BlowFish,
   DateUtils,
   Math,
   ZStream;
@@ -504,6 +507,7 @@ begin
   Rec.FOffSet       := 0;
   Rec.FStoredSize   := 0;
   Rec.FStoredDigest := '';
+  Rec.FComment      := '';
 end;
 
 function DigestRec(const Rec: TGulpRec): string; inline;
@@ -527,6 +531,7 @@ begin
   SHA1Update(Context,         Rec.FOffSet,         SizeOf(Rec.FOffSet      ));
   SHA1Update(Context,         Rec.FStoredSize,     SizeOf(Rec.FStoredSize  ));
   SHA1Update(Context, Pointer(Rec.FStoredDigest)^, Length(Rec.FStoredDigest));
+  SHA1Update(Context, Pointer(Rec.FComment)^,      Length(Rec.FComment     ));
   SHA1Final (Context, Digest);
   Result := SHA1Print(Digest);
 end;
@@ -566,6 +571,7 @@ begin
     if gfStoredSize   and Rec.Flags <> 0 then Source.Read(Rec.FStoredSize, SizeOf(Rec.FStoredSize));
 
     if gfStoredDigest and Rec.Flags <> 0 then Rec.FStoredDigest := Source.ReadAnsiString;
+    if gfComment      and Rec.Flags <> 0 then Rec.FComment      := Source.ReadAnsiString;
 
     Result := Source.ReadAnsiString = DigestRec(Rec);
   end;
@@ -597,13 +603,14 @@ begin
   if gfStoredSize   and Rec.Flags <> 0 then Dest.Write(Rec.FStoredSize, SizeOf(Rec.FStoredSize));
 
   if gfStoredDigest and Rec.Flags <> 0 then Dest.WriteAnsiString(Rec.FStoredDigest);
+  if gfComment      and Rec.Flags <> 0 then Dest.WriteAnsiString(Rec.FComment);
 
   Dest.WriteAnsiString(DigestRec(Rec));
 
   Result := TRUE;
 end;
 
-function ReadOffSet(Source: TStream; var OffSet: int64): boolean; inline;
+function ReadOffSet(Stream: TStream; var OffSet: int64): boolean; inline;
 var
     Context : TSHA1Context;
   AuxDigest : TSHA1Digest;
@@ -611,40 +618,38 @@ var
      Marker : TGulpMarker;
 begin
   FillChar   (Marker, SizeOf(Marker), 0);
-  Source.Read(Marker, SizeOf(Marker));
+  Stream.Read(Marker, SizeOf(Marker));
 
   Result := Marker = GulpMarker;
   if Result then
   begin
     SHA1Init   (Context);
-    Source.Read(         OffSet, SizeOf(OffSet));
+    Stream.Read(         OffSet, SizeOf(OffSet));
     SHA1Update (Context, OffSet, SizeOf(OffSet));
     SHA1Final  (Context, Digest);
 
     FillChar   (AuxDigest, SizeOf(AuxDigest), 0);
-    Source.Read(AuxDigest, SizeOf(AuxDigest));
+    Stream.Read(AuxDigest, SizeOf(AuxDigest));
 
     Result := SHA1Match(AuxDigest, Digest);
   end;
 end;
 
-function WriteOffSet(Dest: TStream; const OffSet: int64): boolean; inline;
+function WriteOffSet(Stream: TStream; const OffSet: int64): boolean; inline;
 var
   Context : TSHA1Context;
    Digest : TSHA1Digest;
 begin
-  Dest.Write(GulpMarker, SizeOf(GulpMarker));
-
-  SHA1Init  (Context);
-  Dest.Write(         OffSet, SizeOf(OffSet));
-  SHA1Update(Context, OffSet, SizeOf(OffSet));
-  SHA1Final (Context, Digest);
-
-  Dest.Write(Digest, SizeOf(Digest));
+  Stream.Write(GulpMarker, SizeOf(GulpMarker));
+  SHA1Init    (Context);
+  Stream.Write(         OffSet, SizeOf(OffSet));
+  SHA1Update  (Context, OffSet, SizeOf(OffSet));
+  SHA1Final   (Context, Digest);
+  Stream.Write(Digest, SizeOf(Digest));
   Result := TRUE;
 end;
 
-procedure WriteFix(Dest: TStream; Version: longint);
+procedure WriteFix(Dest: TStream; Version: longint); inline;
 var
   Rec : TGulpRec;
 begin
