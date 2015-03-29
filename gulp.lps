@@ -12,7 +12,7 @@
         <EditorIndex Value="2"/>
         <WindowIndex Value="1"/>
         <TopLine Value="1"/>
-        <CursorPos X="33" Y="16"/>
+        <CursorPos X="38" Y="18"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
@@ -23,9 +23,8 @@
         <UnitName Value="Application"/>
         <EditorIndex Value="3"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="1"/>
-        <CursorPos X="28" Y="18"/>
-        <FoldState Value=" T3iV0G3 pkIkg0H]9jZkH0{b2^"/>
+        <TopLine Value="9"/>
+        <CursorPos X="28" Y="290"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
@@ -37,9 +36,9 @@
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="1076"/>
-        <CursorPos X="1" Y="456"/>
-        <FoldState Value=" T3lP0BB pigjZ038[95]I7]9cjM0d442D p0uS0S1j"/>
+        <TopLine Value="1128"/>
+        <CursorPos X="23" Y="1168"/>
+        <FoldState Value=" T3lP0BB pigjZ038]9fjO0B7]9cjM0b31123]DXmY0U[95jS0G01312j"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
@@ -52,7 +51,6 @@
         <WindowIndex Value="1"/>
         <TopLine Value="1"/>
         <CursorPos X="44" Y="18"/>
-        <FoldState Value=" T3j10E6 picjN038W"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>

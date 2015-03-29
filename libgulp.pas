@@ -23,7 +23,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.03.27 by Melchiorre Caruso.
+    v0.0.2 - 2015.03.29 by Melchiorre Caruso.
 }
 
 unit LibGulp;
@@ -39,25 +39,25 @@ uses
 
 const
   // --- Gulp Flags ---
-  gfFIX          = $00000000;
-  gfADD          = $00000001;
-  gfDEL          = $00000002;
+  gfADD          = $00000000;
+  gfDEL          = $00000001;
 
-  gfVersion      = $00000100;
-  gfName         = $00000200;
-  gfTime         = $00000400;
-  gfAttributes   = $00000800;
-  gfMode         = $00001000;
-  gfSize         = $00002000;
-  gfLinkName     = $00004000;
-  gfUserID       = $00008000;
-  gfUserName     = $00010000;
-  gfGroupID      = $00020000;
-  gfGroupName    = $00040000;
-  gfOffSet       = $00080000;
-  gfStoredSize   = $00100000;
-  gfStoredDigest = $00200000;
-  gfComment      = $00400000;
+  gfVersion      = $00000010;
+  gfName         = $00000020;
+  gfTime         = $00000040;
+  gfAttributes   = $00000080;
+  gfMode         = $00000100;
+  gfSize         = $00000200;
+  gfLinkName     = $00000400;
+  gfUserID       = $00000800;
+  gfUserName     = $00001000;
+  gfGroupID      = $00002000;
+  gfGroupName    = $00004000;
+  gfOffSet       = $00008000;
+  gfStoredSize   = $00010000;
+  gfStoredDigest = $00020000;
+  gfComment      = $00040000;
+  gfLast         = $40000000;
 
   // --- Gulp Methods ---
   gmGZFast       = $00000101;
@@ -107,11 +107,11 @@ type
   TGulpLib = class(TObject)
   private
     FAdd         : TList;
-    FList        : TList;
-    FFullLoad    : boolean;
     FCurrVersion : longword;
-    FMethod      : longword;
     FFilter      : string;
+    FFullLoad    : boolean;
+    FList        : TList;
+    FMethod      : longword;
     FStream      : TStream;
     FStreamSize  : int64;
     procedure BeginUpdate;
@@ -332,8 +332,7 @@ end;
 
 function FlagToString(var Rec: TGulpRec): string;
 begin
-  case Rec.Flags and $FF of
-    gfFIX: Result := 'FIX';
+  case Rec.Flags and $F of
     gfADD: Result := 'ADD';
     gfDEL: Result := 'DEL';
     else   Result := '???';
@@ -343,7 +342,7 @@ end;
 function TimeToString(var Rec: TGulpRec): string;
 begin
   Result := '.......... ........';
-  if (Rec.Flags and $FF) in [gfADD] then
+  if (Rec.Flags and $F) in [gfADD] then
     if (Rec.Flags and gfTime) = gfTime then
       Result := FormatDateTime(
         DefaultFormatSettings.LongDateFormat + ' ' +
@@ -353,7 +352,7 @@ end;
 function SizeToString(var Rec: TGulpRec): string;
 begin
   Result := '';
-  if (Rec.Flags and $FF) in [gfADD] then
+  if (Rec.Flags and $F) in [gfADD] then
     if (Rec.Flags and gfSize) = gfSize then
       Result := Format('%u', [Rec.Size])
 end;
@@ -361,7 +360,7 @@ end;
 function AttrToString(var Rec: TGulpRec): string;
 begin
   Result := '.......';
-  if (Rec.Flags and $FF) in [gfADD] then
+  if (Rec.Flags and $F) in [gfADD] then
   begin
     if Rec.Attributes and faReadOnly  <> 0 then Result[1] := 'R';
     if Rec.Attributes and faHidden    <> 0 then Result[2] := 'H';
@@ -391,7 +390,7 @@ end;
 function ModeToString(var Rec: TGulpRec): string;
 begin
   {$IFDEF UNIX}
-  if Rec.Flags and $FF in [gfADD] then
+  if (Rec.Flags and $F) in [gfADD] then
     Result := OctStr(Rec.Mode, 3)
   else
     Result := '...';
@@ -546,11 +545,9 @@ begin
   if Result then
   begin
     ClearRec(Rec);
-
     Source.Read(Rec.FFlags, SizeOf(Rec.FFlags));
 
     if gfVersion      and Rec.Flags <> 0 then Source.Read(Rec.FVersion, SizeOf(Rec.FVersion));
-
     if gfName         and Rec.Flags <> 0 then Rec.FName := Source.ReadAnsiString;
 
     if gfTime         and Rec.Flags <> 0 then Source.Read(Rec.FTime, SizeOf(Rec.FTime));
@@ -582,7 +579,6 @@ begin
   Dest.Write(Rec.FFlags, SizeOf(Rec.FFlags));
 
   if gfVersion      and Rec.Flags <> 0 then Dest.Write(Rec.FVersion, SizeOf(Rec.FVersion));
-
   if gfName         and Rec.Flags <> 0 then Dest.WriteAnsiString(Rec.FName);
 
   if gfTime         and Rec.Flags <> 0 then Dest.Write(Rec.FTime, SizeOf(Rec.FTime));
@@ -605,16 +601,14 @@ begin
   if gfComment      and Rec.Flags <> 0 then Dest.WriteAnsiString(Rec.FComment);
 
   Dest.WriteAnsiString(DigestRec(Rec));
-
   Result := TRUE;
 end;
 
 function ReadOffSet(Stream: TStream; var OffSet: int64): boolean; inline;
 var
-    Context : TSHA1Context;
-  AuxDigest : TSHA1Digest;
-     Digest : TSHA1Digest;
-     Marker : TGulpMarker;
+  Context : TSHA1Context;
+   Digest : TSHA1Digest;
+   Marker : TGulpMarker;
 begin
   FillChar   (Marker, SizeOf(Marker), 0);
   Stream.Read(Marker, SizeOf(Marker));
@@ -627,10 +621,7 @@ begin
     SHA1Update (Context, OffSet, SizeOf(OffSet));
     SHA1Final  (Context, Digest);
 
-    FillChar   (AuxDigest, SizeOf(AuxDigest), 0);
-    Stream.Read(AuxDigest, SizeOf(AuxDigest));
-
-    Result := SHA1Match(AuxDigest, Digest);
+    Result := Stream.ReadAnsiString = SHA1Print(Digest);
   end;
 end;
 
@@ -640,27 +631,14 @@ var
    Digest : TSHA1Digest;
 begin
   Stream.Write(GulpMarker, SizeOf(GulpMarker));
+
   SHA1Init    (Context);
   Stream.Write(         OffSet, SizeOf(OffSet));
   SHA1Update  (Context, OffSet, SizeOf(OffSet));
   SHA1Final   (Context, Digest);
-  Stream.Write(Digest, SizeOf(Digest));
+
+  Stream.WriteAnsiString(SHA1Print(Digest));
   Result := TRUE;
-end;
-
-procedure WriteFix(Dest: TStream; Version: longint); inline;
-var
-  Rec : TGulpRec;
-begin
-  Rec := TGulpRec.Create;
-  ClearRec(Rec);
-
-  IncludeFlag(Rec.FFlags, gfFIX);
-  IncludeFlag(Rec.FFlags, gfVersion);
-  Rec.FVersion := Version;
-
-  WriteRec(Dest, Rec);
-  FreeAndNil(Rec);
 end;
 
 // =============================================================================
@@ -672,11 +650,12 @@ begin
   inherited Create;
   FAdd         := TList.Create;
   FList        := TList.Create;
-  FFullLoad    := FALSE;
+
   FCurrVersion :=  0;
   FMethod      :=  0;
-  FStream      := Stream;
   FStreamSize  := -1;
+  FStream      := Stream;
+  FFullLoad    := FALSE;
 end;
 
 destructor TGulpLib.Destroy;
@@ -699,6 +678,7 @@ end;
 procedure TGulpLib.EndUpdate;
 var
      I : longint;
+   Rec : TGulpRec;
   Size : int64;
 begin
   if FStreamSize <> -1 then
@@ -709,8 +689,14 @@ begin
 
     FStream.Seek(0, soEnd);
     for I := 0 to FAdd.Count - 1 do
-      WriteRec(FStream, TGulpRec(FAdd[I]));
-    WriteFix(FStream,  FCurrVersion + 1);
+    begin
+      Rec := TGulpRec(FAdd[I]);
+      if I <> FAdd.Count - 1 then
+        ExcludeFlag(Rec.FFlags, gfLast)
+      else
+        IncludeFlag(Rec.FFlags, gfLast);
+      WriteRec(FStream, Rec);
+    end;
     FStreamSize := -1;
   end;
 end;
@@ -749,7 +735,6 @@ begin
     $0100: FreeAndNil(ZStream);
     $0000: ZStream := nil;
   end;
-
   Result := SHA1Print(Digest);
 end;
 
@@ -787,7 +772,6 @@ begin
     $0100: FreeAndNil(ZStream);
     $0000: ZStream := nil;
   end;
-
   Result := SHA1Print(Digest);
 end;
 
@@ -880,7 +864,7 @@ begin
   Rec := TGulpRec.Create;
   while ReadRec(FStream, Rec) = TRUE do
   begin
-    Result := (Rec.Flags and $FF) = gfFIX;
+    Result := (Rec.Flags and gfLast) = gfLast;
     if Result then
     begin
       Size := FStream.Seek(0, soCurrent);
@@ -895,7 +879,7 @@ begin
       Rec := TGulpRec.Create;
     end else
       if Rec.Version <= Version then
-        case (Rec.Flags and $FF) of
+        case (Rec.Flags and $F) of
           gfADD: begin
             AddItem(Rec);
             Rec := TGulpRec.Create;
@@ -904,6 +888,7 @@ begin
             I := Find(Rec.Name);
             if I <> - 1 then DeleteItem(I);
           end;
+        else raise Exception.CreateFmt('Mismatched flags for "%s"', [Rec.Name]);
         end;
   end;
   FreeAndNil(Rec);
@@ -925,9 +910,9 @@ begin
     TGulpRec(FList[I]).Destroy;
   FList.Clear;
 
-  FFullLoad    := FALSE;
   FCurrVersion :=  0;
   FStreamSize  := -1;
+  FFullLoad    := FALSE;
 end;
 
 procedure TGulpLib.Add(const FileName: string);
@@ -945,8 +930,7 @@ begin
   begin
     BeginUpdate;
 
-    Rec := TGulpRec.Create;
-    ClearRec(Rec);
+    Rec := TGulpRec.Create; ClearRec(Rec);
 
     IncludeFlag(Rec.FFlags, gfADD);
     IncludeFlag(Rec.FFlags, gfVersion);     Rec.FVersion    := FCurrVersion + 1;
@@ -1012,15 +996,11 @@ begin
 
   BeginUpdate;
 
-  Rec := TGulpRec.Create;
-  ClearRec(Rec);
+  Rec := TGulpRec.Create; ClearRec(Rec);
 
   IncludeFlag(Rec.FFlags, gfDEL);
-  IncludeFlag(Rec.FFlags, gfVersion);
-  Rec.FVersion := FCurrVersion + 1;
-
-  IncludeFlag(Rec.FFlags, gfName);
-  Rec.FName := Items[Index].Name;
+  IncludeFlag(Rec.FFlags, gfVersion);  Rec.FVersion := FCurrVersion + 1;
+  IncludeFlag(Rec.FFlags, gfName);     Rec.FName := Items[Index].Name;
 
   FAdd.Add(Rec);
 end;
@@ -1064,10 +1044,10 @@ begin
   if IsLNK(Rec) then
   begin
     {$IFDEF UNIX}
-    //if FpLink(Rec.LinkName, Rec.Name) <> 0 then
-    //  raise Exception.CreateFmt('Unable to create hardlink %s', [Rec.Name]);
-    if FpSymLink(pchar(Rec.LinkName), pchar(Rec.Name)) <> 0 then
-      raise Exception.CreateFmt('Unable to create symlink "%s"', [Rec.Name]);
+      //if FpLink(Rec.LinkName, Rec.Name) <> 0 then
+      //  raise Exception.CreateFmt('Unable to create hardlink %s', [Rec.Name]);
+      if FpSymLink(pchar(Rec.LinkName), pchar(Rec.Name)) <> 0 then
+        raise Exception.CreateFmt('Unable to create symlink "%s"', [Rec.Name]);
     {$ELSE}
       {$IFDEF MSWINDOWS}
         raise Exception.Create('- Link -');
@@ -1078,7 +1058,7 @@ begin
   end else
     if IsFILE(Rec) then
     begin
-      if DirectoryExists(ExtractFileDir(Rec.Name)) then
+      if DirectoryExists(ExtractFileDir(Rec.Name)) = FALSE then
         ForceDirectories(ExtractFileDir(Rec.Name));
 
       Dest := TFileStream.Create(Rec.Name, fmCreate);
@@ -1135,7 +1115,7 @@ begin
   Rec := TGulpRec.Create;
   try
     while ReadRec(Stream, Rec) = TRUE do
-      if (Rec.FFlags and $FF) = gfFIX then
+      if (Rec.FFlags and gfLast) = gfLast then
       begin
         Size := Stream.Seek(0, soCurrent);
         if ReadOffSet(Stream, OffSet) = TRUE then
@@ -1187,8 +1167,14 @@ begin
 
   Dest.Seek(0, soEnd);
   for I := 0 to Lib.Count - 1 do
-    WriteRec(Dest, Lib.Items[I]);
-  WriteFix(Dest, 1);
+  begin
+    Rec := Lib.Items[I];
+    if I <> Lib.Count - 1 then
+      ExcludeFlag(Rec.FFlags, gfLast)
+    else
+      IncludeFlag(Rec.FFlags, gfLast);
+    WriteRec(Dest, Rec);
+  end;
   FreeAndNil(Lib);
 end;
 
