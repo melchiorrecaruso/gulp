@@ -23,7 +23,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.03.29 by Melchiorre Caruso.
+    v0.0.2 - 2015.04.02 by Melchiorre Caruso.
 }
 
 unit LibGulp;
@@ -458,7 +458,7 @@ begin
     Result := FpS_ISLNK(Rec.Mode);
   {$ELSE}
     {$IFDEF MSWINDOWS}
-      Result := Rec.Attributes and faSymLink = faSymLink;
+      Result := FALSE;
     {$ELSE}
       Unsupported platform...
     {$ENDIF}
@@ -671,7 +671,7 @@ begin
   if FStreamSize = -1 then
   begin
     FStreamSize := FStream.Seek(0, soEnd);
-    WriteOffSet(FStream, FStreamSize);
+    WriteOffSet(FStream, 0);
   end;
 end;
 
@@ -859,7 +859,11 @@ begin
   FFullLoad := Version = longword(-1);
   FStream.Seek(0, soBeginning);
   if ReadOffSet(FStream, OffSet) = TRUE then
-    FStream.Seek(OffSet, soBeginning);
+  begin
+    if OffSet = 0 then
+      raise Exception.Create('Archive is damaged, try with the "fix" command');
+    FStream.Seek(OffSet, soBeginning)
+  end;
 
   Rec := TGulpRec.Create;
   while ReadRec(FStream, Rec) = TRUE do
@@ -869,7 +873,11 @@ begin
     begin
       Size := FStream.Seek(0, soCurrent);
       if ReadOffSet(FStream, OffSet) = TRUE then
-        FStream.Seek(OffSet, soBeginning);
+      begin
+        if OffSet = 0 then
+          raise Exception.Create('Archive is damaged, try with the "fix" command');
+        FStream.Seek(OffSet, soBeginning)
+      end;
     end;
 
     FCurrVersion := Max(FCurrVersion, Rec.Version);
@@ -929,7 +937,6 @@ begin
     faDirectory or faArchive or faSymLink or faAnyFile, SR) = 0 then
   begin
     BeginUpdate;
-
     Rec := TGulpRec.Create; ClearRec(Rec);
 
     IncludeFlag(Rec.FFlags, gfADD);
@@ -950,7 +957,7 @@ begin
         Rec.FLinkName := fpReadLink(FileName);
       {$ELSE}
         {$IFDEF MSWINDOWS}
-          raise Exception.Create('- Link -');
+          raise Exception.Create('Unsupported filetype');
         {$ELSE}
           Unsupported platform...
         {$ENDIF}
@@ -995,7 +1002,6 @@ begin
     raise Exception.Create('Internal error');
 
   BeginUpdate;
-
   Rec := TGulpRec.Create; ClearRec(Rec);
 
   IncludeFlag(Rec.FFlags, gfDEL);
@@ -1037,8 +1043,9 @@ end;
 
 procedure TGulpLib.Extract(Index: longint);
 var
-  Dest : TFileStream;
-   Rec : TGulpRec;
+     Dest : TFileStream;
+      Rec : TGulpRec;
+  RecPath : string;
 begin
   Rec := Items[Index];
   if IsLNK(Rec) then
@@ -1050,7 +1057,7 @@ begin
         raise Exception.CreateFmt('Unable to create symlink "%s"', [Rec.Name]);
     {$ELSE}
       {$IFDEF MSWINDOWS}
-        raise Exception.Create('- Link -');
+        raise Exception.Create('Unsupported filetype');
       {$ELSE}
         Unsupported platform...
       {$ENDIF}
@@ -1058,17 +1065,21 @@ begin
   end else
     if IsFILE(Rec) then
     begin
-      if DirectoryExists(ExtractFileDir(Rec.Name)) = FALSE then
-        ForceDirectories(ExtractFileDir(Rec.Name));
+      RecPath := ExtractFileDir(Rec.Name);
+      if Length(RecPath) > 0 then
+        if DirectoryExists(RecPath) = FALSE then
+          ForceDirectories(RecPath);
 
       Dest := TFileStream.Create(Rec.Name, fmCreate);
-      ExtractTo(Index, Dest);
+      ExtractTo (Index, Dest);
       FreeAndNil(Dest);
     end else
       if IsDIR(Rec) then
       begin
-        if DirectoryExists(ExtractFileDir(Rec.Name)) = FALSE then
-          ForceDirectories(ExtractFileDir(Rec.Name));
+        RecPath := ExtractFileDir(Rec.Name);
+        if Length(RecPath) > 0 then
+          if DirectoryExists(RecPath) = FALSE then
+            ForceDirectories(RecPath);
 
         if DirectoryExists(Rec.Name) = FALSE then
           ForceDirectories(Rec.Name);
@@ -1110,7 +1121,10 @@ var
 begin
   Stream.Seek(0, soBeginning);
   if ReadOffSet(Stream, OffSet) = TRUE then
-    Stream.Seek(OffSet, soBeginning);
+  begin
+    if OffSet <> 0 then
+      Stream.Seek(OffSet, soBeginning);
+  end;
 
   Rec := TGulpRec.Create;
   try
@@ -1119,7 +1133,10 @@ begin
       begin
         Size := Stream.Seek(0, soCurrent);
         if ReadOffSet(Stream, OffSet) = TRUE then
-          Stream.Seek(OffSet, soBeginning);
+        begin
+          if OffSet <> 0 then
+            Stream.Seek(OffSet, soBeginning);
+        end;
       end;
   except
     // nothing to do
@@ -1148,7 +1165,7 @@ begin
       raise Exception.Create('Invalid signature value');
   end;
 
-  WriteOffSet(Dest, OffSet);
+  WriteOffSet(Dest, 0);
   for I := 0 to Lib.Count - 1 do
   begin
     Rec := Lib.Items[I];

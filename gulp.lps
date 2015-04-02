@@ -23,8 +23,8 @@
         <UnitName Value="Application"/>
         <EditorIndex Value="3"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="9"/>
-        <CursorPos X="28" Y="290"/>
+        <TopLine Value="91"/>
+        <CursorPos X="43" Y="533"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
@@ -36,9 +36,9 @@
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="1128"/>
-        <CursorPos X="23" Y="1168"/>
-        <FoldState Value=" T3lP0BB pigjZ038]9fjO0B7]9cjM0b31123]DXmY0U[95jS0G01312j"/>
+        <TopLine Value="1021"/>
+        <CursorPos X="6" Y="1046"/>
+        <FoldState Value=" T3lP0BB pigjZ03836."/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>

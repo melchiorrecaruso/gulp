@@ -23,7 +23,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.03.27 by Melchiorre Caruso.
+    v0.0.2 - 2015.04.01 by Melchiorre Caruso.
 }
 
 unit Application;
@@ -563,6 +563,7 @@ begin
     on E: Exception do
       writeln(#13, #13: 80, Format('An exception was raised: "%s"', [E.Message]));
   end;
+
   FreeAndNil(LongSwitches);
   writeln(#13, #13: 80, 'Elapsed ',
     Format('%0.2f', [(Now - StartTime) * (24 * 60 * 60)]) , ' sec');
