@@ -23,7 +23,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.04.01 by Melchiorre Caruso.
+    v0.0.2 - 2015.04.02 by Melchiorre Caruso.
 }
 
 unit Application;
@@ -101,8 +101,8 @@ end;
 procedure TGulpApplication.Synch;
 var
      I, J : longint;
-    Count : longint;
   GulpLib : TGulpLib;
+     Size : int64;
    Stream : TStream;
 begin
   writeln(Description);
@@ -126,20 +126,18 @@ begin
     if Stream.Size <> 0 then
       raise Exception.Create('Invalid signature value');
   end;
+  Size := Stream.Seek(0, soEnd);
 
   write(#13, #13: 80, 'Deleting records... ');
-  Count := 0;
   for I := 0 to GulpLib.Count - 1 do
   begin
     J := FScanner.Find(GulpLib.Items[I].Name);
     if J = -1 then
     begin
-      Inc(Count);
       GulpLib.Delete(I);
     end else
       if GetTime(FScanner.Items[J]) <> GulpLib.Items[I].Time then
       begin
-        Inc(Count);
         GulpLib.Delete(I);
       end else
         FScanner.Delete(J);
@@ -155,13 +153,10 @@ begin
 
   write(#13, #13: 80, 'Adding records... ');
   for I := 0 to FScanner.Count - 1 do
-  begin
-    Inc(Count);
     GulpLib.Add(FScanner.Items[I]);
-  end;
   GulpLib.CloseArchive;
 
-  write(#13, #13: 80, 'Finished (', Count, ' added records)');
+  write(#13, #13: 80, 'Finished (', Stream.Seek(0, soEnd) - Size, ' added bytes)');
   FreeAndNil(GulpLib);
   FreeAndNil(Stream);
   writeln;
@@ -170,8 +165,8 @@ end;
 procedure TGulpApplication.Restore;
 var
      I, J : longint;
-    Count : longint;
   GulpLib : TGulpLib;
+     Size : int64;
    Stream : TStream;
   Version : longword;
 begin
@@ -221,23 +216,23 @@ begin
       end;
 
   write(#13, #13: 80, 'Extracting records... ');
-  Count := 0;
+  Size  := 0;
   for I := 0 to GulpLib.Count - 1 do
   begin
     J := FScanner.Find(GulpLib.Items[I].Name);
     if J = - 1 then
     begin
-      Inc(Count);
       GulpLib.Extract(I);
+      Inc(Size, GulpLib.Items[I].Size);
     end else
       if GetTime(FScanner.Items[J]) <> GulpLib.Items[I].Time then
       begin
-        Inc(Count);
         GulpLib.Extract(I);
+        Inc(Size, GulpLib.Items[I].Size);
       end;
   end;
 
-  write(#13, #13: 80, 'Finished (', Count, ' extracted records)');
+  write(#13, #13: 80, 'Finished (', Stream.Seek(0, soEnd) - Size, ' extracted bytes)');
   FreeAndNil(GulpLib);
   FreeAndNil(Stream);
   writeln;
@@ -265,7 +260,6 @@ end;
 procedure TGulpApplication.Check;
 var
         I : longint;
-    Count : longint;
   GulpLib : TGulpLib;
       Nul : TStream;
    Stream : TStream;
@@ -285,15 +279,11 @@ begin
   end;
 
   write(#13, #13: 80, 'Checking records... ');
-  Count := 0;
   for I := 0 to GulpLib.Count - 1 do
-  begin
-    Inc(Count);
     GulpLib.ExtractTo(I, Nul);
-  end;
   GulpLib.CloseArchive;
 
-  write(#13, #13: 80, 'Finished (', Count, ' checked records)');
+  write(#13, #13: 80, 'Finished (', Stream.Size, ' checked bytes)');
   FreeAndNil(GulpLib);
   FreeAndNil(Stream);
   FreeAndNil(Nul);
