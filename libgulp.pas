@@ -526,6 +526,7 @@ begin
   Rec.FStoredSize   := 0;
   Rec.FStoredDigest := '';
   Rec.FComment      := '';
+  Rec.FPlatform     := 0;
 end;
 
 function DigestRec(const Rec: TGulpRec): string; inline;
@@ -550,6 +551,7 @@ begin
   SHA1Update(Context,         Rec.FStoredSize,     SizeOf(Rec.FStoredSize  ));
   SHA1Update(Context, Pointer(Rec.FStoredDigest)^, Length(Rec.FStoredDigest));
   SHA1Update(Context, Pointer(Rec.FComment)^,      Length(Rec.FComment     ));
+  SHA1Update(Context,         Rec.FPlatform,       SizeOf(Rec.FPlatform    ));
   SHA1Final (Context, Digest);
   Result := SHA1Print(Digest);
 end;
@@ -589,6 +591,8 @@ begin
     if gfStoredDigest and Rec.Flags <> 0 then Rec.FStoredDigest := Source.ReadAnsiString;
     if gfComment      and Rec.Flags <> 0 then Rec.FComment      := Source.ReadAnsiString;
 
+    if gfPlatform     and Rec.Flags <> 0 then Source.Read(Rec.FPlatform, SizeOf(Rec.FPlatform));
+
     Result := Source.ReadAnsiString = DigestRec(Rec);
   end;
 end;
@@ -619,6 +623,8 @@ begin
 
   if gfStoredDigest and Rec.Flags <> 0 then Dest.WriteAnsiString(Rec.FStoredDigest);
   if gfComment      and Rec.Flags <> 0 then Dest.WriteAnsiString(Rec.FComment);
+
+  if gfPlatform     and Rec.Flags <> 0 then Dest.Write(Rec.FPlatform, SizeOf(Rec.FPlatform));
 
   Dest.WriteAnsiString(DigestRec(Rec));
   Result := TRUE;
@@ -965,9 +971,17 @@ begin
     IncludeFlag(Rec.FFlags, gfTime);        Rec.FTime       := GetTime(SR);
     IncludeFlag(Rec.FFlags, gfAttributes);  Rec.FAttributes := GetAttr(SR);
     {$IFDEF UNIX}
-      IncludeFlag(Rec.FFlags, gfMode   );   Rec.FMode       := GetMode(FileName);
-      IncludeFlag(Rec.FFlags, gfUserID );   Rec.FUserID     := GetUID(FileName);
-      IncludeFlag(Rec.FFlags, gfGroupID);   Rec.FGroupID    := GetGID(FileName);
+      IncludeFlag(Rec.FFlags, gfMode    );  Rec.FMode       := GetMode(FileName);
+      IncludeFlag(Rec.FFlags, gfUserID  );  Rec.FUserID     := GetUID(FileName);
+      IncludeFlag(Rec.FFlags, gfGroupID );  Rec.FGroupID    := GetGID(FileName);
+      IncludeFlag(Rec.FFlags, gfPlatform);  Rec.FPlatform   := gpUNIX;
+    {$ELSE}
+      {$IFDEF MSWINDOWS}
+        IncludeFlag(Rec.FFlags, gfPlatform);
+        Rec.FPlatform := gpMSWINDOWS;
+      {$ELSE}
+        Unsupported platform...
+      {$ENDIF}
     {$ENDIF}
 
     if IsLNK(Rec) = TRUE then
@@ -1053,11 +1067,11 @@ var
   Rec : TGulpRec;
 begin
   Rec := Items[Index];
-  if Rec.Size > 0 then
+  if Rec.FSize > 0 then
   begin
     FStream.Seek(Rec.FOffset, soBeginning);
-    if ReadStream(Stream, Rec.Size) <> Rec.FStoredDigest then
-      raise Exception.CreateFmt('Mismatched checksum for "%s"', [Rec.Name]);
+    if ReadStream(Stream, Rec.FSize) <> Rec.FStoredDigest then
+      raise Exception.CreateFmt('Mismatched checksum for "%s"', [Rec.FName]);
   end;
 end;
 

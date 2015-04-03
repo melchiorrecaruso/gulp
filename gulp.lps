@@ -25,7 +25,6 @@
         <WindowIndex Value="1"/>
         <TopLine Value="64"/>
         <CursorPos X="11" Y="248"/>
-        <FoldState Value=" T3mZ0H3 pjUkC0{bq"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
@@ -35,11 +34,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="LibGulp"/>
         <IsVisibleTab Value="True"/>
-        <EditorIndex Value="1"/>
+        <EditorIndex Value="0"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="444"/>
-        <CursorPos X="11" Y="485"/>
-        <FoldState Value=" T3lX0BB pigjZ038Y"/>
+        <TopLine Value="974"/>
+        <CursorPos X="1" Y="1065"/>
+        <FoldState Value=" T3lX0BB pigjZ03836 pjEnF0V6]Kck10Z5]ICkG0v11332!"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
@@ -48,13 +47,18 @@
         <Filename Value="common.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Common"/>
+        <EditorIndex Value="1"/>
         <WindowIndex Value="1"/>
+        <TopLine Value="1"/>
         <CursorPos X="44" Y="18"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit3>
     </Units>
+    <General>
+      <ActiveWindowIndexAtStart Value="0"/>
+    </General>
   </ProjectSession>
   <Debugging>
     <BreakPoints Count="1">
@@ -66,4 +70,5 @@
       </Item1>
     </BreakPoints>
   </Debugging>
+  <EditorMacros Count="0"/>
 </CONFIG>
