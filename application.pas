@@ -23,7 +23,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.04.02 by Melchiorre Caruso.
+    v0.0.2 - 2015.04.03 by Melchiorre Caruso.
 }
 
 unit Application;
@@ -112,6 +112,9 @@ begin
     FFileNames.Add('*');
   for I := 0 to FFileNames.Count - 1 do
     FScanner.Add(FFileNames[I]);
+  J := FScanner.Find(GetOptionValue('s', 'synch'));
+  if J <> -1 then
+    FScanner.Delete(J);
 
   write(#13, #13: 80, 'Opening archive... ');
   if FileExists(GetOptionValue('s', 'synch')) then
@@ -134,7 +137,8 @@ begin
     J := FScanner.Find(GulpLib.Items[I].Name);
     if J = -1 then
     begin
-      GulpLib.Delete(I);
+      if HasOption('nodelete') = FALSE then
+        GulpLib.Delete(I);
     end else
       if GetTime(FScanner.Items[J]) <> GulpLib.Items[I].Time then
       begin
@@ -177,6 +181,9 @@ begin
     FFileNames.Add('*');
   for I := 0 to FFileNames.Count - 1 do
     FScanner.Add(FFileNames[I]);
+  J := FScanner.Find(GetOptionValue('r', 'restore'));
+  if J <> -1 then
+    FScanner.Delete(J);
 
   Version := longword(-2);
   if GetOptionValue('u', 'until') <> '' then
@@ -198,22 +205,25 @@ begin
       raise Exception.Create('Invalid signature value');
   end;
 
-  write(#13, #13: 80, 'Deleting records... ');
-  for I := FScanner.Count - 1 downto 0 do
-    if GulpLib.Find(FScanner.Items[I]) = - 1 then
-      if FileExists(FScanner.Items[I]) then
-      begin
-        DeleteFile(FScanner.Items[I]);
-        FScanner.Delete(I);
-      end;
+  if HasOption('nodelete') = FALSE then
+  begin
+    write(#13, #13: 80, 'Deleting records... ');
+    for I := FScanner.Count - 1 downto 0 do
+      if GulpLib.Find(FScanner.Items[I]) = - 1 then
+        if FileExists(FScanner.Items[I]) then
+        begin
+          DeleteFile(FScanner.Items[I]);
+          FScanner.Delete(I);
+        end;
 
-  for I := FScanner.Count - 1 downto 0 do
-    if GulpLib.Find(FScanner.Items[I]) = - 1 then
-      if DirectoryExists(FScanner.Items[I]) then
-      begin
-        RemoveDir(FScanner.Items[I]);
-        FScanner.Delete(I);
-      end;
+    for I := FScanner.Count - 1 downto 0 do
+      if GulpLib.Find(FScanner.Items[I]) = - 1 then
+        if DirectoryExists(FScanner.Items[I]) then
+        begin
+          RemoveDir(FScanner.Items[I]);
+          FScanner.Delete(I);
+        end;
+  end;
 
   write(#13, #13: 80, 'Extracting records... ');
   Size  := 0;
@@ -528,6 +538,7 @@ begin
   LongSwitches.Add('until:');
   LongSwitches.Add('method:');
   LongSwitches.Add('help');
+  LongSwitches.Add('nodelete');
 
   ExitCode  := 1;
   try
@@ -540,7 +551,7 @@ begin
       if HasOption('l', 'list'   ) then List    else
       if HasOption('c', 'check'  ) then Check   else
       if HasOption('f', 'fix'    ) then Fix     else
-      if HasOption('h', 'help'   ) then Help    else Help;
+      if HasOption('h', 'help'   ) then Help;
 
       ExitCode := 0;
     end else

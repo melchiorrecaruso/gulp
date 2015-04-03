@@ -57,12 +57,18 @@ const
   gfStoredSize   = $00010000;
   gfStoredDigest = $00020000;
   gfComment      = $00040000;
+  gfPlatform     = $00080000;
   gfLast         = $40000000;
 
   // --- Gulp Methods ---
   gmGZFast       = $00000101;
   gmGZNormal     = $00000102;
   gmGZMax        = $00000103;
+
+  // --- Gulp Platforms ---
+  gpUNIX         = $00000100;
+  gpMSWINDOWS    = $00000200;
+  gpMAC          = $00000400;
 
 type
   // --- Gulp Marker ---
@@ -87,6 +93,7 @@ type
     FStoredSize   : int64;     // Stored data size   (reserved)
     FStoredDigest : string;    // Stored data digest (reserved)
     FComment      : string;    // Comment
+    FPlatform     : longint;   // Platform
   public
     property Flags      : longword  read FFlags;
     property Version    : longword  read FVersion;
@@ -101,6 +108,7 @@ type
     property GroupID    : longword  read FGroupID;
     property GroupName  : string    read FGroupName;
     property Comment    : string    read FComment;
+    property Platform   : longint   read FPlatform;
   end;
 
   // --- The Gulp Library ---
@@ -429,10 +437,14 @@ end;
 function IsFILE(const Rec: TGulpRec): boolean; inline;
 begin
   {$IFDEF UNIX}
-    Result := FpS_ISREG(Rec.Mode);
+    case Rec.FPlatform of
+      gpUNIX:      Result := FpS_ISREG(Rec.FMode);
+      gpMSWINDOWS: Result := Rec.FAttributes and (faDirectory or faVolumeId) = 0;
+    else Exception.Create('Unsupported platform');
+    end;
   {$ELSE}
     {$IFDEF MSWINDOWS}
-      Result := Rec.Attributes and (faDirectory or faVolumeId) = 0;
+      Result := Rec.FAttributes and (faDirectory or faVolumeId) = 0;
     {$ELSE}
       Unsupported platform...
     {$ENDIF}
@@ -442,10 +454,14 @@ end;
 function IsDIR(const Rec: TGulpRec): boolean; inline;
 begin
   {$IFDEF UNIX}
-    Result := FpS_ISDIR(Rec.Mode);
+    case Rec.FPlatform of
+      gpUNIX:      Result := FpS_ISDIR(Rec.FMode);
+      gpMSWINDOWS: Result := Rec.FAttributes and faDirectory = faDirectory;
+    else Exception.Create('Unsupported platform');
+    end;
   {$ELSE}
     {$IFDEF MSWINDOWS}
-      Result := Rec.Attributes and faDirectory = faDirectory;
+      Result := Rec.FAttributes and faDirectory = faDirectory;
     {$ELSE}
       Unsupported platform...
     {$ENDIF}
@@ -455,7 +471,11 @@ end;
 function IsLNK(const Rec: TGulpRec): boolean; inline;
 begin
   {$IFDEF UNIX}
-    Result := FpS_ISLNK(Rec.Mode);
+    case Rec.FPlatform of
+      gpUNIX:      Result := FpS_ISLNK(Rec.Mode);
+      gpMSWINDOWS: Result := FALSE;
+    else Exception.Create('Unsupported platform');
+    end;
   {$ELSE}
     {$IFDEF MSWINDOWS}
       Result := FALSE;
