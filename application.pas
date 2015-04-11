@@ -168,9 +168,10 @@ end;
 
 procedure TGulpApplication.Restore;
 var
-     I, J : longint;
+  I, J, K : longint;
   GulpLib : TGulpLib;
-     Size : int64;
+  GulpRec : TGulpRec;
+     Size : int64 = 0;
    Stream : TStream;
   Version : longword;
 begin
@@ -179,8 +180,7 @@ begin
   write  (#13, #13: 80, 'Scanning filesystem... ');
   if FFileNames.Count = 0 then
     FFileNames.Add('*');
-  for I := 0 to FFileNames.Count - 1 do
-    FScanner.Add(FFileNames[I]);
+  FScanner.Add('*');
   J := FScanner.Find(GetOptionValue('r', 'restore'));
   if J <> -1 then
     FScanner.Delete(J);
@@ -205,44 +205,53 @@ begin
       raise Exception.Create('Invalid signature value');
   end;
 
-  if HasOption('nodelete') = FALSE then
-  begin
-    write(#13, #13: 80, 'Deleting records... ');
-    for I := FScanner.Count - 1 downto 0 do
-      if GulpLib.Find(FScanner.Items[I]) = - 1 then
-        if FileExists(FScanner.Items[I]) then
-        begin
+  (*
+  write(#13, #13: 80, 'Deleting records... ');
+  writeln(FScanner.Count);
+  for I := FScanner.Count - 1 downto 0 do
+    if GulpLib.Find(FScanner.Items[I]) = -1 then
+      if DirectoryExists(FScanner.Items[I]) = FALSE then
+      begin
+        writeln('STEP1 ', FScanner.Items[I]);
+        if HasOption('nodelete') = FALSE then
           DeleteFile(FScanner.Items[I]);
-          FScanner.Delete(I);
-        end;
+        FScanner.Delete(I);
+      end;
 
-    for I := FScanner.Count - 1 downto 0 do
-      if GulpLib.Find(FScanner.Items[I]) = - 1 then
-        if DirectoryExists(FScanner.Items[I]) then
-        begin
+  for I := FScanner.Count - 1 downto 0 do
+    if GulpLib.Find(FScanner.Items[I]) = -1 then
+      if DirectoryExists(FScanner.Items[I]) = TRUE then
+      begin
+        writeln('STEP2');
+        if HasOption('nodelete') = FALSE then
           RemoveDir(FScanner.Items[I]);
-          FScanner.Delete(I);
-        end;
-  end;
+        FScanner.Delete(I);
+      end;
+  *)
 
   write(#13, #13: 80, 'Extracting records... ');
-  Size  := 0;
-  for I := 0 to GulpLib.Count - 1 do
+  for I := GulpLib.Count - 1 downto 0 do
   begin
-    J := FScanner.Find(GulpLib.Items[I].Name);
-    if J = - 1 then
-    begin
-      GulpLib.Extract(I);
-      Inc(Size, GulpLib.Items[I].Size);
-    end else
-      if GetTime(FScanner.Items[J]) <> GulpLib.Items[I].Time then
+    GulpRec := GulpLib.Items[I];
+    for J := 0 to FFileNames.Count - 1 do
+      if FileNameMatch(GulpRec.Name, FFileNames[J]) = TRUE then
       begin
-        GulpLib.Extract(I);
-        Inc(Size, GulpLib.Items[I].Size);
+        K := FScanner.Find(GulpRec.Name);
+        if K = - 1 then
+        begin
+          GulpLib.Extract(I);
+          Inc(Size, GulpRec.Size);
+        end else
+          if GetTime(FScanner.Items[K]) <> GulpRec.Time then
+          begin
+            GulpLib.Extract(I);
+            Inc(Size, GulpRec.Size);
+          end;
+        break;
       end;
   end;
 
-  write(#13, #13: 80, 'Finished (', Stream.Seek(0, soEnd) - Size, ' extracted bytes)');
+  write(#13, #13: 80, 'Finished (', Size, ' extracted bytes)');
   FreeAndNil(GulpLib);
   FreeAndNil(Stream);
   writeln;

@@ -12,7 +12,7 @@
         <EditorIndex Value="2"/>
         <WindowIndex Value="1"/>
         <TopLine Value="40"/>
-        <CursorPos X="67" Y="56"/>
+        <CursorPos X="55" Y="56"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
@@ -21,10 +21,12 @@
         <Filename Value="application.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Application"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="3"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="64"/>
-        <CursorPos X="11" Y="248"/>
+        <TopLine Value="221"/>
+        <CursorPos X="3" Y="253"/>
+        <FoldState Value=" T3jE0,\"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
@@ -33,12 +35,9 @@
         <Filename Value="libgulp.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="LibGulp"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="0"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="974"/>
-        <CursorPos X="1" Y="1065"/>
-        <FoldState Value=" T3lX0BB pigjZ03836 pjEnF0V6]Kck10Z5]ICkG0v11332!"/>
+        <TopLine Value="1065"/>
+        <CursorPos X="7" Y="1076"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
@@ -49,16 +48,13 @@
         <UnitName Value="Common"/>
         <EditorIndex Value="1"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="1"/>
-        <CursorPos X="44" Y="18"/>
+        <TopLine Value="53"/>
+        <CursorPos X="56" Y="66"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit3>
     </Units>
-    <General>
-      <ActiveWindowIndexAtStart Value="0"/>
-    </General>
   </ProjectSession>
   <Debugging>
     <BreakPoints Count="1">
@@ -70,5 +66,4 @@
       </Item1>
     </BreakPoints>
   </Debugging>
-  <EditorMacros Count="0"/>
 </CONFIG>

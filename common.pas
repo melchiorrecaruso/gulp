@@ -142,7 +142,9 @@ begin
       begin
         if Recursive then
         begin
+          // if FileNameMatch(ScanPath + Rec.Name, FileMask) then
           AddItem(ScanPath + Rec.Name);
+
           if (Rec.Attr and faSymLink) = 0 then
             Scan(ScanPath + IncludeTrailingPathDelimiter(Rec.Name) + ScanMask, TRUE);
         end else

@@ -23,7 +23,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.04.02 by Melchiorre Caruso.
+    v0.0.2 - 2015.04.04 by Melchiorre Caruso.
 }
 
 unit LibGulp;
@@ -144,9 +144,9 @@ type
 
     procedure Add (const FileName: string);
     function  Find(const FileName: string): longint;
-    procedure ExtractTo(Index: longint; Stream: TStream);
-    procedure Extract  (Index: longint);
-    procedure Delete   (Index: longint);
+    procedure ExtractTo  (Index: longint; Stream: TStream);
+    procedure Extract    (Index: longint);
+    procedure Delete     (Index: longint);
 
     property Items[Index: longint]: TGulpRec read GetItem;
     property Method: longword read FMethod   write FMethod;
@@ -158,7 +158,6 @@ type
 
 // --- Some useful routines ---
 
-function GetName(const FileName: string): string;
 function GetTime(const FileName: string): TDateTime; overload;
 function GetTime(var   SR: TSearchRec  ): TDateTime; overload;
 function GetSize(const FileName: string): int64;     overload;
@@ -202,19 +201,6 @@ const
 // =============================================================================
 // Library routines
 // =============================================================================
-
-function GetName(const FileName: string): string;
-begin
-  {$IFDEF UNIX}
-    Result := StringReplace(FileName, '\', '/', [rfReplaceAll]);
-  {$ELSE}
-    {$IFDEF MSWINDOWS}
-      Result := StringReplace(Filename, '/', '\', [rfReplaceAll]);
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
-  {$ENDIF}
-end;
 
 function GetTime(var SR: TSearchRec): TDateTime;
 begin
@@ -594,6 +580,9 @@ begin
     if gfPlatform     and Rec.Flags <> 0 then Source.Read(Rec.FPlatform, SizeOf(Rec.FPlatform));
 
     Result := Source.ReadAnsiString = DigestRec(Rec);
+
+    DoDirSeparators(Rec.FLinkName);
+    DoDirSeparators(Rec.FName    );
   end;
 end;
 
@@ -969,16 +958,15 @@ begin
     IncludeFlag(Rec.FFlags, gfVersion);     Rec.FVersion    := FCurrVersion + 1;
     IncludeFlag(Rec.FFlags, gfName);        Rec.FName       := FileName;
     IncludeFlag(Rec.FFlags, gfTime);        Rec.FTime       := GetTime(SR);
-    IncludeFlag(Rec.FFlags, gfAttributes);  Rec.FAttributes := GetAttr(SR);
     {$IFDEF UNIX}
-      IncludeFlag(Rec.FFlags, gfMode    );  Rec.FMode       := GetMode(FileName);
-      IncludeFlag(Rec.FFlags, gfUserID  );  Rec.FUserID     := GetUID(FileName);
-      IncludeFlag(Rec.FFlags, gfGroupID );  Rec.FGroupID    := GetGID(FileName);
       IncludeFlag(Rec.FFlags, gfPlatform);  Rec.FPlatform   := gpUNIX;
+      IncludeFlag(Rec.FFlags, gfMode    );  Rec.FMode       := GetMode(FileName);
+      IncludeFlag(Rec.FFlags, gfUserID  );  Rec.FUserID     := GetUID (FileName);
+      IncludeFlag(Rec.FFlags, gfGroupID );  Rec.FGroupID    := GetGID (FileName);
     {$ELSE}
       {$IFDEF MSWINDOWS}
-        IncludeFlag(Rec.FFlags, gfPlatform);
-        Rec.FPlatform := gpMSWINDOWS;
+        IncludeFlag(Rec.FFlags, gfPlatform);   Rec.FPlatform   := gpMSWINDOWS;
+        IncludeFlag(Rec.FFlags, gfAttributes); Rec.FAttributes := GetAttr(SR);
       {$ELSE}
         Unsupported platform...
       {$ENDIF}
@@ -987,11 +975,10 @@ begin
     if IsLNK(Rec) = TRUE then
     begin
       {$IFDEF UNIX}
-        IncludeFlag(Rec.FFlags, gfLinkName);
-        Rec.FLinkName := fpReadLink(FileName);
+        IncludeFlag(Rec.FFlags, gfLinkName);   Rec.FLinkName   := fpReadLink(FileName);
       {$ELSE}
         {$IFDEF MSWINDOWS}
-          raise Exception.Create('Unsupported filetype');
+          raise Exception.CreateFmt('Unsupported file "%s"', [FileName]);
         {$ELSE}
           Unsupported platform...
         {$ENDIF}
@@ -999,22 +986,14 @@ begin
     end else
       if IsFILE(Rec) = TRUE then
       begin
-
         if GetSize(SR) > 0 then
         begin
           Stream := TFileStream.Create(Rec.Name, fmOpenRead or fmShareDenyNone);
 
-          IncludeFlag(Rec.FFlags, gfSize);
-          Rec.FSize := GetSize(SR);
-
-          IncludeFlag(Rec.FFlags, gfOffSet);
-          Rec.FOffSet := FStream.Seek(0, soCurrent);
-
-          IncludeFlag(Rec.FFlags, gfStoredDigest);
-          Rec.FStoredDigest := WriteStream(Stream, Rec.FSize);
-
-          IncludeFlag(Rec.FFlags, gfStoredSize);
-          Rec.FStoredSize := FStream.Seek(0, soCurrent) - Rec.FOffSet;
+          IncludeFlag(Rec.FFlags, gfSize);           Rec.FSize         := GetSize(SR);
+          IncludeFlag(Rec.FFlags, gfOffSet);         Rec.FOffSet       := FStream.Seek(0, soCurrent);
+          IncludeFlag(Rec.FFlags, gfStoredDigest);   Rec.FStoredDigest := WriteStream (Stream, Rec.FSize);
+          IncludeFlag(Rec.FFlags, gfStoredSize);     Rec.FStoredSize   := FStream.Seek(0, soCurrent) - Rec.FOffSet;
 
           FreeAndNil(Stream);
         end;
@@ -1040,7 +1019,7 @@ begin
 
   IncludeFlag(Rec.FFlags, gfDEL);
   IncludeFlag(Rec.FFlags, gfVersion);  Rec.FVersion := FCurrVersion + 1;
-  IncludeFlag(Rec.FFlags, gfName);     Rec.FName := Items[Index].Name;
+  IncludeFlag(Rec.FFlags, gfName);     Rec.FName    := Items[Index].Name;
 
   FAdd.Add(Rec);
 end;
@@ -1077,18 +1056,21 @@ end;
 
 procedure TGulpLib.Extract(Index: longint);
 var
-     Dest : TFileStream;
-      Rec : TGulpRec;
-  RecPath : string;
+  Dest : TFileStream;
+   Rec : TGulpRec;
 begin
-  Rec := Items[Index];
+  Rec  := Items[Index];
+  if ForceDirectories(ExtractFileDir(Rec.FName)) = FALSE then
+    raise Exception.CreateFmt('Unable to create path "%s"',
+      [ExtractFileDir(Rec.FName)]);
+
   if IsLNK(Rec) then
   begin
     {$IFDEF UNIX}
-      //if FpLink(Rec.LinkName, Rec.Name) <> 0 then
-      //  raise Exception.CreateFmt('Unable to create hardlink %s', [Rec.Name]);
-      if FpSymLink(pchar(Rec.LinkName), pchar(Rec.Name)) <> 0 then
-        raise Exception.CreateFmt('Unable to create symlink "%s"', [Rec.Name]);
+      //if FpLink(RecLinkName, RecName) <> 0 then
+      //  raise Exception.CreateFmt('Unable to create hardlink %s', [RecName]);
+      if FpSymLink(pchar(Rec.FLinkName), pchar(Rec.FName)) <> 0 then
+        raise Exception.CreateFmt('Unable to create symlink "%s"', [Rec.FName]);
     {$ELSE}
       {$IFDEF MSWINDOWS}
         raise Exception.Create('Unsupported filetype');
@@ -1099,38 +1081,35 @@ begin
   end else
     if IsFILE(Rec) then
     begin
-      RecPath := ExtractFileDir(Rec.Name);
-      if Length(RecPath) > 0 then
-        if DirectoryExists(RecPath) = FALSE then
-          ForceDirectories(RecPath);
-
-      Dest := TFileStream.Create(Rec.Name, fmCreate);
+      Dest := TFileStream.Create(Rec.FName, fmCreate);
       ExtractTo (Index, Dest);
       FreeAndNil(Dest);
     end else
       if IsDIR(Rec) then
       begin
-        RecPath := ExtractFileDir(Rec.Name);
-        if Length(RecPath) > 0 then
-          if DirectoryExists(RecPath) = FALSE then
-            ForceDirectories(RecPath);
+        if DirectoryExists(Rec.FName) = FALSE then
+          if CreateDir(Rec.FName) = FALSE then
+          begin
+            raise Exception.CreateFmt('Unable to create directory "%s"', [Rec.FName]);
+          end;
 
-        if DirectoryExists(Rec.Name) = FALSE then
-          ForceDirectories(Rec.Name);
       end else
-        raise Exception.CreateFmt('Unsupported file "%s"', [Rec.Name]);
+        raise Exception.CreateFmt('Unsupported file "%s"', [Rec.FName]);
 
   {$IFDEF UNIX}
-    FpChmod(Rec.Name, Rec.Mode);
+    if Rec.FPlatform = gpUNIX then
+      if FpChmod(Rec.FName, Rec.FMode) <> 0 then
+        raise Exception.CreateFmt('Unable to set mode for "%s"', [Rec.FName]);
   {$ELSE}
     {$IFDEF MSWINDOWS}
-      // nothing to do...
+      if FileSetAttr(RecName, Rec.FAttributes) <> 0 then
+        raise Exception.CreateFmt('Unable to set attrbutes for "%s"', [RecName]);
     {$ELSE}
       Unsupported platform...
     {$ENDIF}
   {$ENDIF}
-  FileSetAttr(Rec.Name, Rec.Attributes);
-  FileSetDate(Rec.Name, DateTimeToFileDate(UniversalTimeToLocal(Rec.Time)));
+  if FileSetDate(Rec.FName, DateTimeToFileDate(UniversalTimeToLocal(Rec.FTime))) <> 0 then
+    raise Exception.CreateFmt('Unable to set date for "%s"', [Rec.FName]);
 end;
 
 function TGulpLib.GetItem(Index: longint): TGulpRec;
