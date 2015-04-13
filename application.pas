@@ -23,7 +23,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.04.03 by Melchiorre Caruso.
+    v0.0.2 - 2015.04.13 by Melchiorre Caruso.
 }
 
 unit Application;
@@ -205,29 +205,19 @@ begin
       raise Exception.Create('Invalid signature value');
   end;
 
-  (*
   write(#13, #13: 80, 'Deleting records... ');
-  writeln(FScanner.Count);
-  for I := FScanner.Count - 1 downto 0 do
-    if GulpLib.Find(FScanner.Items[I]) = -1 then
-      if DirectoryExists(FScanner.Items[I]) = FALSE then
+  if HasOption('nodelete') = FALSE then
+    for I := FScanner.Count - 1 downto 0 do
+    begin
+      J := GulpLib.Find(FScanner.Items[I]);
+      if (J = -1) or (FileNameMatch(GulpLib.Items[J].Name, FScanner.Items[I]) = FALSE) then
       begin
-        writeln('STEP1 ', FScanner.Items[I]);
-        if HasOption('nodelete') = FALSE then
+        if DirectoryExists(FScanner.Items[I]) = TRUE then
+          RemoveDir(FScanner.Items[I])
+        else
           DeleteFile(FScanner.Items[I]);
-        FScanner.Delete(I);
       end;
-
-  for I := FScanner.Count - 1 downto 0 do
-    if GulpLib.Find(FScanner.Items[I]) = -1 then
-      if DirectoryExists(FScanner.Items[I]) = TRUE then
-      begin
-        writeln('STEP2');
-        if HasOption('nodelete') = FALSE then
-          RemoveDir(FScanner.Items[I]);
-        FScanner.Delete(I);
-      end;
-  *)
+    end;
 
   write(#13, #13: 80, 'Extracting records... ');
   for I := GulpLib.Count - 1 downto 0 do
@@ -237,7 +227,7 @@ begin
       if FileNameMatch(GulpRec.Name, FFileNames[J]) = TRUE then
       begin
         K := FScanner.Find(GulpRec.Name);
-        if K = - 1 then
+        if K = -1 then
         begin
           GulpLib.Extract(I);
           Inc(Size, GulpRec.Size);
@@ -247,7 +237,7 @@ begin
             GulpLib.Extract(I);
             Inc(Size, GulpRec.Size);
           end;
-        break;
+        Break;
       end;
   end;
 
@@ -560,7 +550,7 @@ begin
       if HasOption('l', 'list'   ) then List    else
       if HasOption('c', 'check'  ) then Check   else
       if HasOption('f', 'fix'    ) then Fix     else
-      if HasOption('h', 'help'   ) then Help;
+      if HasOption('h', 'help'   ) then Help    else Help;
 
       ExitCode := 0;
     end else
