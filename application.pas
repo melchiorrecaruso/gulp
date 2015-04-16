@@ -23,7 +23,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.04.13 by Melchiorre Caruso.
+    v0.0.2 - 2015.04.14 by Melchiorre Caruso.
 }
 
 unit Application;
@@ -168,6 +168,7 @@ end;
 
 procedure TGulpApplication.Restore;
 var
+        C : boolean;
   I, J, K : longint;
   GulpLib : TGulpLib;
   GulpRec : TGulpRec;
@@ -209,8 +210,20 @@ begin
   if HasOption('nodelete') = FALSE then
     for I := FScanner.Count - 1 downto 0 do
     begin
+      C := FALSE;
       J := GulpLib.Find(FScanner.Items[I]);
-      if (J = -1) or (FileNameMatch(GulpLib.Items[J].Name, FScanner.Items[I]) = FALSE) then
+      if J <> -1 then
+      begin
+        GulpRec := GulpLib.Items[J];
+        for K := 0 to FFileNames.Count - 1 do
+        begin
+          C := FileNameMatch(GulpRec.Name, FFileNames[K]);
+          if C = TRUE then
+            Break;
+        end;
+      end;
+
+      if C = FALSE then
       begin
         if DirectoryExists(FScanner.Items[I]) = TRUE then
           RemoveDir(FScanner.Items[I])
@@ -479,6 +492,20 @@ writeln('                                                                       
 writeln('OPTIONS                                                                   ');
 writeln('       Operation modifiers:                                               ');
 writeln('                                                                          ');
+writeln('       -m, --method[gzfast|gz|gzmax]                                      ');
+writeln('              with synch, select a compression method.                    ');
+writeln('                                                                          ');
+writeln('                     gulp -s backup files -m gzfast                       ');
+writeln('                                                                          ');
+writeln('              store files with gzfast compression method.                 ');
+writeln('                                                                          ');
+writeln('       --nodelete                                                         ');
+writeln('              with synch, do not mark files in the archive as deleted when');
+writeln('              the  corresponding  external file does not exist. With rest-');
+writeln('              ore, do not delete external files when the corresponding fi-');
+writeln('              le in  archive does  not exist. This  makes gulp  consistent');
+writeln('              with the behavior of most non-journaling archivers.         ');
+writeln('                                                                          ');
 writeln('       -u, --until                                                        ');
 writeln('              ignore any part of the archive updated after version number.');
 writeln('                                                                          ');
@@ -487,12 +514,17 @@ writeln('                                                                       
 writeln('              show files added before version 21.                         ');
 writeln('                                                                          ');
 writeln('EXAMPLES                                                                  ');
-writeln('       Create archive.gulp from files foo and bar.                        ');
-writeln('              gulp -s archive.gulp foo bar                                ');
-writeln('       List all files in archive.gulp.                                    ');
-writeln('              gulp -l archive.gulp                                        ');
-writeln('       Restore all files from archive.gulp.                               ');
-writeln('              gulp -r archive.gulp                                        ');
+writeln('       Create archive from files foo and bar:                             ');
+writeln('                                                                          ');
+writeln('              gulp -s archive foo bar                                     ');
+writeln('                                                                          ');
+writeln('       List all files in archive:                                         ');
+writeln('                                                                          ');
+writeln('              gulp -l archive                                             ');
+writeln('                                                                          ');
+writeln('       Restore all files from archive:                                    ');
+writeln('                                                                          ');
+writeln('              gulp -r archive                                             ');
 writeln('                                                                          ');
 writeln('EXIT STATUS                                                               ');
 writeln('       Returns 0 if successful or 1 in case of an error.                  ');
@@ -550,7 +582,7 @@ begin
       if HasOption('l', 'list'   ) then List    else
       if HasOption('c', 'check'  ) then Check   else
       if HasOption('f', 'fix'    ) then Fix     else
-      if HasOption('h', 'help'   ) then Help    else Help;
+      if HasOption('h', 'help'   ) then Help    else  Help;
 
       ExitCode := 0;
     end else

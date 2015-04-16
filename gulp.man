@@ -1,6 +1,6 @@
 .\" Manpage for GULP.
 .\" Contact melchiorrecaruso@gmail.com to correct errors or typos.
-.TH man 1 "16 FEB 2015" "0.0.2" "GULP man page"
+.TH man 1 "15 APR 2015" "0.0.2" "GULP man page"
 .SH NAME
 .B gulp
 \- A simple journaling archiver.
@@ -57,12 +57,30 @@ truncates any data added after last valid update.
 .SH OPTIONS
 Operation modifiers:
 
-.BR \-u ", " --until
+.BR \-m ", " --method[gzfast|gz|gzmax] 
+.RS
+With synch, select a compression method. 
+
+.RS
+gulp -s backup files -m gzfast 
+.RE
+
+store files with gzfast compression method. 
+.RE
+
+
+.BR \--nodelete 
+.RS
+With synch , do not mark files in the archive as deleted when the corresponding external file does not exist. With restore , do not delete external files when the corresponding file in archive does not exist. This makes gulp consistent with the behavior of most non-journaling archivers.
+
+.RE
+
+.BR \-u ", " --until[version]
 .RS
 ignore any part of the archive updated after version number. 
 
 .RS
-gulp -l backup files -until 20
+gulp -l backup files -until 20 
 .RE
 
 show files added before version 21.
@@ -70,18 +88,23 @@ show files added before version 21.
 
 .SH EXAMPLES
 Create archive.gulp from files foo and bar.
+
 .RS
 gulp -s archive.gulp foo bar
+
 .RE
 List all files in archive.gulp.
+
 .RS
 gulp -l archive.gulp
+
 .RE
 Restore all files from archive.gulp.
+
 .RS
 gulp -r archive.gulp
-.RE
 
+.RE
 
 .SH EXIT STATUS
 Returns 0 if successful or 1 in case of an error.
@@ -89,4 +112,4 @@ Returns 0 if successful or 1 in case of an error.
 The archive format does not save sufficient information for backing up and restoring the operating system.
 .SH AUTHOR
 .B gulp
-is copyright (C) 2014-2015, Melchiorre Caruso. It is licensed under GPL v2. For information on the license, see <http://www.gnu.org/copyleft/gpl.html>. Program was written by Melchiorre Caruso <melchiorrecaruso at gmail dot com>"
+is copyright (C) 2014-2015, Melchiorre Caruso. It is licensed under GPL v2. For information on the license, see <http://www.gnu.org/copyleft/gpl.html>. Program was written by Melchiorre Caruso <melchiorrecaruso at gmail dot com>" 
