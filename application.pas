@@ -40,9 +40,10 @@ type
 
   TGulpApplication = class(TCustomApplication)
   private
-    FFileNames : TStringList;
-    FSwitches  : TStringList;
-    FScanner   : TSysScanner;
+    FExclude  : TStringList;
+    FInclude  : TStringList;
+    FScanner  : TSysScanner;
+    FSwitches : TStringList;
     procedure Synch;
     procedure Restore;
     procedure Purge;
@@ -85,16 +86,18 @@ begin
     {$ENDIF}
   {$ENDIF}
   StopOnException := TRUE;
-  FFileNames      := TStringList.Create;
-  FSwitches       := TStringList.Create;
+  FExclude        := TStringList.Create;
+  FInclude        := TStringList.Create;
   FScanner        := TSysScanner.Create;
+  FSwitches       := TStringList.Create;
 end;
 
 destructor TGulpApplication.Destroy;
 begin
+  FExclude.Destroy;
+  FInclude.Destroy;
   FScanner.Destroy;
   FSwitches.Destroy;
-  FFileNames.Destroy;
   inherited Destroy;
 end;
 
@@ -108,10 +111,10 @@ begin
   writeln(Description);
   writeln(#13, #13: 80, 'Synch the content of ' + GetOptionValue('s', 'synch'));
   write  (#13, #13: 80, 'Scanning filesystem... ');
-  if FFileNames.Count = 0 then
-    FFileNames.Add('*');
-  for I := 0 to FFileNames.Count - 1 do
-    FScanner.Add(FFileNames[I]);
+  if FInclude.Count = 0 then
+    FInclude.Add('*');
+  for I := 0 to FInclude.Count - 1 do
+    FScanner.Add(FInclude[I]);
   J := FScanner.Find(GetOptionValue('s', 'synch'));
   if J <> -1 then
     FScanner.Delete(J);
@@ -179,8 +182,8 @@ begin
   writeln(Description);
   writeln(#13, #13: 80, 'Restore the content of ' + GetOptionValue('r', 'restore'));
   write  (#13, #13: 80, 'Scanning filesystem... ');
-  if FFileNames.Count = 0 then
-    FFileNames.Add('*');
+  if FInclude.Count = 0 then
+    FInclude.Add('*');
   FScanner.Add('*');
   J := FScanner.Find(GetOptionValue('r', 'restore'));
   if J <> -1 then
@@ -215,9 +218,9 @@ begin
       if J <> -1 then
       begin
         GulpRec := GulpLib.Items[J];
-        for K := 0 to FFileNames.Count - 1 do
+        for K := 0 to FInclude.Count - 1 do
         begin
-          C := FileNameMatch(GulpRec.Name, FFileNames[K]);
+          C := FileNameMatch(GulpRec.Name, FInclude[K]);
           if C = TRUE then
             Break;
         end;
@@ -236,8 +239,8 @@ begin
   for I := GulpLib.Count - 1 downto 0 do
   begin
     GulpRec := GulpLib.Items[I];
-    for J := 0 to FFileNames.Count - 1 do
-      if FileNameMatch(GulpRec.Name, FFileNames[J]) = TRUE then
+    for J := 0 to FInclude.Count - 1 do
+      if FileNameMatch(GulpRec.Name, FInclude[J]) = TRUE then
       begin
         K := FScanner.Find(GulpRec.Name);
         if K = -1 then
@@ -351,8 +354,8 @@ var
 begin
   writeln(Description);
   writeln(#13, #13: 80, 'List the content of ' + GetOptionValue('l', 'list'));
-  if FFileNames.Count = 0 then
-    FFileNames.Add('*');
+  if FInclude.Count = 0 then
+    FInclude.Add('*');
 
   Version := longword(-1);
   if GetOptionValue('u', 'until') <> '' then
@@ -379,8 +382,8 @@ begin
   for I := 0 to GulpLib.Count - 1 do
   begin
     GulpRec := GulpLib.Items[I];
-    for J := 0 to FFileNames.Count - 1 do
-       if FileNameMatch(GulpRec.Name, FFileNames[J])  then
+    for J := 0 to FInclude.Count - 1 do
+       if FileNameMatch(GulpRec.Name, FInclude[J])  then
        begin
          writeln(#13, #13: 80, Format('%4s %3s %3s %7s %19s %12s %s', [
             VerTostring(GulpRec),
@@ -548,6 +551,7 @@ end;
 procedure TGulpApplication.DoRun;
 var
           Error : string;
+              I : longint;
    LongSwitches : TStringList;
   ShortSwitches : string;
       StartTime : TDateTime;
@@ -558,7 +562,7 @@ begin
   DefaultFormatSettings.LongDateFormat  := 'yyyy-mm-dd';
   DefaultFormatSettings.ShortDateFormat := 'yyyy-mm-dd';
 
-  ShortSwitches := 's:r:p:l:c:f:u:m:h';
+  ShortSwitches := 's:r:p:l:c:f:u:m:i:e:h';
   LongSwitches  :=  TStringList.Create;
   LongSwitches.Add('synch:');
   LongSwitches.Add('restore:');
@@ -568,12 +572,14 @@ begin
   LongSwitches.Add('fix:');
   LongSwitches.Add('until:');
   LongSwitches.Add('method:');
+  LongSwitches.Add('include:');
+  LongSwitches.Add('exclude:');
   LongSwitches.Add('help');
   LongSwitches.Add('nodelete');
 
   ExitCode  := 1;
   try
-    Error   := CheckOptions(ShortSwitches, LongSwitches, FSwitches, FFileNames);
+    Error   := CheckOptions(ShortSwitches, LongSwitches, FSwitches, FInclude);
     if Error = '' then
     begin
       if HasOption('s', 'synch'  ) then Synch   else
