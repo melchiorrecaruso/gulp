@@ -23,7 +23,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.05.01 by Melchiorre Caruso.
+    v0.0.2 - 2015.05.02 by Melchiorre Caruso.
 }
 
 unit Common;
@@ -134,29 +134,21 @@ begin
     faDirectory or faArchive or faSymLink or faAnyFile,  Rec);
   while Error = 0 do
   begin
-    if (Rec.Attr and faDirectory) <> 0 then
+    if Rec.Attr and faDirectory = faDirectory then
     begin
       if (Rec.Name <> '.') and (Rec.Name <> '..') then
       begin
+        AddItem(ScanPath + Rec.Name);
         if Recursive then
-        begin
-          // if FileNameMatch(ScanPath + Rec.Name, FileMask) then
-          AddItem(ScanPath + Rec.Name);
-
-          if (Rec.Attr and faSymLink) = 0 then
+          if Rec.Attr and faSymLink = 0 then
             Scan(ScanPath + IncludeTrailingPathDelimiter(Rec.Name) + ScanMask, TRUE);
-        end else
-        begin
-          if FileNameMatch(ScanPath + Rec.Name, FileMask) then
-            AddItem(ScanPath + Rec.Name);
-        end;
       end;
     end else
       if FileNameMatch(ScanPath + Rec.Name, FileMask) then
         AddItem(ScanPath + Rec.Name);
 
     Error := FindNext(Rec);
-  end; // end while error ...
+  end;
   SysUtils.FindClose(Rec);
 end;
 

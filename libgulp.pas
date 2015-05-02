@@ -23,7 +23,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.04.13 by Melchiorre Caruso.
+    v0.0.2 - 2015.05.02 by Melchiorre Caruso.
 }
 
 unit LibGulp;
@@ -384,10 +384,10 @@ end;
 function ModeToString(var Rec: TGulpRec): string;
 begin
   {$IFDEF UNIX}
-  if (Rec.Flags and $F) in [gfADD] then
-    Result := OctStr(Rec.Mode, 3)
-  else
-    Result := '...';
+    if (Rec.Flags and $F) in [gfADD] then
+      Result := OctStr(Rec.Mode, 3)
+    else
+      Result := '...';
   {$ELSE}
     {$IFDEF MSWINDOWS}
       Result := '...';
