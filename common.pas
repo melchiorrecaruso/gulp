@@ -23,7 +23,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.04.13 by Melchiorre Caruso.
+    v0.0.2 - 2015.05.01 by Melchiorre Caruso.
 }
 
 unit Common;
@@ -31,7 +31,8 @@ unit Common;
 interface
 
 uses
-  Classes;
+  Classes,
+  SysUtils;
 
 type
   { TSysScanner }
@@ -47,8 +48,7 @@ type
     constructor Create;
     destructor Destroy; override;
     procedure Add(const FileMask: string);
-    procedure Delete(const FileMask: string); overload;
-    procedure Delete(Index: longint); overload;
+    procedure Delete(Index: longint);
     function Find(const FileName: string): longint;
     procedure Clear;
   public
@@ -66,7 +66,8 @@ type
 
   { Matching routines }
 
-  function FileNameMatch(const FileName, FileMask: string): boolean;
+  function FileNameMatch(const FileName, FileMask: string): boolean; overload;
+  function FileNameMatch(const FileName: string; FileMasks: TStringList): boolean; overload;
 
   { Priority routines }
 
@@ -76,12 +77,8 @@ type
 implementation
 
 uses
-  {$IFDEF UNIX} BaseUnix, {$ENDIF}
-  {$IFDEF MSWINDOWS} Windows, {$ENDIF}
-  Masks,
-  Math,
-  Process,
-  SysUtils;
+  {$IFDEF UNIX} BaseUnix; {$ENDIF}
+  {$IFDEF MSWINDOWS} Windows; {$ENDIF}
 
 { TSysScanner class }
 
@@ -98,7 +95,8 @@ begin
       Unsupported platform...
     {$ENDIF}
   {$ENDIF}
-  FList.Sorted := TRUE;
+  FList.Duplicates  := dupIgnore;
+  FList.Sorted      := TRUE;
 end;
 
 destructor TSysScanner.Destroy;
@@ -165,35 +163,13 @@ end;
 procedure TSysScanner.Add(const FileMask: string);
 begin
   if FileMask = '' then Exit;
-  // Directory and recursive mode ...
   if DirectoryExists(FileMask) then
-  begin
-    AddItem(FileMask);
-    Scan(IncludeTrailingPathDelimiter(FileMask) + '*', TRUE);
-  end else
-  begin
-    if FileMask[Length(FileMask)] = PathDelim then
-    begin
-      Scan(FileMask + '*', TRUE)
-    end else
-    begin
-      if FileExists(FileMask) then
-        AddItem(FileMask)
-      else
-        Scan(FileMask, TRUE);
-    end;
-  end;
-end;
-
-procedure TSysScanner.Delete(const FileMask: string);
-var
-  I : longint;
-begin
-  for I := Count - 1 downto 0 do
-    if FileNameMatch(Items[I], FileMask) then
-    begin
-      Delete(I);
-    end;
+    AddItem(FileMask)
+  else
+    if FileExists(FileMask) then
+      AddItem(FileMask)
+    else
+      Scan(FileMask, TRUE);
 end;
 
 procedure TSysScanner.Delete(Index: longint);
@@ -233,17 +209,47 @@ end;
 
 { Matching routines }
 
+function MatchPattern(Element, Pattern: pchar): boolean;
+begin
+  if 0 = StrComp(Pattern, '*') then
+    Result := TRUE
+  else
+    if (Element^ = Chr(0)) and (Pattern^ <> Chr(0)) then
+      Result := FALSE
+    else
+      if Element^ = Chr(0) then
+        Result := TRUE
+      else
+        case Pattern^ of
+          '*': if MatchPattern(Element, @Pattern[1]) then
+                 Result := TRUE
+               else
+                 Result := MatchPattern(@Element[1], Pattern);
+          '?': Result := MatchPattern(@Element[1], @Pattern[1]);
+        else
+          if Element^ = Pattern^ then
+            Result := MatchPattern(@Element[1], @Pattern[1])
+          else
+            Result := FALSE;
+        end;
+end;
+
 function FileNameMatch(const FileName, FileMask: string): boolean;
 begin
-  {$IFDEF UNIX}
-    Result := MatchesMask(FileName, FileMask, TRUE);
-  {$ELSE}
-    {$IFDEF MSWINDOWS}
-      Result := MatchesMask(FileName, FileMask, FALSE);
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
-  {$ENDIF}
+  Result := MatchPattern(PChar(FileName), PChar(FileMask));
+end;
+
+function FileNameMatch(const FileName: string; FileMasks: TStringList): boolean;
+var
+  I : longint;
+begin
+  Result := FALSE;
+  for I := 0 to FileMasks.Count - 1 do
+    if FileNameMatch(FileName, FileMasks[I]) = TRUE then
+    begin
+      Result := TRUE;
+      Break;
+    end;
 end;
 
 { Priority routines }

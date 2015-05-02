@@ -23,7 +23,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.04.14 by Melchiorre Caruso.
+    v0.0.2 - 2015.05.01 by Melchiorre Caruso.
 }
 
 unit Application;
@@ -32,7 +32,6 @@ interface
 
 uses
   Classes,
-  Common,
   CustApp;
 
 type
@@ -42,7 +41,6 @@ type
   private
     FExclude  : TStringList;
     FInclude  : TStringList;
-    FScanner  : TSysScanner;
     FSwitches : TStringList;
     procedure Synch;
     procedure Restore;
@@ -62,6 +60,7 @@ type
 implementation
 
 uses
+  Common,
   LibGulp,
   SysUtils;
 
@@ -85,18 +84,22 @@ begin
       Unsupported platform...
     {$ENDIF}
   {$ENDIF}
-  StopOnException := TRUE;
-  FExclude        := TStringList.Create;
-  FInclude        := TStringList.Create;
-  FScanner        := TSysScanner.Create;
-  FSwitches       := TStringList.Create;
+  StopOnException      := TRUE;
+  FExclude             := TStringList.Create;
+  FExclude.Duplicates  := dupIgnore;
+  FExclude.Sorted      := TRUE;
+  FInclude             := TStringList.Create;
+  FInclude.Duplicates  := dupIgnore;
+  FInclude.Sorted      := TRUE;
+  FSwitches            := TStringList.Create;
+  FSwitches.Duplicates := dupIgnore;
+  FSwitches.Sorted     := TRUE;
 end;
 
 destructor TGulpApplication.Destroy;
 begin
   FExclude.Destroy;
   FInclude.Destroy;
-  FScanner.Destroy;
   FSwitches.Destroy;
   inherited Destroy;
 end;
@@ -105,27 +108,18 @@ procedure TGulpApplication.Synch;
 var
      I, J : longint;
   GulpLib : TGulpLib;
+     Scan : TSysScanner;
      Size : int64;
    Stream : TStream;
 begin
   writeln(Description);
   writeln(#13, #13: 80, 'Synch the content of ' + GetOptionValue('s', 'synch'));
-  write  (#13, #13: 80, 'Scanning filesystem... ');
-  if FInclude.Count = 0 then
-    FInclude.Add('*');
-  for I := 0 to FInclude.Count - 1 do
-    FScanner.Add(FInclude[I]);
-  J := FScanner.Find(GetOptionValue('s', 'synch'));
-  if J <> -1 then
-    FScanner.Delete(J);
-
-  write(#13, #13: 80, 'Opening archive... ');
+  write  (#13, #13: 80, 'Opening archive... ');
   if FileExists(GetOptionValue('s', 'synch')) then
     Stream := TFileStream.Create (GetOptionValue('s', 'synch'), fmOpenReadWrite)
   else
-    Stream := TFileStream.Create (GetOptionValue('s', 'synch'), fmCreate);;
-
-  write(#13, #13: 80, 'Reading records... ');
+    Stream := TFileStream.Create (GetOptionValue('s', 'synch'), fmCreate);
+  write  (#13, #13: 80, 'Scanning archive... ');
   GulpLib := TGulpLib.Create(Stream);
   if GulpLib.OpenArchive(longword(-2)) = FALSE then
   begin
@@ -133,23 +127,39 @@ begin
       raise Exception.Create('Invalid signature value');
   end;
   Size := Stream.Seek(0, soEnd);
-
-  write(#13, #13: 80, 'Deleting records... ');
-  for I := 0 to GulpLib.Count - 1 do
+  write  (#13, #13: 80, 'Scanning filesystem... ');
+  Scan := TSysScanner.Create;
   begin
-    J := FScanner.Find(GulpLib.Items[I].Name);
-    if J = -1 then
-    begin
-      if HasOption('nodelete') = FALSE then
-        GulpLib.Delete(I);
-    end else
-      if GetTime(FScanner.Items[J]) <> GulpLib.Items[I].Time then
-      begin
-        GulpLib.Delete(I);
-      end else
-        FScanner.Delete(J);
-  end;
+    for I := FInclude.Count - 1 downto 0 do
+      if DirectoryExists(FInclude[I]) = TRUE then
+        FInclude.Add(IncludeTrailingPathDelimiter(FInclude[I]) + '*')
+      else
+        if FInclude[I][Length(FInclude[I])] = PathDelim then
+          FInclude[I] := FInclude[I] + '*';
+    if FInclude.Count = 0 then
+      FInclude.Add('*');
 
+    for I := FExclude.Count - 1 downto 0 do
+      if DirectoryExists(FExclude[I]) = TRUE then
+        FExclude.Add(IncludeTrailingPathDelimiter(FExclude[I]) + '*')
+      else
+        if FExclude[I][Length(FExclude[I])] = PathDelim then
+          FExclude[I] := FExclude[I] + '*';
+    FExclude.Add(GetOptionValue('s', 'synch'));
+  end;
+  for I := FInclude.Count - 1 downto 0 do
+    Scan.Add(FInclude[I]);
+  for I := Scan.Count - 1 downto 0 do
+    if FileNameMatch(Scan.Items[I], FExclude) = TRUE then
+      Scan.Delete(I);
+  write  (#13, #13: 80, 'Deleting records... ');
+  if HasOption('nodelete') = FALSE then
+  begin
+    for I := 0 to GulpLib.Count - 1 do
+      if Scan.Find(GulpLib.Items[I].Name) = -1 then
+        GulpLib.Delete(I);
+  end;
+  write  (#13, #13: 80, 'Adding records... ');
   if GetOptionValue('m', 'method') <> '' then
   begin
     if GetOptionValue('m', 'method') = 'gzfast' then GulpLib.Method := gmGZFast   else
@@ -157,38 +167,43 @@ begin
     if GetOptionValue('m', 'method') = 'gzmax'  then GulpLib.Method := gmGZMax    else
       raise Exception.Create('Wrong method value');
   end;
-
-  write(#13, #13: 80, 'Adding records... ');
-  for I := 0 to FScanner.Count - 1 do
-    GulpLib.Add(FScanner.Items[I]);
+  for I := 0 to Scan.Count - 1 do
+  begin
+    J := GulpLib.Find(Scan.Items[I]);
+    if J = -1 then
+    begin
+      GulpLib.Add(Scan.Items[I])
+    end else
+      if GetTime(Scan.Items[I]) <> GulpLib.Items[J].Time then
+      begin
+        GulpLib.Delete(J);
+        GulpLib.Add(Scan.Items[I]);
+      end;
+  end;
+  write  (#13, #13: 80, 'Closing archive... ');
   GulpLib.CloseArchive;
-
-  write(#13, #13: 80, 'Finished (', Stream.Seek(0, soEnd) - Size, ' added bytes)');
+  write  (#13, #13: 80, 'Finished (', Stream.Seek(0, soEnd) - Size, ' added bytes)');
   FreeAndNil(GulpLib);
   FreeAndNil(Stream);
+  FreeandNil(Scan);
   writeln;
 end;
 
 procedure TGulpApplication.Restore;
 var
-        C : boolean;
-  I, J, K : longint;
+     I, J : longint;
   GulpLib : TGulpLib;
   GulpRec : TGulpRec;
+     Scan : TSysScanner;
      Size : int64 = 0;
    Stream : TStream;
   Version : longword;
 begin
   writeln(Description);
   writeln(#13, #13: 80, 'Restore the content of ' + GetOptionValue('r', 'restore'));
-  write  (#13, #13: 80, 'Scanning filesystem... ');
-  if FInclude.Count = 0 then
-    FInclude.Add('*');
-  FScanner.Add('*');
-  J := FScanner.Find(GetOptionValue('r', 'restore'));
-  if J <> -1 then
-    FScanner.Delete(J);
-
+  write  (#13, #13: 80, 'Opening archive... ');
+  Stream := TFileStream.Create(GetOptionValue('r', 'restore'), fmOpenRead);
+  write  (#13, #13: 80, 'Scanning records... ');
   Version := longword(-2);
   if GetOptionValue('u', 'until') <> '' then
   begin
@@ -197,69 +212,84 @@ begin
     else
       Version := StrToInt(GetOptionValue('u', 'until'));
   end;
-
-  write(#13, #13: 80, 'Opening archive... ');
-  Stream := TFileStream.Create(GetOptionValue('r', 'restore'), fmOpenRead);
-
-  write(#13, #13: 80, 'Reading records... ');
   GulpLib := TGulpLib.Create(Stream);
   if GulpLib.OpenArchive(Version) = FALSE then
   begin
     if Stream.Size <> 0 then
       raise Exception.Create('Invalid signature value');
   end;
+  write  (#13, #13: 80, 'Scanning filesystem... ');
+  Scan := TSysScanner.Create;
+  Scan.Add('*');
+  begin
+    for I := FInclude.Count - 1 downto 0 do
+      if FInclude[I][Length(FInclude[I])] = PathDelim then
+      begin
+        FInclude[I] := FInclude[I] + '*'
+      end else
+      begin
+        J := GulpLib.Find(FInclude[I]);
+        if J <> -1 then
+          if GulpLib.Items[J].Attributes and faDirectory <> 0 then
+            FInclude.Add(IncludeTrailingPathDelimiter(FInclude[I]) + '*')
+      end;
+    if FInclude.Count = 0 then
+      FInclude.Add('*');
 
-  write(#13, #13: 80, 'Deleting records... ');
+    for I := FExclude.Count - 1 downto 0 do
+      if FExclude[I][Length(FExclude[I])] = PathDelim then
+      begin
+        FExclude[I] := FExclude[I] + '*'
+      end else
+      begin
+        J := GulpLib.Find(FExclude[I]);
+        if J <> -1 then
+          if GulpLib.Items[J].Attributes and faDirectory <> 0 then
+            FExclude.Add(IncludeTrailingPathDelimiter(FExclude[I]) + '*')
+      end;
+    FExclude.Add(GetOptionValue('r', 'restore'));
+  end;
+  write  (#13, #13: 80, 'Deleting records... ');
   if HasOption('nodelete') = FALSE then
-    for I := FScanner.Count - 1 downto 0 do
+    for I := Scan.Count - 1 downto 0 do
     begin
-      C := FALSE;
-      J := GulpLib.Find(FScanner.Items[I]);
-      if J <> -1 then
-      begin
-        GulpRec := GulpLib.Items[J];
-        for K := 0 to FInclude.Count - 1 do
+      J := GulpLib.Find(Scan.Items[I]);
+      if (J = -1) or
+         (FileNameMatch(GulpLib.Items[J].Name, FInclude) = FALSE) or
+         (FileNameMatch(GulpLib.Items[J].Name, FExclude) = TRUE ) then
         begin
-          C := FileNameMatch(GulpRec.Name, FInclude[K]);
-          if C = TRUE then
-            Break;
+          if DirectoryExists(Scan.Items[I]) = TRUE then
+            RemoveDir(Scan.Items[I])
+          else
+            DeleteFile(Scan.Items[I]);
         end;
-      end;
-
-      if C = FALSE then
-      begin
-        if DirectoryExists(FScanner.Items[I]) = TRUE then
-          RemoveDir(FScanner.Items[I])
-        else
-          DeleteFile(FScanner.Items[I]);
-      end;
     end;
-
-  write(#13, #13: 80, 'Extracting records... ');
+  write  (#13, #13: 80, 'Extracting records... ');
   for I := GulpLib.Count - 1 downto 0 do
   begin
     GulpRec := GulpLib.Items[I];
-    for J := 0 to FInclude.Count - 1 do
-      if FileNameMatch(GulpRec.Name, FInclude[J]) = TRUE then
+    if FileNameMatch(GulpRec.Name, FInclude) = TRUE then
+      if FileNameMatch(GulpRec.Name, FExclude) = FALSE then
       begin
-        K := FScanner.Find(GulpRec.Name);
-        if K = -1 then
+        J := Scan.Find(GulpRec.Name);
+        if J = -1 then
         begin
           GulpLib.Extract(I);
           Inc(Size, GulpRec.Size);
         end else
-          if GetTime(FScanner.Items[K]) <> GulpRec.Time then
+          if GetTime(Scan.Items[J]) <> GulpRec.Time then
           begin
             GulpLib.Extract(I);
             Inc(Size, GulpRec.Size);
           end;
-        Break;
       end;
   end;
-
+  write  (#13, #13: 80, 'Closing archive... ');
+  GulpLib.CloseArchive;
   write(#13, #13: 80, 'Finished (', Size, ' extracted bytes)');
   FreeAndNil(GulpLib);
   FreeAndNil(Stream);
+  FreeAndNil(Scan);
   writeln;
 end;
 
@@ -582,14 +612,34 @@ begin
     Error   := CheckOptions(ShortSwitches, LongSwitches, FSwitches, FInclude);
     if Error = '' then
     begin
+      for I := 0 to FSwitches.Count - 1 do
+      begin
+      {$IFDEF UNIX}
+          if (Pos('include=', FSwitches[I]) = 1) then FInclude.Add(Copy(FSwitches[I], 9, Length(FSwitches[I]) - 8)) else
+          if (Pos('exclude=', FSwitches[I]) = 1) then FExclude.Add(Copy(FSwitches[I], 9, Length(FSwitches[I]) - 8)) else
+          if (Pos('i=',       FSwitches[I]) = 1) then FInclude.Add(Copy(FSwitches[I], 3, Length(FSwitches[I]) - 2)) else
+          if (Pos('e=',       FSwitches[I]) = 1) then FExclude.Add(Copy(FSwitches[I], 3, Length(FSwitches[I]) - 2));
+      {$ELSE}
+        {$IFDEF MSWINDOWS}
+          if (Pos('include=', lowercase(FSwitches[I])) = 1) then FInclude.Add(Copy(FSwitches[I], 9, Length(FSwitches[I]) - 8)) else
+          if (Pos('exclude=', lowercase(FSwitches[I])) = 1) then FExclude.Add(Copy(FSwitches[I], 9, Length(FSwitches[I]) - 8)) else
+          if (Pos('i=',       lowercase(FSwitches[I])) = 1) then FInclude.Add(Copy(FSwitches[I], 3, Length(FSwitches[I]) - 2)) else
+          if (Pos('e=',       lowercase(FSwitches[I])) = 1) then FExclude.Add(Copy(FSwitches[I], 3, Length(FSwitches[I]) - 2));
+        {$ELSE}
+          Unsupported platform...
+        {$ENDIF}
+      {$ENDIF}
+      end;
       if HasOption('s', 'synch'  ) then Synch   else
       if HasOption('r', 'restore') then Restore else
       if HasOption('p', 'purge'  ) then Purge   else
       if HasOption('l', 'list'   ) then List    else
       if HasOption('c', 'check'  ) then Check   else
       if HasOption('f', 'fix'    ) then Fix     else
-      if HasOption('h', 'help'   ) then Help    else  Help;
-
+      if HasOption('h', 'help'   ) then Help    else
+      begin
+        Help;
+      end;
       ExitCode := 0;
     end else
     begin
@@ -601,7 +651,6 @@ begin
     on E: Exception do
       writeln(#13, #13: 80, Format('An exception was raised: "%s"', [E.Message]));
   end;
-
   FreeAndNil(LongSwitches);
   writeln(#13, #13: 80, 'Elapsed ',
     Format('%0.2f', [(Now - StartTime) * (24 * 60 * 60)]) , ' sec');

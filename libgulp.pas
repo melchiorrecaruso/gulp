@@ -420,57 +420,6 @@ end;
 // Internal rutines
 // =============================================================================
 
-function IsFILE(const Rec: TGulpRec): boolean; inline;
-begin
-  {$IFDEF UNIX}
-    case Rec.FPlatform of
-      gpUNIX:      Result := FpS_ISREG(Rec.FMode);
-      gpMSWINDOWS: Result := Rec.FAttributes and (faDirectory or faVolumeId) = 0;
-    else Exception.Create('Unsupported platform');
-    end;
-  {$ELSE}
-    {$IFDEF MSWINDOWS}
-      Result := Rec.FAttributes and (faDirectory or faVolumeId) = 0;
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
-  {$ENDIF}
-end;
-
-function IsDIR(const Rec: TGulpRec): boolean; inline;
-begin
-  {$IFDEF UNIX}
-    case Rec.FPlatform of
-      gpUNIX:      Result := FpS_ISDIR(Rec.FMode);
-      gpMSWINDOWS: Result := Rec.FAttributes and faDirectory = faDirectory;
-    else Exception.Create('Unsupported platform');
-    end;
-  {$ELSE}
-    {$IFDEF MSWINDOWS}
-      Result := Rec.FAttributes and faDirectory = faDirectory;
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
-  {$ENDIF}
-end;
-
-function IsLNK(const Rec: TGulpRec): boolean; inline;
-begin
-  {$IFDEF UNIX}
-    case Rec.FPlatform of
-      gpUNIX:      Result := FpS_ISLNK(Rec.Mode);
-      gpMSWINDOWS: Result := FALSE;
-    else Exception.Create('Unsupported platform');
-    end;
-  {$ELSE}
-    {$IFDEF MSWINDOWS}
-      Result := FALSE;
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
-  {$ENDIF}
-end;
-
 procedure IncludeFlag(var Flags: longword; Flag: longword); inline;
 begin
   Flags := Flags or Flag;
@@ -665,7 +614,6 @@ begin
   inherited Create;
   FAdd         := TList.Create;
   FList        := TList.Create;
-
   FCurrVersion :=  0;
   FMethod      :=  0;
   FStreamSize  := -1;
@@ -946,64 +894,56 @@ var
 begin
   if FFullLoad = TRUE then
     raise Exception.Create('Internal error');
-
   if SysUtils.FindFirst(FileName,
     faReadOnly  or faHidden  or faSysFile or faVolumeId or
     faDirectory or faArchive or faSymLink or faAnyFile, SR) = 0 then
-  begin
-    BeginUpdate;
-    Rec := TGulpRec.Create; ClearRec(Rec);
-
-    IncludeFlag(Rec.FFlags, gfADD);
-    IncludeFlag(Rec.FFlags, gfVersion);     Rec.FVersion    := FCurrVersion + 1;
-    IncludeFlag(Rec.FFlags, gfName);        Rec.FName       := FileName;
-    IncludeFlag(Rec.FFlags, gfTime);        Rec.FTime       := GetTime(SR);
-    {$IFDEF UNIX}
-      IncludeFlag(Rec.FFlags, gfPlatform);  Rec.FPlatform   := gpUNIX;
-      IncludeFlag(Rec.FFlags, gfMode    );  Rec.FMode       := GetMode(FileName);
-      IncludeFlag(Rec.FFlags, gfUserID  );  Rec.FUserID     := GetUID (FileName);
-      IncludeFlag(Rec.FFlags, gfGroupID );  Rec.FGroupID    := GetGID (FileName);
-    {$ELSE}
-      {$IFDEF MSWINDOWS}
-        IncludeFlag(Rec.FFlags, gfPlatform);   Rec.FPlatform   := gpMSWINDOWS;
-        IncludeFlag(Rec.FFlags, gfAttributes); Rec.FAttributes := GetAttr(SR);
-      {$ELSE}
-        Unsupported platform...
-      {$ENDIF}
-    {$ENDIF}
-
-    if IsLNK(Rec) = TRUE then
+    if GetAttr(SR) and (faSysFile or faVolumeId) = 0 then
     begin
+      BeginUpdate;
+      Rec := TGulpRec.Create; ClearRec(Rec);
+
+      IncludeFlag(Rec.FFlags, gfADD);
+      IncludeFlag(Rec.FFlags, gfVersion);      Rec.FVersion    := FCurrVersion + 1;
+      IncludeFlag(Rec.FFlags, gfName);         Rec.FName       := FileName;
+      IncludeFlag(Rec.FFlags, gfTime);         Rec.FTime       := GetTime(SR);
+      IncludeFlag(Rec.FFlags, gfAttributes);   Rec.FAttributes := GetAttr(SR);
       {$IFDEF UNIX}
-        IncludeFlag(Rec.FFlags, gfLinkName);   Rec.FLinkName   := fpReadLink(FileName);
+        IncludeFlag(Rec.FFlags, gfMode    );   Rec.FMode       := GetMode(FileName);
+        IncludeFlag(Rec.FFlags, gfUserID  );   Rec.FUserID     := GetUID (FileName);
+        IncludeFlag(Rec.FFlags, gfGroupID );   Rec.FGroupID    := GetGID (FileName);
+        IncludeFlag(Rec.FFlags, gfPlatform);   Rec.FPlatform   := gpUNIX;
       {$ELSE}
         {$IFDEF MSWINDOWS}
-          raise Exception.CreateFmt('Unsupported file "%s"', [FileName]);
+          IncludeFlag(Rec.FFlags, gfPlatform); Rec.FPlatform   := gpMSWINDOWS;
         {$ELSE}
           Unsupported platform...
         {$ENDIF}
       {$ENDIF}
-    end else
-      if IsFILE(Rec) = TRUE then
-      begin
-        if GetSize(SR) > 0 then
+
+      {$IFDEF UNIX}
+        if Rec.FAttributes and faSymLink = faSymLink then
         begin
-          Stream := TFileStream.Create(Rec.Name, fmOpenRead or fmShareDenyNone);
+          IncludeFlag(Rec.FFlags, gfLinkName); Rec.FLinkName   := fpReadLink(FileName);
+        end else
+      {$ELSE}
+        {$IFDEF MSWINDOWS}
+        {$ELSE}
+          Unsupported platform...
+        {$ENDIF}
+      {$ENDIF}
+          if Rec.FAttributes and faDirectory = 0 then
+            if GetSize(SR) > 0 then
+            begin
+              Stream := TFileStream.Create(Rec.FName, fmOpenRead or fmShareDenyNone);
+              IncludeFlag(Rec.FFlags, gfSize);           Rec.FSize         := GetSize(SR);
+              IncludeFlag(Rec.FFlags, gfOffSet);         Rec.FOffSet       := FStream.Seek(0, soCurrent);
+              IncludeFlag(Rec.FFlags, gfStoredDigest);   Rec.FStoredDigest := WriteStream (Stream, Rec.FSize);
+              IncludeFlag(Rec.FFlags, gfStoredSize);     Rec.FStoredSize   := FStream.Seek(0, soCurrent) - Rec.FOffSet;
+              FreeAndNil(Stream);
+            end;
 
-          IncludeFlag(Rec.FFlags, gfSize);           Rec.FSize         := GetSize(SR);
-          IncludeFlag(Rec.FFlags, gfOffSet);         Rec.FOffSet       := FStream.Seek(0, soCurrent);
-          IncludeFlag(Rec.FFlags, gfStoredDigest);   Rec.FStoredDigest := WriteStream (Stream, Rec.FSize);
-          IncludeFlag(Rec.FFlags, gfStoredSize);     Rec.FStoredSize   := FStream.Seek(0, soCurrent) - Rec.FOffSet;
-
-          FreeAndNil(Stream);
-        end;
-
-      end else
-        if IsDIR(Rec) = FALSE then
-          raise Exception.CreateFmt('Unsupported file "%s"', [FileName]);
-
-    FAdd.Add(Rec);
-  end;
+      FAdd.Add(Rec);
+    end;
   SysUtils.FindClose(SR);
 end;
 
@@ -1013,14 +953,11 @@ var
 begin
   if FFullLoad = TRUE then
     raise Exception.Create('Internal error');
-
   BeginUpdate;
   Rec := TGulpRec.Create; ClearRec(Rec);
-
   IncludeFlag(Rec.FFlags, gfDEL);
   IncludeFlag(Rec.FFlags, gfVersion);  Rec.FVersion := FCurrVersion + 1;
   IncludeFlag(Rec.FFlags, gfName);     Rec.FName    := Items[Index].Name;
-
   FAdd.Add(Rec);
 end;
 
@@ -1063,39 +1000,31 @@ begin
   if ForceDirectories(ExtractFileDir(Rec.FName)) = FALSE then
     raise Exception.CreateFmt('Unable to create path "%s"',
       [ExtractFileDir(Rec.FName)]);
-
-  if IsLNK(Rec) then
-  begin
-    {$IFDEF UNIX}
+  {$IFDEF UNIX}
+    if Rec.FAttributes and faSymLink = faSymLink then
+    begin
       //if FpLink(RecLinkName, RecName) <> 0 then
       //  raise Exception.CreateFmt('Unable to create hardlink %s', [RecName]);
       if FpSymLink(pchar(Rec.FLinkName), pchar(Rec.FName)) <> 0 then
         raise Exception.CreateFmt('Unable to create symlink "%s"', [Rec.FName]);
-    {$ELSE}
-      {$IFDEF MSWINDOWS}
-        raise Exception.Create('Unsupported filetype');
-      {$ELSE}
-        Unsupported platform...
-      {$ENDIF}
-    {$ENDIF}
-  end else
-    if IsFILE(Rec) then
-    begin
-      Dest := TFileStream.Create(Rec.FName, fmCreate);
-      ExtractTo (Index, Dest);
-      FreeAndNil(Dest);
     end else
-      if IsDIR(Rec) then
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+    {$ELSE}
+      Unsupported platform...
+    {$ENDIF}
+  {$ENDIF}
+      if Rec.FAttributes and faDirectory = faDirectory then
       begin
         if DirectoryExists(Rec.FName) = FALSE then
           if CreateDir(Rec.FName) = FALSE then
-          begin
             raise Exception.CreateFmt('Unable to create directory "%s"', [Rec.FName]);
-          end;
-
       end else
-        raise Exception.CreateFmt('Unsupported file "%s"', [Rec.FName]);
-
+      begin
+        Dest := TFileStream.Create(Rec.FName, fmCreate);
+        ExtractTo (Index, Dest);
+        FreeAndNil(Dest);
+      end;
   {$IFDEF UNIX}
     if Rec.FPlatform = gpUNIX then
       if FpChmod(Rec.FName, Rec.FMode) <> 0 then

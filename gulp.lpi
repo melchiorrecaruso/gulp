@@ -102,6 +102,7 @@
     </BuildModes>
     <PublishOptions>
       <Version Value="2"/>
+      <IgnoreBinaries Value="False"/>
     </PublishOptions>
     <RunParams>
       <local>
@@ -111,11 +112,6 @@
         <Display Use="True"/>
       </local>
     </RunParams>
-    <RequiredPackages Count="1">
-      <Item1>
-        <PackageName Value="LazUtils"/>
-      </Item1>
-    </RequiredPackages>
     <Units Count="4">
       <Unit0>
         <Filename Value="gulp.pas"/>
