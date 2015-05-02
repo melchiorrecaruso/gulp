@@ -538,7 +538,13 @@ begin
   writeln('OPTIONS                                                                   ');
   writeln('       Operation modifiers:                                               ');
   writeln('                                                                          ');
-  writeln('       -m, --method[gzfast|gz|gzmax]                                      ');
+  writeln('       -e, --exclude  [ pattern ]                                         ');
+  writeln('              exclude files in pattern.                                   ');
+  writeln('                                                                          ');
+  writeln('       -i, --include  [ pattern ]                                         ');
+  writeln('              include files in pattern.                                   ');
+  writeln('                                                                          ');
+  writeln('       -m, --method [ gzfast | gz | gzmax ]                               ');
   writeln('              with synch, select a compression method.                    ');
   writeln('                                                                          ');
   writeln('                     gulp -s backup files -m gzfast                       ');

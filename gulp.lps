@@ -20,10 +20,11 @@
         <Filename Value="application.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Application"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="2"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="321"/>
-        <CursorPos X="44" Y="347"/>
+        <TopLine Value="520"/>
+        <CursorPos X="57" Y="540"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
@@ -32,7 +33,6 @@
         <Filename Value="libgulp.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="LibGulp"/>
-        <IsVisibleTab Value="True"/>
         <WindowIndex Value="1"/>
         <TopLine Value="1056"/>
         <CursorPos X="3" Y="1109"/>
