@@ -1099,7 +1099,6 @@ var
      Rec : TGulpRec;
 begin
   Dest.Seek(0, soBeginning);
-
   Lib:= TGulpLib.Create(Source);
   if Lib.OpenArchive(longword(-2)) = FALSE then
   begin
@@ -1107,32 +1106,35 @@ begin
       raise Exception.Create('Invalid signature value');
   end;
 
-  WriteOffSet(Dest, 0);
-  for I := 0 to Lib.Count - 1 do
+  if Lib.Count > 0 then
   begin
-    Rec := Lib.Items[I];
-    if Rec.FStoredSize > 0 then
+    WriteOffSet(Dest, 0);
+    for I := 0 to Lib.Count - 1 do
     begin
-      Source.Seek (Rec.FOffset, soBeginning);
-      Rec.FOffSet := Dest.Seek(0, soCurrent);
-      Dest.CopyFrom(Source, Rec.FStoredSize);
+      Rec := Lib.Items[I];
+      if Rec.FStoredSize > 0 then
+      begin
+        Source.Seek (Rec.FOffset, soBeginning);
+        Rec.FOffSet := Dest.Seek(0, soCurrent);
+        Dest.CopyFrom(Source, Rec.FStoredSize);
+      end;
+      Rec.FVersion := 1;
     end;
-    Rec.FVersion := 1;
-  end;
 
-  OffSet := Dest.Seek(0, soEnd);
-  Dest.Seek(0, soBeginning);
-  WriteOffSet(Dest, OffSet);
+    OffSet := Dest.Seek(0, soEnd);
+    Dest.Seek(0, soBeginning);
+    WriteOffSet(Dest, OffSet);
 
-  Dest.Seek(0, soEnd);
-  for I := 0 to Lib.Count - 1 do
-  begin
-    Rec := Lib.Items[I];
-    if I <> Lib.Count - 1 then
-      ExcludeFlag(Rec.FFlags, gfLast)
-    else
-      IncludeFlag(Rec.FFlags, gfLast);
-    WriteRec(Dest, Rec);
+    Dest.Seek(0, soEnd);
+    for I := 0 to Lib.Count - 1 do
+    begin
+      Rec := Lib.Items[I];
+      if I <> Lib.Count - 1 then
+        ExcludeFlag(Rec.FFlags, gfLast)
+      else
+        IncludeFlag(Rec.FFlags, gfLast);
+      WriteRec(Dest, Rec);
+    end;
   end;
   FreeAndNil(Lib);
 end;
