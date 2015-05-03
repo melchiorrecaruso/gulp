@@ -31,8 +31,13 @@ unit LibGulp;
 interface
 
 uses
-  {$IFDEF UNIX} BaseUnix, {$ENDIF}
-  {$IFDEF MSWINDOWS} Windows, {$ENDIF}
+  {$IFDEF UNIX}
+    BaseUnix,
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+      Windows,
+    {$ENDIF}
+  {$ENDIF}
   Classes,
   Sha1,
   SysUtils;
