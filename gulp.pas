@@ -36,7 +36,7 @@ uses
   {$IFDEF MSWINDOWS}
     Windows,
   {$ENDIF}
-  Application;
+  GulpApplication;
 
 var
   App: TGulpApplication;

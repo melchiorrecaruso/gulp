@@ -26,7 +26,7 @@
     v0.0.2 - 2015.05.02 by Melchiorre Caruso.
 }
 
-unit LibGulp;
+unit GulpLibrary;
 
 interface
 
