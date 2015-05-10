@@ -94,7 +94,11 @@
             <LinkSmart Value="True"/>
           </Linking>
           <Other>
+            <Verbosity>
+              <ShowHintsForUnusedUnitsInMainSrc Value="True"/>
+            </Verbosity>
             <WriteFPCLogo Value="False"/>
+            <CustomOptions Value="-dCONSOLEAPP"/>
           </Other>
         </CompilerOptions>
       </Item3>
@@ -118,46 +122,53 @@
         <UnitName Value="Gulp"/>
         <IsVisibleTab Value="True"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="60"/>
-        <CursorPos X="34" Y="70"/>
+        <TopLine Value="66"/>
+        <CursorPos X="77" Y="141"/>
+        <FoldState Value=" T3lF031 pkGkT282U"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit0>
       <Unit1>
-        <Filename Value="application.pas"/>
+        <Filename Value="gulpapplication.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Application"/>
-        <EditorIndex Value="-1"/>
+        <UnitName Value="GulpApplication"/>
+        <EditorIndex Value="1"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="148"/>
-        <CursorPos X="83" Y="169"/>
-        <UsageCount Value="200"/>
+        <TopLine Value="457"/>
+        <CursorPos X="56" Y="470"/>
+        <UsageCount Value="32"/>
+        <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit1>
       <Unit2>
-        <Filename Value="libgulp.pas"/>
+        <Filename Value="gulpcommon.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="LibGulp"/>
-        <EditorIndex Value="-1"/>
+        <UnitName Value="GulpCommon"/>
+        <EditorIndex Value="3"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="65"/>
-        <CursorPos Y="81"/>
-        <FoldState Value=" T3.U0Y("/>
-        <UsageCount Value="200"/>
+        <TopLine Value="11"/>
+        <CursorPos X="48" Y="37"/>
+        <UsageCount Value="32"/>
+        <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit2>
       <Unit3>
-        <Filename Value="common.pas"/>
+        <Filename Value="gulplibrary.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Common"/>
-        <EditorIndex Value="-1"/>
+        <UnitName Value="GulpLibrary"/>
+        <EditorIndex Value="2"/>
         <WindowIndex Value="1"/>
-        <CursorPos X="10" Y="6"/>
-        <UsageCount Value="200"/>
+        <TopLine Value="59"/>
+        <CursorPos X="52" Y="59"/>
+        <UsageCount Value="32"/>
+        <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit3>
     </Units>
+    <CustomDefines Count="1">
+      <Define0 Value="CONSOLEAPP"/>
+    </CustomDefines>
   </ProjectOptions>
   <CompilerOptions>
     <Version Value="11"/>

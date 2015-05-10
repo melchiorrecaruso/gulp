@@ -23,7 +23,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.05.02 by Melchiorre Caruso.
+    v0.0.2 - 2015.05.10 by Melchiorre Caruso.
 }
 
 program Gulp;
@@ -36,37 +36,338 @@ uses
   {$IFDEF MSWINDOWS}
     Windows,
   {$ENDIF}
-  GulpApplication;
+  Classes,
+  CustApp,
+  GulpApplication,
+  SysUtils;
+
+type
+  TShellApplication = class(TCustomApplication)
+  private
+     LongSwitches : TStringList;
+    ShortSwitches : string;
+         Switches : TStringList;
+  protected
+    procedure DoRun; override;
+    procedure Abort;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+    procedure Help;
+  end;
+
+constructor TShellApplication.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  DefaultFormatSettings. LongDateFormat := 'yyyy-mm-dd';
+  DefaultFormatSettings.ShortDateFormat := 'yyyy-mm-dd';
+  LongSwitches  := TStringList.Create;
+  Switches      := TStringList.Create;
+  {$IFDEF UNIX}
+    CaseSensitiveOptions   := TRUE;
+    Switches.CaseSensitive := TRUE;
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+      CaseSensitiveOptions   := FALSE;
+      Switches.CaseSensitive := FALSE;
+    {$ELSE}
+      Unsupported platform...
+    {$ENDIF}
+  {$ENDIF}
+  Switches.Duplicates := dupIgnore;
+  Switches.Sorted     := TRUE;
+  StopOnException     := TRUE;
+  ExitCode            := 255;
+end;
+
+destructor TShellApplication.Destroy;
+begin
+  FreeAndNil(LongSwitches);
+  FreeandNil(Switches);
+  inherited Destroy;
+end;
+
+procedure TShellApplication.DoRun;
+var
+         App : TGulpApplication;
+       Error : string;
+           I : longint;
+   StartTime : TDateTime;
+begin
+  StartTime     := Now;
+  ShortSwitches := 's:r:p:l:c:f:u:m:i:e:h';
+  LongSwitches.Add('synch:');
+  LongSwitches.Add('restore:');
+  LongSwitches.Add('purge:');
+  LongSwitches.Add('list:');
+  LongSwitches.Add('check:');
+  LongSwitches.Add('fix:');
+  LongSwitches.Add('until:');
+  LongSwitches.Add('method:');
+  LongSwitches.Add('include:');
+  LongSwitches.Add('exclude:');
+  LongSwitches.Add('help');
+  LongSwitches.Add('nodelete');
+
+  App := TGulpShellApplication.Create;
+  try
+    Error   := CheckOptions(ShortSwitches, LongSwitches, Switches, App.Include);
+    if Error = '' then
+    begin
+      for I := 0 to Switches.Count - 1 do
+      begin
+        {$IFDEF UNIX}
+          if (Pos('include=', Switches[I]) = 1) then App.Include.Add(Copy(Switches[I], 9, Length(Switches[I]) - 8)) else
+          if (Pos('exclude=', Switches[I]) = 1) then App.Exclude.Add(Copy(Switches[I], 9, Length(Switches[I]) - 8)) else
+          if (Pos('i=',       Switches[I]) = 1) then App.Include.Add(Copy(Switches[I], 3, Length(Switches[I]) - 2)) else
+          if (Pos('e=',       Switches[I]) = 1) then App.Exclude.Add(Copy(Switches[I], 3, Length(Switches[I]) - 2));
+        {$ELSE}
+          {$IFDEF MSWINDOWS}
+            if (Pos('include=', lowercase(FSwitches[I])) = 1) then Application.Include.Add(Copy(Switches[I], 9, Length(Switches[I]) - 8)) else
+            if (Pos('exclude=', lowercase(FSwitches[I])) = 1) then Application.Exclude.Add(Copy(Switches[I], 9, Length(Switches[I]) - 8)) else
+            if (Pos('i=',       lowercase(FSwitches[I])) = 1) then Application.Include.Add(Copy(Switches[I], 3, Length(Switches[I]) - 2)) else
+            if (Pos('e=',       lowercase(FSwitches[I])) = 1) then Application.Exclude.Add(Copy(Switches[I], 3, Length(Switches[I]) - 2));
+          {$ELSE}
+            Unsupported platform...
+          {$ENDIF}
+        {$ENDIF}
+      end;
+
+      App.Method       := lowercase(GetOptionValue('m', 'method'));
+      App.UntilVersion := lowercase(GetOptionValue('u', 'until'));
+
+      if HasOption('s', 'synch' ) then
+      begin
+        App.FileName := GetOptionValue('s', 'synch');
+        App.Synchronize;
+      end else
+      if HasOption('r', 'restore') then
+      begin
+        App.FileName := GetOptionValue('r', 'restore');
+        App.Restore;
+      end else
+      if HasOption('p', 'purge'  ) then
+      begin
+        App.FileName := GetOptionValue('p', 'purge');
+        App.Purge;
+      end else
+      if HasOption('c', 'check'  ) then
+      begin
+        App.FileName := GetOptionValue('c', 'check');
+        App.Check;
+      end else
+      if HasOption('f', 'fix'    ) then
+      begin
+        App.FileName := GetOptionValue('f', 'fix');
+        App.Fix;
+      end else
+      if HasOption('l', 'list'   ) then
+      begin
+        App.FileName := GetOptionValue('l', 'list');
+        App.List;
+      end else
+      if HasOption('h', 'help'   ) then
+        Help
+      else
+        Help;
+
+      ExitCode := 0;
+    end else
+      writeln(#13, #13: 80, Error);
+
+  except
+    on E: Exception do
+      writeln(#13, #13: 80, Format('An exception was raised: "%s"', [E.Message]));
+  end;
+  FreeAndNil(App);
+  writeln(#13, #13: 80, 'Elapsed ',
+    Format('%0.2f', [(Now - StartTime) * (24 * 60 * 60)]) , ' sec');
+  Terminate;
+end;
+
+procedure TShellApplication.Abort;
+begin
+  raise Exception.Create('User abort');
+end;
+
+procedure TShellApplication.Help;
+begin
+  writeln;
+  writeln('NAME                                                                      ');
+  writeln('       gulp - A simple journaling archiver.                               ');
+  writeln('                                                                          ');
+  writeln('SYNOPSIS                                                                  ');
+  writeln('       gulp [-] s --synch | r --restore | p --purge | l --list |          ');
+  writeln('                c --check | f --fix [ options ...] [ files ...]           ');
+  writeln('                                                                          ');
+  writeln('DESCRIPTION                                                               ');
+  writeln('       gulp stores and extracts files from a disk archive. A GULP  archive');
+  writeln('       is  a  sequence  of timestamped updates, each listing the files and');
+  writeln('       directories that have been added, changed,  or  deleted  since  the');
+  writeln('       previous  transacted update, normally based on changes to the last-');
+  writeln('       modified dates.                                                    ');
+  writeln('                                                                          ');
+  writeln('       The first argument to gulp should be a function; either one of  the');
+  writeln('       letters srplcfh, or one of the long function names. A function let‐');
+  writeln('       ter need be prefixed with ''-'', and can''t  be  combined  with  other');
+  writeln('       single-letter  options.  A long function name must be prefixed with');
+  writeln('       ''--''.  Some options take a parameter; with the  single-letter  form');
+  writeln('       these must be given as separate arguments. With the long form, they');
+  writeln('       may be given by appending =value to the option.                    ');
+  writeln('                                                                          ');
+  writeln('FUNCTION LETTERS                                                          ');
+  writeln('       Main operation mode:                                               ');
+  writeln('                                                                          ');
+  writeln('       -s, --synch                                                        ');
+  writeln('              append changes in files to archive, or create archive if  it');
+  writeln('              does  not exist. files is a list of file and directory names');
+  writeln('              separated by spaces. If a  name  is  a  directory,  then  it');
+  writeln('              recursively includes all files and subdirectories within. In');
+  writeln('              Windows, files may contain wildcards * and  ?  in  the  last');
+  writeln('              component  of the path (after the last slash). * matches any');
+  writeln('              string and ? matches any character.                         ');
+  writeln('                                                                          ');
+  writeln('              A change is an addition, update, or deletion of any file  or');
+  writeln('              directory  in  files  or  any  of  its subdirectories to any');
+  writeln('              depth. A file or directory  is  considered  changed  if  its');
+  writeln('              last-modified  date differ between the internal and external');
+  writeln('              versions. File contents are not compared.                   ');
+  writeln('                                                                          ');
+  writeln('              For each added or updated file or directory,  the  following');
+  writeln('              information  is saved in the archive: the contents, the file');
+  writeln('              or directory name as it appears in files plus  any  trailing');
+  writeln('              path, the last-modified date, and the Unix/Linux permissions');
+  writeln('              or Windows attributes. Other metadata such as owner,  group,');
+  writeln('              last  access  time,  etc.  are not saved. Symbolic links are');
+  writeln('              saved. Hard links are followed  as  if  they  were  ordinary');
+  writeln('              files.  Special file types such as devices, named pipes, and');
+  writeln('              named sockets are not saved. If  any  file  cannot  be  read');
+  writeln('              (e.g. permission denied), then it is skipped. However, other');
+  writeln('              files are still added and the update is still valid.        ');
+  writeln('                                                                          ');
+  writeln('              Updates are transacted. If gulp is interrupted  before  com‐');
+  writeln('              pleting  the update, then the archive can be repair with fix');
+  writeln('              function.                                                   ');
+  writeln('                                                                          ');
+  writeln('       -r, --restore                                                      ');
+  writeln('              restore files (including the contents  of  directories),  or');
+  writeln('              extract  the whole archive contents if files is omitted. The');
+  writeln('              file  names,  last-modified   date,   and   permissions   or');
+  writeln('              attributes  are  set  as  saved in the archive. If there are');
+  writeln('              multiple versions of a file stored,  then  only  the  latest');
+  writeln('              version  is  extracted.  If a stored file has been marked as');
+  writeln('              deleted, then it is deleted. Existing files are  overwritten');
+  writeln('              if they are considered changed.                             ');
+  writeln('                                                                          ');
+  writeln('       -p, --purge                                                        ');
+  writeln('              purge archive, remove old files archived.                   ');
+  writeln('                                                                          ');
+  writeln('       -l, --list                                                         ');
+  writeln('              list  files  within  the archive, or list the entire archive');
+  writeln('              contents if files is omitted. For each  file  or  directory,');
+  writeln('              show   version   number,   marker,   Windows  attributes  or');
+  writeln('              Unix/Linux permissions, last modified date, size  and  name.');
+  writeln('              Attributes  are  listed as an octal number in Unix/Linux (as');
+  writeln('              per chmod(1)) or with the letters D, A, S, H, R, I  in  Win‐');
+  writeln('              dows (as per the attrib command).                           ');
+  writeln('                                                                          ');
+  writeln('       -c, --check                                                        ');
+  writeln('              check  archive  integrity  by verifying that the data agrees');
+  writeln('              with the stored SHA-1 hashes and sizes  and  that  the  data');
+  writeln('              otherwise conforms to the gulp standard.                    ');
+  writeln('                                                                          ');
+  writeln('       -f, --fix                                                          ');
+  writeln('              truncates any data added after last valid update.           ');
+  writeln('                                                                          ');
+  writeln('OPTIONS                                                                   ');
+  writeln('       Operation modifiers:                                               ');
+  writeln('                                                                          ');
+  writeln('       -e, --exclude  [ pattern ]                                         ');
+  writeln('              exclude files in pattern.                                   ');
+  writeln('                                                                          ');
+  writeln('       -i, --include  [ pattern ]                                         ');
+  writeln('              include files in pattern.                                   ');
+  writeln('                                                                          ');
+  writeln('       -m, --method [ gzfast | gz | gzmax ]                               ');
+  writeln('              with synch, select a compression method.                    ');
+  writeln('                                                                          ');
+  writeln('                     gulp -s backup files -m gzfast                       ');
+  writeln('                                                                          ');
+  writeln('              store files with gzfast compression method.                 ');
+  writeln('                                                                          ');
+  writeln('       --nodelete                                                         ');
+  writeln('              with synch, do not mark files in the archive as deleted when');
+  writeln('              the  corresponding  external file does not exist. With rest-');
+  writeln('              ore, do not delete external files when the corresponding fi-');
+  writeln('              le in  archive does  not exist. This  makes gulp  consistent');
+  writeln('              with the behavior of most non-journaling archivers.         ');
+  writeln('                                                                          ');
+  writeln('       -u, --until                                                        ');
+  writeln('              ignore any part of the archive updated after version number.');
+  writeln('                                                                          ');
+  writeln('                     gulp -l backup files -until 20                       ');
+  writeln('                                                                          ');
+  writeln('              show files added before version 21.                         ');
+  writeln('                                                                          ');
+  writeln('EXAMPLES                                                                  ');
+  writeln('       Create archive from files foo and bar:                             ');
+  writeln('                                                                          ');
+  writeln('              gulp -s archive foo bar                                     ');
+  writeln('                                                                          ');
+  writeln('       List all files in archive:                                         ');
+  writeln('                                                                          ');
+  writeln('              gulp -l archive                                             ');
+  writeln('                                                                          ');
+  writeln('       Restore all files from archive:                                    ');
+  writeln('                                                                          ');
+  writeln('              gulp -r archive                                             ');
+  writeln('                                                                          ');
+  writeln('EXIT STATUS                                                               ');
+  writeln('       Returns 0 if successful or 1 in case of an error.                  ');
+  writeln('                                                                          ');
+  writeln('BUGS                                                                      ');
+  writeln('       The archive format does not save sufficient information for backing');
+  writeln('       up and restoring the operating system.                             ');
+  writeln('                                                                          ');
+  writeln('AUTHOR                                                                    ');
+  writeln('       gulp is copyright (c) 2014-2015, Melchiorre Caruso. It is  licensed');
+  writeln('       under    GPL    v2.   For   information   on   the   license,   see');
+  writeln('       <http://www.gnu.org/copyleft/gpl.html>. Program was written by Mel‐');
+  writeln('       chiorre Caruso <melchiorrecaruso at gmail dot com>"                ');
+  writeln;
+end;
 
 var
-  App: TGulpApplication;
+  Shell: TShellApplication;
 
 { Control+c event }
 
-{$IFDEF MSWINDOWS}
-function CtrlHandler(CtrlType: longword): longbool;
-begin
-  case CtrlType of
-    CTRL_C_EVENT:        App.Abort;
-    CTRL_BREAK_EVENT:    App.Abort;
-    CTRL_CLOSE_EVENT:    App.Abort;
-    CTRL_LOGOFF_EVENT:   App.Abort;
-    CTRL_SHUTDOWN_EVENT: App.Abort;
-  end;
-  Result := True;
-end;
-{$ENDIF}
-
 {$IFDEF UNIX}
-procedure CtrlHandler(sig: cint);
-begin
-  case sig of
-    SIGINT:  App.Abort;
-    SIGQUIT: App.Abort;
-    SIGKILL: App.Abort;
-    SIGSTOP: App.Abort;
+  procedure CtrlHandler(sig: cint);
+  begin
+    case sig of
+      SIGINT:  Shell.Abort;
+      SIGQUIT: Shell.Abort;
+      SIGKILL: Shell.Abort;
+      SIGSTOP: Shell.Abort;
+    end;
   end;
-end;
+{$ELSE}
+  {$IFDEF MSWINDOWS}
+    function CtrlHandler(CtrlType: longword): longbool;
+    begin
+      case CtrlType of
+        CTRL_C_EVENT:        App.Abort;
+        CTRL_BREAK_EVENT:    App.Abort;
+        CTRL_CLOSE_EVENT:    App.Abort;
+        CTRL_LOGOFF_EVENT:   App.Abort;
+        CTRL_SHUTDOWN_EVENT: App.Abort;
+      end;
+      Result := TRUE;
+    end;
+  {$ELSE}
+    Unsupported platform...
+  {$ENDIF}
 {$ENDIF}
 
 procedure SetCtrlCHandler(CtrlHandler: pointer);
@@ -75,15 +376,18 @@ var
   oa, na: SigActionRec;
 {$ENDIF}
 begin
-  {$IFDEF MSWINDOWS}
-    SetConsoleCtrlHandler(@CtrlHandler, TRUE);
-  {$ENDIF}
   {$IFDEF UNIX}
     na.sa_handler  := SigActionHandler(CtrlHandler);
     FillChar(na.sa_mask, SizeOf(na.sa_mask), #0);
     na.sa_flags    := SA_ONESHOT;
     na.sa_restorer := nil;
     fpSigAction(SIGINT, @na, @oa);
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+      SetConsoleCtrlHandler(@CtrlHandler, TRUE);
+    {$ELSE}
+      Unsupported platform...
+    {$ENDIF}
   {$ENDIF}
 end;
 
@@ -91,7 +395,7 @@ end;
 
 begin
   SetCtrlCHandler(@CtrlHandler);
-  App := TGulpApplication.Create(nil);
-  App.Run;
-  App.Destroy;
+  Shell := TShellApplication.Create(nil);
+  Shell.Run;
+  Shell.Destroy;
 end.
