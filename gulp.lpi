@@ -9,6 +9,7 @@
         <MainUnitHasCreateFormStatements Value="False"/>
         <MainUnitHasTitleStatement Value="False"/>
         <AlwaysBuild Value="True"/>
+        <UseDesignTimePackages Value="True"/>
       </Flags>
       <MainUnit Value="0"/>
       <Title Value="Gulp"/>
@@ -22,86 +23,8 @@
     <VersionInfo>
       <StringTable ProductVersion=""/>
     </VersionInfo>
-    <BuildModes Count="3" Active="Release">
+    <BuildModes Count="1" Active="Default">
       <Item1 Name="Default" Default="True"/>
-      <Item2 Name="Debug">
-        <CompilerOptions>
-          <Version Value="11"/>
-          <Target>
-            <Filename Value="gulp"/>
-          </Target>
-          <SearchPaths>
-            <IncludeFiles Value="$(ProjOutDir)"/>
-            <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
-          </SearchPaths>
-          <Parsing>
-            <SyntaxOptions>
-              <SyntaxMode Value="Delphi"/>
-              <CStyleOperator Value="False"/>
-              <IncludeAssertionCode Value="True"/>
-              <AllowLabel Value="False"/>
-              <CPPInline Value="False"/>
-            </SyntaxOptions>
-          </Parsing>
-          <CodeGeneration>
-            <Checks>
-              <IOChecks Value="True"/>
-              <RangeChecks Value="True"/>
-              <OverflowChecks Value="True"/>
-              <StackChecks Value="True"/>
-            </Checks>
-            <Optimizations>
-              <OptimizationLevel Value="0"/>
-            </Optimizations>
-          </CodeGeneration>
-          <Linking>
-            <Debugging>
-              <UseHeaptrc Value="True"/>
-            </Debugging>
-          </Linking>
-        </CompilerOptions>
-      </Item2>
-      <Item3 Name="Release">
-        <CompilerOptions>
-          <Version Value="11"/>
-          <Target>
-            <Filename Value="gulp"/>
-          </Target>
-          <SearchPaths>
-            <IncludeFiles Value="$(ProjOutDir)"/>
-            <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
-          </SearchPaths>
-          <Parsing>
-            <SyntaxOptions>
-              <SyntaxMode Value="Delphi"/>
-              <CStyleOperator Value="False"/>
-              <AllowLabel Value="False"/>
-              <CPPInline Value="False"/>
-              <UseAnsiStrings Value="False"/>
-            </SyntaxOptions>
-          </Parsing>
-          <CodeGeneration>
-            <SmartLinkUnit Value="True"/>
-            <Optimizations>
-              <OptimizationLevel Value="3"/>
-            </Optimizations>
-          </CodeGeneration>
-          <Linking>
-            <Debugging>
-              <GenerateDebugInfo Value="False"/>
-              <UseLineInfoUnit Value="False"/>
-            </Debugging>
-            <LinkSmart Value="True"/>
-          </Linking>
-          <Other>
-            <Verbosity>
-              <ShowHintsForUnusedUnitsInMainSrc Value="True"/>
-            </Verbosity>
-            <WriteFPCLogo Value="False"/>
-            <CustomOptions Value="-dCONSOLEAPP"/>
-          </Other>
-        </CompilerOptions>
-      </Item3>
     </BuildModes>
     <PublishOptions>
       <Version Value="2"/>
@@ -120,11 +43,9 @@
         <Filename Value="gulp.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Gulp"/>
-        <IsVisibleTab Value="True"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="66"/>
-        <CursorPos X="77" Y="141"/>
-        <FoldState Value=" T3lF031 pkGkT282U"/>
+        <TopLine Value="107"/>
+        <CursorPos X="44" Y="78"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
@@ -133,11 +54,13 @@
         <Filename Value="gulpapplication.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="GulpApplication"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="457"/>
-        <CursorPos X="56" Y="470"/>
-        <UsageCount Value="32"/>
+        <TopLine Value="287"/>
+        <CursorPos X="45" Y="304"/>
+        <FoldState Value=" T3ob0V23"/>
+        <UsageCount Value="34"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit1>
@@ -147,9 +70,9 @@
         <UnitName Value="GulpCommon"/>
         <EditorIndex Value="3"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="11"/>
-        <CursorPos X="48" Y="37"/>
-        <UsageCount Value="32"/>
+        <TopLine Value="2"/>
+        <CursorPos X="40" Y="21"/>
+        <UsageCount Value="34"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit2>
@@ -161,7 +84,7 @@
         <WindowIndex Value="1"/>
         <TopLine Value="59"/>
         <CursorPos X="52" Y="59"/>
-        <UsageCount Value="32"/>
+        <UsageCount Value="34"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit3>
@@ -197,10 +120,13 @@
       <Debugging>
         <GenerateDebugInfo Value="False"/>
         <UseLineInfoUnit Value="False"/>
-        <StripSymbols Value="True"/>
       </Debugging>
       <LinkSmart Value="True"/>
     </Linking>
+    <Other>
+      <WriteFPCLogo Value="False"/>
+      <CustomOptions Value="-dCONSOLEAPP"/>
+    </Other>
   </CompilerOptions>
   <Debugging>
     <BreakPoints Count="1">

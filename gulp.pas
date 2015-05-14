@@ -61,8 +61,8 @@ begin
   inherited Create(AOwner);
   DefaultFormatSettings. LongDateFormat := 'yyyy-mm-dd';
   DefaultFormatSettings.ShortDateFormat := 'yyyy-mm-dd';
-  LongSwitches  := TStringList.Create;
-  Switches      := TStringList.Create;
+  LongSwitches := TStringList.Create;
+      Switches := TStringList.Create;
   {$IFDEF UNIX}
     CaseSensitiveOptions   := TRUE;
     Switches.CaseSensitive := TRUE;
