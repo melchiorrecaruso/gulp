@@ -31,12 +31,13 @@ unit GulpApplication;
 interface
 
 uses
-  Classes;
+  Classes,
+  GulpLibrary;
 
 type
   { TGulpApplication class }
 
-  TGulpApplication = class
+  TGulpApplication = class(TObject)
   private
     FFileName     : string;
     FExclude      : TStringList;
@@ -45,7 +46,8 @@ type
     FNodelete     : boolean;
     FUntilVersion : string;
   protected
-    procedure DoMessage(const Message: string); virtual; abstract;
+    procedure ShowMessage(const Message: string); virtual; abstract;
+    procedure ShowRec    (Rec: TGulpRec        ); virtual; abstract;
   public
     constructor Create;
     destructor Destroy; override;
@@ -67,21 +69,14 @@ type
 
   TGulpShellApplication = class(TGulpApplication)
   protected
-    procedure DoMessage(const Message: string); override;
-  end;
-
-  { TGulpGuiApplication class }
-
-  TGulpGuiApplication = class(TGulpApplication)
-  protected
-    procedure DoMessage(const Message: string); override;
+    procedure ShowMessage(const Message: string); override;
+    procedure ShowRec    (Rec: TGulpRec        ); override;
   end;
 
 implementation
 
 uses
   GulpCommon,
-  GulpLibrary,
   SysUtils;
 
 const
@@ -133,11 +128,11 @@ var
      Size : int64 = 0;
    Stream : TStream;
 begin
-  DoMessage(Description);
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage(Format('Synch the content of %s', [FileName]));
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage('Scanning archive...      ');
+  ShowMessage(Description);
+  {$IFDEF CONSOLEAPP} ShowMessage(LineEnding); {$ENDIF}
+  ShowMessage(Format('Synch the content of %s', [FileName]));
+  {$IFDEF CONSOLEAPP} ShowMessage(LineEnding); {$ENDIF}
+  ShowMessage('Scanning archive...      ');
   if FileExists(FileName) then
     Stream := TFileStream.Create (FileName, fmOpenReadWrite)
   else
@@ -149,8 +144,8 @@ begin
       raise Exception.Create('Invalid signature value');
   end;
   Size := Stream.Seek(0, soEnd);
-  {$IFDEF CONSOLEAPP} DoMessage(#13); {$ENDIF}
-  DoMessage('Scanning filesystem...   ');
+  {$IFDEF CONSOLEAPP} ShowMessage(#13); {$ENDIF}
+  ShowMessage('Scanning filesystem...   ');
   Scan := TSysScanner.Create;
   for I := FInclude.Count - 1 downto 0 do
     if DirectoryExists(FInclude[I]) = TRUE then
@@ -173,16 +168,16 @@ begin
   for I := Scan.Count - 1 downto 0 do
     if FileNameMatch(Scan.Items[I], FExclude) = TRUE then
       Scan.Delete(I);
-  {$IFDEF CONSOLEAPP} DoMessage(#13); {$ENDIF}
-  DoMessage('Deleting records...      ');
+  {$IFDEF CONSOLEAPP} ShowMessage(#13); {$ENDIF}
+  ShowMessage('Deleting records...      ');
   if FNoDelete = FALSE then
   begin
     for I := 0 to GulpLib.Count - 1 do
       if Scan.Find(GulpLib.Items[I].Name) = -1 then
         GulpLib.Delete(I);
   end;
-  {$IFDEF CONSOLEAPP} DoMessage(#13); {$ENDIF}
-  DoMessage('Adding records...        ');
+  {$IFDEF CONSOLEAPP} ShowMessage(#13); {$ENDIF}
+  ShowMessage('Adding records...        ');
   if FMethod <> '' then
   begin
     if FMethod = 'gzfast' then GulpLib.Method := gmGZFast   else
@@ -203,9 +198,9 @@ begin
       end;
   end;
   GulpLib.CloseArchive;
-  {$IFDEF CONSOLEAPP} DoMessage(#13); {$ENDIF}
-  DoMessage(Format('Finished (%u added bytes)', [Stream.Seek(0, soEnd) - Size]));
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
+  {$IFDEF CONSOLEAPP} ShowMessage(#13); {$ENDIF}
+  ShowMessage(Format('Finished (%u added bytes)', [Stream.Seek(0, soEnd) - Size]));
+  {$IFDEF CONSOLEAPP} ShowMessage(LineEnding); {$ENDIF}
   FreeAndNil(GulpLib);
   FreeAndNil(Stream);
   FreeandNil(Scan);
@@ -221,11 +216,11 @@ var
    Stream : TStream;
   Version : longword;
 begin
-  DoMessage(Description);
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage(Format('Restore the content of %s', [FileName]));
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage('Scanning archive...      ');
+  ShowMessage(Description);
+  {$IFDEF CONSOLEAPP} ShowMessage(LineEnding); {$ENDIF}
+  ShowMessage(Format('Restore the content of %s', [FileName]));
+  {$IFDEF CONSOLEAPP} ShowMessage(LineEnding); {$ENDIF}
+  ShowMessage('Scanning archive...      ');
   Stream := TFileStream.Create(FileName, fmOpenRead);
   Version := longword(-2);
   if FUntilVersion <> '' then
@@ -241,8 +236,8 @@ begin
     if Stream.Size <> 0 then
       raise Exception.Create('Invalid signature value');
   end;
-  {$IFDEF CONSOLEAPP} DoMessage(#13); {$ENDIF}
-  DoMessage('Scanning filesystem...   ');
+  {$IFDEF CONSOLEAPP} ShowMessage(#13); {$ENDIF}
+  ShowMessage('Scanning filesystem...   ');
   Scan := TSysScanner.Create;
   Scan.Add('*');
   for I := FInclude.Count - 1 downto 0 do
@@ -271,8 +266,8 @@ begin
           FExclude.Add(IncludeTrailingPathDelimiter(FExclude[I]) + '*')
     end;
   FExclude.Add(FileName);
-  {$IFDEF CONSOLEAPP} DoMessage(#13); {$ENDIF}
-  DoMessage('Deleting records...      ');
+  {$IFDEF CONSOLEAPP} ShowMessage(#13); {$ENDIF}
+  ShowMessage('Deleting records...      ');
   if FNoDelete = FALSE then
     for I := Scan.Count - 1 downto 0 do
     begin
@@ -287,8 +282,8 @@ begin
             DeleteFile(Scan.Items[I]);
         end;
     end;
-  {$IFDEF CONSOLEAPP} DoMessage(#13); {$ENDIF}
-  DoMessage('Extracting records...    ');
+  {$IFDEF CONSOLEAPP} ShowMessage(#13); {$ENDIF}
+  ShowMessage('Extracting records...    ');
   for I := GulpLib.Count - 1 downto 0 do
   begin
     GulpRec := GulpLib.Items[I];
@@ -309,9 +304,9 @@ begin
       end;
   end;
   GulpLib.CloseArchive;
-  {$IFDEF CONSOLEAPP} DoMessage(#13); {$ENDIF}
-  DoMessage(Format('Finished (%u extracted bytes)', [Size]));
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
+  {$IFDEF CONSOLEAPP} ShowMessage(#13); {$ENDIF}
+  ShowMessage(Format('Finished (%u extracted bytes)', [Size]));
+  {$IFDEF CONSOLEAPP} ShowMessage(LineEnding); {$ENDIF}
   FreeAndNil(GulpLib);
   FreeAndNil(Stream);
   FreeAndNil(Scan);
@@ -322,17 +317,17 @@ var
     Size : int64;
   Stream : TStream;
 begin
-  DoMessage(Description);
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage(Format('Fix the content of %s', [FileName]));
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage('Fixing archive...        ');
+  ShowMessage(Description);
+  {$IFDEF CONSOLEAPP} ShowMessage(LineEnding); {$ENDIF}
+  ShowMessage(Format('Fix the content of %s', [FileName]));
+  {$IFDEF CONSOLEAPP} ShowMessage(LineEnding); {$ENDIF}
+  ShowMessage('Fixing archive...        ');
   Stream := TFileStream.Create(FileName, fmOpenReadWrite);
   Size   := Stream.Seek(0, soEnd);
   FixArchive(Stream);
-  {$IFDEF CONSOLEAPP} DoMessage(#13); {$ENDIF}
-  DoMessage(Format('Finished (%u removed bytes)', [Size - Stream.Size]));
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
+  {$IFDEF CONSOLEAPP} ShowMessage(#13); {$ENDIF}
+  ShowMessage(Format('Finished (%u removed bytes)', [Size - Stream.Size]));
+  {$IFDEF CONSOLEAPP} ShowMessage(LineEnding); {$ENDIF}
   FreeAndNil(Stream);
 end;
 
@@ -343,11 +338,11 @@ var
       Nul : TStream;
    Stream : TStream;
 begin
-  DoMessage(Description);
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage(Format('Check the content of %s', [FileName]));
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage('Scanning archive...      ');
+  ShowMessage(Description);
+  {$IFDEF CONSOLEAPP} ShowMessage(LineEnding); {$ENDIF}
+  ShowMessage(Format('Check the content of %s', [FileName]));
+  {$IFDEF CONSOLEAPP} ShowMessage(LineEnding); {$ENDIF}
+  ShowMessage('Scanning archive...      ');
   Stream := TFileStream.Create (FileName, fmOpenRead);
   Nul    := TNulStream.Create;
   GulpLib := TGulpLib.Create(Stream);
@@ -356,14 +351,14 @@ begin
     if Stream.Size <> 0 then
       raise Exception.Create('Invalid signature value');
   end;
-  {$IFDEF CONSOLEAPP} DoMessage(#13); {$ENDIF}
-  DoMessage('Checking records...      ');
+  {$IFDEF CONSOLEAPP} ShowMessage(#13); {$ENDIF}
+  ShowMessage('Checking records...      ');
   for I := 0 to GulpLib.Count - 1 do
     GulpLib.ExtractTo(I, Nul);
   GulpLib.CloseArchive;
-  {$IFDEF CONSOLEAPP} DoMessage(#13); {$ENDIF}
-  DoMessage(Format('Finished (%u checked bytes)', [Stream.Size]));
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
+  {$IFDEF CONSOLEAPP} ShowMessage(#13); {$ENDIF}
+  ShowMessage(Format('Finished (%u checked bytes)', [Stream.Size]));
+  {$IFDEF CONSOLEAPP} ShowMessage(LineEnding); {$ENDIF}
   FreeAndNil(GulpLib);
   FreeAndNil(Stream);
   FreeAndNil(Nul);
@@ -375,18 +370,18 @@ var
       Tmp : TStream;
   TmpName : string;
 begin
-  DoMessage(Description);
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage(Format('Purge the content of %s', [FileName]));
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage('Moving records...        ');
+  ShowMessage(Description);
+  {$IFDEF CONSOLEAPP} ShowMessage(LineEnding); {$ENDIF}
+  ShowMessage(Format('Purge the content of %s', [FileName]));
+  {$IFDEF CONSOLEAPP} ShowMessage(LineEnding); {$ENDIF}
+  ShowMessage('Moving records...        ');
   TmpName := GetTempFileName(ExtractFileDir(FileName), '');
   Tmp     := TFileStream.Create(TmpName,  fmCreate  );
   Stream  := TFileStream.Create(FileName, fmOpenRead);
   PurgeArchive(Stream, Tmp);
-  {$IFDEF CONSOLEAPP} DoMessage(#13); {$ENDIF}
-  DoMessage(Format('Finished (%u removed bytes)', [Stream.Size - Tmp.Size]));
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
+  {$IFDEF CONSOLEAPP} ShowMessage(#13); {$ENDIF}
+  ShowMessage(Format('Finished (%u removed bytes)', [Stream.Size - Tmp.Size]));
+  {$IFDEF CONSOLEAPP} ShowMessage(LineEnding); {$ENDIF}
   FreeAndNil(Stream);
   FreeAndNil(Tmp);
   if DeleteFile(FileName) = FALSE then
@@ -405,11 +400,11 @@ var
    Stream : TStream;
   Version : longword;
 begin
-  DoMessage(Description);
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage(Format('List the content of %s', [FileName]));
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage('Scanning archive...      ');
+  ShowMessage(Description);
+  {$IFDEF CONSOLEAPP} ShowMessage(LineEnding); {$ENDIF}
+  ShowMessage(Format('List the content of %s', [FileName]));
+  {$IFDEF CONSOLEAPP} ShowMessage(LineEnding); {$ENDIF}
+  ShowMessage('Scanning archive...      ');
   Stream := TFileStream.Create (FileName, fmOpenRead);
   Version := longword(-1);
   if FUntilVersion <> '' then
@@ -425,8 +420,8 @@ begin
     if Stream.Size <> 0 then
       raise Exception.Create('Invalid signature value');
   end;
-  {$IFDEF CONSOLEAPP} DoMessage(#13); {$ENDIF}
-  DoMessage('Listing records...       ');
+  {$IFDEF CONSOLEAPP} ShowMessage(#13); {$ENDIF}
+  ShowMessage('Listing records...       ');
   for I := FInclude.Count - 1 downto 0 do
     if FInclude[I][Length(FInclude[I])] = PathDelim then
     begin
@@ -460,23 +455,14 @@ begin
     if FileNameMatch(GulpRec.Name, FInclude) = TRUE then
       if FileNameMatch(GulpRec.Name, FExclude) = FALSE then
       begin
-        {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-        DoMessage(Format('%4s %3s %3s %7s %19s %12s %s', [
-           VerTostring(GulpRec),
-          FlagToString(GulpRec),
-          ModeToString(GulpRec),
-          AttrToString(GulpRec),
-          TimeToString(GulpRec),
-          SizeToString(GulpRec),
-          GulpRec.Name]));
-
+        ShowRec(GulpRec);
         Inc(Count);
       end;
   end;
   GulpLib.CloseArchive;
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage(Format('Finished (%u listed records)', [Count]));
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
+  {$IFDEF CONSOLEAPP} ShowMessage(LineEnding); {$ENDIF}
+  ShowMessage(Format('Finished (%u listed records)', [Count]));
+  {$IFDEF CONSOLEAPP} ShowMessage(LineEnding); {$ENDIF}
   FreeAndNil(GulpLib);
   FreeAndNil(Stream);
 end;
@@ -485,18 +471,22 @@ end;
 // TGulpShellApplication
 // =============================================================================
 
-procedure TGulpShellApplication.DoMessage(const Message: string);
+procedure TGulpShellApplication.ShowMessage(const Message: string);
 begin
   write(Message);
 end;
 
-// =============================================================================
-// TGulpGuiApplication
-// =============================================================================
-
-procedure TGulpGuiApplication.DoMessage(const Message: string);
+procedure TGulpShellApplication.ShowRec(Rec: TGulpRec);
 begin
-
+  {$IFDEF CONSOLEAPP} ShowMessage(LineEnding); {$ENDIF}
+  ShowMessage(Format('%4s %3s %3s %7s %19s %12s %s', [
+     VerTostring(Rec),
+    FlagToString(Rec),
+    ModeToString(Rec),
+    AttrToString(Rec),
+    TimeToString(Rec),
+    SizeToString(Rec),
+    Rec.Name]));
 end;
 
 end.
