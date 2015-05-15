@@ -389,10 +389,12 @@ end;
 function ModeToString(var Rec: TGulpRec): string;
 begin
   {$IFDEF UNIX}
-    if (Rec.Flags and $F) in [gfADD] then
-      Result := OctStr(Rec.Mode, 3)
-    else
-      Result := '...';
+    Result := '...';
+    if Rec.Platform = gpUNIX then
+    begin
+      if (Rec.Flags and $F) in [gfADD] then
+        Result := OctStr(Rec.Mode, 3);
+    end;
   {$ELSE}
     {$IFDEF MSWINDOWS}
       Result := '...';
