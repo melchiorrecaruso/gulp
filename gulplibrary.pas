@@ -14,16 +14,14 @@
   You should have received a copy of the GNU General Public License
   along with this program; if not, write to the Free Software
   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-}
 
-{
   Contains:
 
     The journaling archiver library.
 
   Modified:
 
-    v0.0.2 - 2015.05.02 by Melchiorre Caruso.
+    v0.0.2 - 2015.05.15 by Melchiorre Caruso.
 }
 
 unit GulpLibrary;
@@ -39,8 +37,8 @@ uses
     {$ENDIF}
   {$ENDIF}
   Classes,
-  Sha1,
-  SysUtils;
+  SysUtils,
+  Sha1;
 
 const
   // --- Gulp Flags ---
@@ -129,30 +127,24 @@ type
     FStreamSize  : int64;
     procedure BeginUpdate;
     procedure EndUpdate;
-
-    procedure AddItem   (Rec: TGulpRec);
+    procedure AddItem(Rec: TGulpRec);
     procedure InsertItem(Rec: TGulpRec);
     procedure DeleteItem(Index: longint);
-    function  FindItem  (const FileName: string): longint;
-
-    function GetItem(Index: longint): TGulpRec;
-    function GetCount: longint;
-
+    function FindItem(const FileName: string): longint;
     function ReadStream (Stream: TStream; Size: int64): string;
     function WriteStream(Stream: TStream; Size: int64): string;
+    function GetItem(Index: longint): TGulpRec;
+    function GetCount: longint;
   public
     constructor Create(Stream: TStream);
     destructor  Destroy; override;
-
-    function  OpenArchive(Version: longword): boolean;
     procedure CloseArchive;
-
+    function  OpenArchive(Version: longword): boolean;
     procedure Add (const FileName: string);
     function  Find(const FileName: string): longint;
-    procedure ExtractTo  (Index: longint; Stream: TStream);
-    procedure Extract    (Index: longint);
-    procedure Delete     (Index: longint);
-
+    procedure ExtractTo(Index: longint; Stream: TStream);
+    procedure Extract(Index: longint);
+    procedure Delete(Index: longint);
     property Items[Index: longint]: TGulpRec read GetItem;
     property Method: longword read FMethod   write FMethod;
     property Count:  longint  read GetCount;
@@ -195,7 +187,6 @@ function StringToMode(const S: string  ): longint;
 implementation
 
 uses
-  // BlowFish,
   DateUtils,
   Math,
   ZStream;
@@ -321,7 +312,7 @@ begin
 end;
 {$ENDIF}
 
-function  VerToString(var Rec: TGulpRec): string;
+function VerToString(var Rec: TGulpRec): string;
 begin
   if (Rec.FFlags and gfVersion) = gfVersion then
     Result := IntTostr(Rec.Version)
@@ -631,8 +622,8 @@ end;
 destructor TGulpLib.Destroy;
 begin
   CloseArchive;
-  FAdd.Destroy;
-  FList.Destroy;
+  FreeAndNil(FAdd);
+  FreeAndNil(FList);
   inherited Destroy;
 end;
 

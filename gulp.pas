@@ -14,16 +14,14 @@
   You should have received a copy of the GNU General Public License
   along with this program; if not, write to the Free Software
   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-}
 
-{
   Contains:
 
     The journaling archiver utility.
 
   Modified:
 
-    v0.0.2 - 2015.05.10 by Melchiorre Caruso.
+    v0.0.2 - 2015.05.15 by Melchiorre Caruso.
 }
 
 program Gulp;
@@ -44,16 +42,16 @@ uses
 type
   TShellApplication = class(TCustomApplication)
   private
-     LongSwitches : TStringList;
-    ShortSwitches : string;
+     LongSwitches : TStringList; 
          Switches : TStringList;
+    ShortSwitches : string;    
   protected
     procedure DoRun; override;
     procedure Abort;
   public
     constructor Create(AOwner: TComponent); override;
-    destructor Destroy; override;
-    procedure Help;
+    destructor  Destroy; override;
+    procedure   Help;
   end;
 
 constructor TShellApplication.Create(AOwner: TComponent);
@@ -89,10 +87,10 @@ end;
 
 procedure TShellApplication.DoRun;
 var
-         App : TGulpApplication;
-       Error : string;
-           I : longint;
-   StartTime : TDateTime;
+        App : TGulpApplication;
+      Error : string;
+          I : longint;
+  StartTime : TDateTime;
 begin
   StartTime     := Now;
   ShortSwitches := 's:r:p:l:c:f:u:m:i:e:h';
@@ -132,40 +130,14 @@ begin
           {$ENDIF}
         {$ENDIF}
       end;
-
       App.Method       := lowercase(GetOptionValue('m', 'method'));
       App.UntilVersion := lowercase(GetOptionValue('u', 'until'));
-
-      if HasOption('s', 'synch' ) then
-      begin
-        App.FileName := GetOptionValue('s', 'synch');
-        App.Synchronize;
-      end else
-      if HasOption('r', 'restore') then
-      begin
-        App.FileName := GetOptionValue('r', 'restore');
-        App.Restore;
-      end else
-      if HasOption('p', 'purge'  ) then
-      begin
-        App.FileName := GetOptionValue('p', 'purge');
-        App.Purge;
-      end else
-      if HasOption('c', 'check'  ) then
-      begin
-        App.FileName := GetOptionValue('c', 'check');
-        App.Check;
-      end else
-      if HasOption('f', 'fix'    ) then
-      begin
-        App.FileName := GetOptionValue('f', 'fix');
-        App.Fix;
-      end else
-      if HasOption('l', 'list'   ) then
-      begin
-        App.FileName := GetOptionValue('l', 'list');
-        App.List;
-      end else
+      if HasOption('s', 'synch'  ) then App.Synchronize(GetOptionValue('s', 'synch'  )) else
+      if HasOption('r', 'restore') then App.Restore    (GetOptionValue('r', 'restore')) else
+      if HasOption('p', 'purge'  ) then App.Purge      (GetOptionValue('p', 'purge'  )) else
+      if HasOption('c', 'check'  ) then App.Check      (GetOptionValue('c', 'check'  )) else
+      if HasOption('f', 'fix'    ) then App.Fix        (GetOptionValue('f', 'fix'    )) else
+      if HasOption('l', 'list'   ) then App.List       (GetOptionValue('l', 'list'   )) else
       if HasOption('h', 'help'   ) then
         Help
       else
@@ -177,7 +149,8 @@ begin
 
   except
     on E: Exception do
-      writeln(#13, #13: 80, Format('An exception was raised: "%s"', [E.Message]));
+      writeln(#13, #13: 80,
+        Format('An exception was raised: "%s"', [E.Message]));
   end;
   FreeAndNil(App);
   writeln(#13, #13: 80, 'Elapsed ',

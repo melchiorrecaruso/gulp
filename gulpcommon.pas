@@ -14,16 +14,14 @@
   You should have received a copy of the GNU General Public License
   along with this program; if not, write to the Free Software
   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-}
 
-{
   Contains:
 
     Various helper routines.
 
   Modified:
 
-    v0.0.2 - 2015.05.02 by Melchiorre Caruso.
+    v0.0.2 - 2015.05.15 by Melchiorre Caruso.
 }
 
 unit GulpCommon;

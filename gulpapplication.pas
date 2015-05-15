@@ -14,16 +14,14 @@
   You should have received a copy of the GNU General Public License
   along with this program; if not, write to the Free Software
   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-}
 
-{
   Contains:
 
     The journaling archiver shell.
 
   Modified:
 
-    v0.0.2 - 2015.05.10 by Melchiorre Caruso.
+    v0.0.2 - 2015.05.15 by Melchiorre Caruso.
 }
 
 unit GulpApplication;
@@ -39,7 +37,6 @@ type
 
   TGulpApplication = class(TObject)
   private
-    FFileName     : string;
     FExclude      : TStringList;
     FInclude      : TStringList;
     FMethod       : string;
@@ -50,14 +47,13 @@ type
     procedure ShowRec    (Rec: TGulpRec        ); virtual; abstract;
   public
     constructor Create;
-    destructor Destroy; override;
-    procedure Synchronize;
-    procedure Restore;
-    procedure Purge;
-    procedure List;
-    procedure Fix;
-    procedure Check;
-    property FileName     : string      read FFileName     write FFileName;
+    destructor Destroy;  override;
+    procedure Synchronize(const FileName: string);
+    procedure Restore    (const FileName: string);
+    procedure Purge      (const FileName: string);
+    procedure List       (const FileName: string);
+    procedure Fix        (const FileName: string);
+    procedure Check      (const FileName: string);
     property Exclude      : TStringList read FExclude;
     property Include      : TStringList read FInclude;
     property Method       : string      read FMethod       write FMethod;
@@ -90,7 +86,6 @@ const
 constructor TGulpApplication.Create;
 begin
   inherited Create;
-  FFileName := '';
   FExclude  := TStringList.Create;
   FInclude  := TStringList.Create;
   {$IFDEF UNIX}
@@ -115,12 +110,12 @@ end;
 
 destructor TGulpApplication.Destroy;
 begin
-  FExclude.Destroy;
-  FInclude.Destroy;
+  FreeAndNil(FExclude);
+  FreeAndNil(FInclude);
   inherited Destroy;
 end;
 
-procedure TGulpApplication.Synchronize;
+procedure TGulpApplication.Synchronize(const FileName: string);
 var
   GulpLib : TGulpLib;
      I, J : longint;
@@ -206,7 +201,7 @@ begin
   FreeandNil(Scan);
 end;
 
-procedure TGulpApplication.Restore;
+procedure TGulpApplication.Restore(const FileName: string);
 var
   GulpLib : TGulpLib;
   GulpRec : TGulpRec;
@@ -312,7 +307,7 @@ begin
   FreeAndNil(Scan);
 end;
 
-procedure TGulpApplication.Fix;
+procedure TGulpApplication.Fix(const FileName: string);
 var
     Size : int64;
   Stream : TStream;
@@ -331,7 +326,7 @@ begin
   FreeAndNil(Stream);
 end;
 
-procedure TGulpApplication.Check;
+procedure TGulpApplication.Check(const FileName: string);
 var
   GulpLib : TGulpLib;
         I : longint;
@@ -364,7 +359,7 @@ begin
   FreeAndNil(Nul);
 end;
 
-procedure TGulpApplication.Purge;
+procedure TGulpApplication.Purge(const FileName: string);
 var
    Stream : TStream;
       Tmp : TStream;
@@ -391,7 +386,7 @@ begin
       raise Exception.CreateFmt('Unable to rename file "%s"', [TmpName]);
 end;
 
-procedure TGulpApplication.List;
+procedure TGulpApplication.List(const FileName: string);
 var
     Count : longint;
   GulpLib : TGulpLib;
