@@ -36,7 +36,7 @@ uses
   {$ENDIF}
   Classes,
   CustApp,
-  GulpApplication,
+  GulpLibrary,
   SysUtils;
 
 type
@@ -46,6 +46,8 @@ type
          Switches : TStringList;
     ShortSwitches : string;    
   protected
+    procedure DoList(Rec: TGulpRec);
+    procedure DoMessage(const Message: string);
     procedure DoRun; override;
     procedure Abort;
   public
@@ -85,6 +87,24 @@ begin
   inherited Destroy;
 end;
 
+procedure TShellApplication.DoMessage(const Message: string);
+begin
+  write(Message);
+end;
+
+procedure TShellApplication.DoList(Rec: TGulpRec);
+begin
+  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
+  DoMessage(Format('%4s %3s %3s %7s %19s %12s %s', [
+     VerTostring(Rec),
+    FlagToString(Rec),
+    ModeToString(Rec),
+    AttrToString(Rec),
+    TimeToString(Rec),
+    SizeToString(Rec),
+    Rec.Name]));
+end;
+
 procedure TShellApplication.DoRun;
 var
         App : TGulpApplication;
@@ -107,7 +127,9 @@ begin
   LongSwitches.Add('help');
   LongSwitches.Add('nodelete');
 
-  App := TGulpShellApplication.Create;
+  App           := TGulpApplication.Create;
+  App.OnMessage := DoMessage;
+  App.OnList    := DoList;
   try
     Error   := CheckOptions(ShortSwitches, LongSwitches, Switches, App.Include);
     if Error = '' then
@@ -116,37 +138,43 @@ begin
       begin
         {$IFDEF UNIX}
           if (Pos('include=', Switches[I]) = 1) then App.Include.Add(Copy(Switches[I], 9, Length(Switches[I]) - 8)) else
-          if (Pos('exclude=', Switches[I]) = 1) then App.Exclude.Add(Copy(Switches[I], 9, Length(Switches[I]) - 8)) else
-          if (Pos('i=',       Switches[I]) = 1) then App.Include.Add(Copy(Switches[I], 3, Length(Switches[I]) - 2)) else
-          if (Pos('e=',       Switches[I]) = 1) then App.Exclude.Add(Copy(Switches[I], 3, Length(Switches[I]) - 2));
+            if (Pos('exclude=', Switches[I]) = 1) then App.Exclude.Add(Copy(Switches[I], 9, Length(Switches[I]) - 8)) else
+              if (Pos('i=',       Switches[I]) = 1) then App.Include.Add(Copy(Switches[I], 3, Length(Switches[I]) - 2)) else
+                if (Pos('e=',       Switches[I]) = 1) then App.Exclude.Add(Copy(Switches[I], 3, Length(Switches[I]) - 2));
         {$ELSE}
           {$IFDEF MSWINDOWS}
             if (Pos('include=', lowercase(FSwitches[I])) = 1) then Application.Include.Add(Copy(Switches[I], 9, Length(Switches[I]) - 8)) else
-            if (Pos('exclude=', lowercase(FSwitches[I])) = 1) then Application.Exclude.Add(Copy(Switches[I], 9, Length(Switches[I]) - 8)) else
-            if (Pos('i=',       lowercase(FSwitches[I])) = 1) then Application.Include.Add(Copy(Switches[I], 3, Length(Switches[I]) - 2)) else
-            if (Pos('e=',       lowercase(FSwitches[I])) = 1) then Application.Exclude.Add(Copy(Switches[I], 3, Length(Switches[I]) - 2));
+              if (Pos('exclude=', lowercase(FSwitches[I])) = 1) then Application.Exclude.Add(Copy(Switches[I], 9, Length(Switches[I]) - 8)) else
+                if (Pos('i=',       lowercase(FSwitches[I])) = 1) then Application.Include.Add(Copy(Switches[I], 3, Length(Switches[I]) - 2)) else
+                  if (Pos('e=',       lowercase(FSwitches[I])) = 1) then Application.Exclude.Add(Copy(Switches[I], 3, Length(Switches[I]) - 2));
           {$ELSE}
             Unsupported platform...
           {$ENDIF}
         {$ENDIF}
       end;
-      App.Method       := lowercase(GetOptionValue('m', 'method'));
-      App.UntilVersion := lowercase(GetOptionValue('u', 'until'));
+      if GetOptionValue('m', 'method') = 'gzfast' then App.StorageFlags := [gsfGZ, gsfFASTEST];
+      if GetOptionValue('m', 'method') = 'gz'     then App.StorageFlags := [gsfGZ, gsfDEFAULT];
+      if GetOptionValue('m', 'method') = 'gzmax'  then App.StorageFlags := [gsfGZ, gsfMAX    ];
+      if GetOptionValue('u', 'until' ) <> '' then
+      begin
+        if GetOptionValue('u', 'until') = 'last' then
+          App.UntilVersion := longword(-1)
+        else
+          App.UntilVersion := StrToInt(GetOptionValue('u', 'until'));
+      end;
       if HasOption('s', 'synch'  ) then App.Synchronize(GetOptionValue('s', 'synch'  )) else
-      if HasOption('r', 'restore') then App.Restore    (GetOptionValue('r', 'restore')) else
-      if HasOption('p', 'purge'  ) then App.Purge      (GetOptionValue('p', 'purge'  )) else
-      if HasOption('c', 'check'  ) then App.Check      (GetOptionValue('c', 'check'  )) else
-      if HasOption('f', 'fix'    ) then App.Fix        (GetOptionValue('f', 'fix'    )) else
-      if HasOption('l', 'list'   ) then App.List       (GetOptionValue('l', 'list'   )) else
-      if HasOption('h', 'help'   ) then
-        Help
-      else
-        Help;
-
+        if HasOption('r', 'restore') then App.Restore    (GetOptionValue('r', 'restore')) else
+          if HasOption('p', 'purge'  ) then App.Purge      (GetOptionValue('p', 'purge'  )) else
+            if HasOption('c', 'check'  ) then App.Check      (GetOptionValue('c', 'check'  )) else
+              if HasOption('f', 'fix'    ) then App.Fix        (GetOptionValue('f', 'fix'    )) else
+                if HasOption('l', 'list'   ) then App.List       (GetOptionValue('l', 'list'   )) else
+                  if HasOption('h', 'help'   ) then
+                    Help
+                  else
+                    Help;
       ExitCode := 0;
     end else
       writeln(#13, #13: 80, Error);
-
   except
     on E: Exception do
       writeln(#13, #13: 80,
