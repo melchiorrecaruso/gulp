@@ -21,32 +21,24 @@
 
   Modified:
 
-    v0.0.2 - 2015.05.15 by Melchiorre Caruso.
+    v0.0.2 - 2015.05.23 by Melchiorre Caruso.
 }
 
 program Gulp;
 
 uses
-  {$IFDEF UNIX}
-    cthreads,
-    BaseUnix,
-  {$ENDIF}
-  {$IFDEF MSWINDOWS}
-    Windows,
-  {$ENDIF}
-  Classes,
-  CustApp,
-  GulpLibrary,
-  SysUtils;
+  {$IFDEF UNIX} cthreads, BaseUnix,
+  {$ENDIF} {$IFDEF MSWINDOWS} Windows, {$ENDIF}
+  Classes, CustApp, GulpLibrary, SysUtils;
 
 type
   TShellApplication = class(TCustomApplication)
   private
      LongSwitches : TStringList; 
          Switches : TStringList;
-    ShortSwitches : string;    
+    ShortSwitches : string;
   protected
-    procedure DoList(Rec: TGulpRec);
+    procedure DoList(Item: TGulpItem);
     procedure DoMessage(const Message: string);
     procedure DoRun; override;
     procedure Abort;
@@ -92,17 +84,26 @@ begin
   write(Message);
 end;
 
-procedure TShellApplication.DoList(Rec: TGulpRec);
+procedure TShellApplication.DoList(Item: TGulpItem);
 begin
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage(Format('%4s %3s %3s %7s %19s %12s %s', [
-     VerTostring(Rec),
-    FlagToString(Rec),
-    ModeToString(Rec),
-    AttrToString(Rec),
-    TimeToString(Rec),
-    SizeToString(Rec),
-    Rec.Name]));
+  if gfNew in Item.Flags then
+    writeln(Format('%4s %3s %3s %7s %19s %12s %s', [
+       VerTostring(Item),
+      FlagToString(Item),
+      ModeToString(Item),
+      AttrToString(Item),
+      TimeToString(Item),
+      SizeToString(Item),
+      Item.Name]))
+   else
+     writeln(Format('%4s %3s %3s %7s %19s %12s %s', [
+       VerTostring(Item),
+      FlagToString(Item),
+      '',
+      '',
+      '',
+      '',
+      Item.Name]));
 end;
 
 procedure TShellApplication.DoRun;
@@ -158,16 +159,16 @@ begin
       if GetOptionValue('u', 'until' ) <> '' then
       begin
         if GetOptionValue('u', 'until') = 'last' then
-          App.UntilVersion := longword(-1)
+          App.UntilVersion := $FFFFFFFF
         else
           App.UntilVersion := StrToInt(GetOptionValue('u', 'until'));
       end;
-      if HasOption('s', 'synch'  ) then App.Synchronize(GetOptionValue('s', 'synch'  )) else
-        if HasOption('r', 'restore') then App.Restore    (GetOptionValue('r', 'restore')) else
-          if HasOption('p', 'purge'  ) then App.Purge      (GetOptionValue('p', 'purge'  )) else
-            if HasOption('c', 'check'  ) then App.Check      (GetOptionValue('c', 'check'  )) else
-              if HasOption('f', 'fix'    ) then App.Fix        (GetOptionValue('f', 'fix'    )) else
-                if HasOption('l', 'list'   ) then App.List       (GetOptionValue('l', 'list'   )) else
+      if HasOption('s', 'synch'  ) then App.Sync   (GetOptionValue('s', 'synch'  )) else
+        if HasOption('r', 'restore') then App.Restore(GetOptionValue('r', 'restore')) else
+          if HasOption('p', 'purge'  ) then App.Purge  (GetOptionValue('p', 'purge'  )) else
+            if HasOption('c', 'check'  ) then App.Check  (GetOptionValue('c', 'check'  )) else
+              if HasOption('f', 'fix'    ) then App.Fix    (GetOptionValue('f', 'fix'    )) else
+                if HasOption('l', 'list'   ) then App.List   (GetOptionValue('l', 'list'   )) else
                   if HasOption('h', 'help'   ) then
                     Help
                   else

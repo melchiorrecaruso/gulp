@@ -21,7 +21,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.05.15 by Melchiorre Caruso.
+    v0.0.2 - 2015.05.24 by Melchiorre Caruso.
 }
 
 unit GulpLibrary;
@@ -29,17 +29,9 @@ unit GulpLibrary;
 interface
 
 uses
-  {$IFDEF UNIX}
-    BaseUnix,
-  {$ELSE}
-    {$IFDEF MSWINDOWS}
-      Windows,
-    {$ENDIF}
-  {$ENDIF}
-  Classes,
-  GulpCommon,
-  SysUtils,
-  Sha1;
+  {$IFDEF UNIX} BaseUnix, {$ENDIF}
+  {$IFDEF MSWINDOWS} Windows, {$ENDIF}
+  Classes, GulpCommon, Sha1, SysUtils;
 
 type
   // --- Gulp Marker ---
@@ -68,11 +60,11 @@ type
                    gpMSWINDOWS,
                    gpMAC);
 
-  // --- Gulp Record class ---
-  TGulpRec = class(TObject)
+  // --- Gulp Item class ---
+  TGulpItem = class(TObject)
   private
     FFlags        : TGulpFlags;    // Flags
-    FVersion      : int64;         // File version (reserved)
+    FVersion      : longword;      // File version (reserved)
     FName         : string;        // File path and name
     FTime         : TDateTime;     // Last modification date and time (UTC)
     FAttributes   : longint;       // File Attributes (MSWindows)
@@ -88,9 +80,10 @@ type
     FStoredDigest : string;        // Stored data digest (reserved)
     FComment      : string;        // Comment
     FPlatform     : TGulpPlatform; // Platform
+    FPosition     : longword;      // Position           (reserved)
   public
     property Flags      : TGulpFlags    read FFlags;
-    property Version    : int64         read FVersion;
+    property Version    : longword      read FVersion;
     property Name       : string        read FName;
     property Time       : TDateTime     read FTime;
     property Attributes : longint       read FAttributes;
@@ -103,10 +96,12 @@ type
     property GroupName  : string        read FGroupName;
     property Comment    : string        read FComment;
     property Platform   : TGulpPlatform read FPlatform;
+    property Position   : longword      read FPosition;
   end;
 
-  TGulpOnMessage = procedure (const Message: string) of object;
-  TGulpOnList    = procedure (Rec: TGulpRec) of object;
+  // --- The Gulp Application events ---
+  TGulpOnMessage = procedure(const Message: string) of object;
+  TGulpOnList    = procedure(Item: TGulpItem) of object;
 
   // --- The Gulp Application class ---
   TGulpApplication = class(TObject)
@@ -118,17 +113,17 @@ type
     FUntilVersion : longword;
     FOnList       : TGulpOnList;
     FOnMessage    : TGulpOnMessage;
-    procedure DoList(Rec: TGulpRec);
+    procedure DoList(Item: TGulpItem);
     procedure DoMessage(const Message: string);
   public
     constructor Create;
-    destructor Destroy;  override;
-    procedure Synchronize(const FileName: string);
-    procedure Restore    (const FileName: string);
-    procedure Purge      (const FileName: string);
-    procedure List       (const FileName: string);
-    procedure Fix        (const FileName: string);
-    procedure Check      (const FileName: string);
+    destructor  Destroy; override;
+    procedure   Sync     (const FileName: string);
+    procedure   Restore  (const FileName: string);
+    procedure   Purge    (const FileName: string);
+    procedure   List     (const FileName: string);
+    procedure   Fix      (const FileName: string);
+    procedure   Check    (const FileName: string);
   public
     property Exclude      : TStringList       read FExclude;
     property Include      : TStringList       read FInclude;
@@ -157,14 +152,14 @@ function GetGID (const FileName: string): longword;  overload;
 function GetGID (var   Info: stat      ): longword;  overload;
 {$ENDIF}
 
-function  VerToString(var Rec: TGulpRec): string;
-function FlagToString(var Rec: TGulpRec): string;
-function AttrToString(var Rec: TGulpRec): string;
-function StringToAttr(const S: string  ): longint;
-function SizeToString(var Rec: TGulpRec): string;
-function TimeToString(var Rec: TGulpRec): string;
-function ModeToString(var Rec: TGulpRec): string;
-function StringToMode(const S: string  ): longint;
+function  VerToString(var Item: TGulpItem): string;
+function FlagToString(var Item: TGulpItem): string;
+function AttrToString(var Item: TGulpItem): string;
+function StringToAttr(const S: string    ): longint;
+function SizeToString(var Item: TGulpItem): string;
+function TimeToString(var Item: TGulpItem): string;
+function ModeToString(var Item: TGulpItem): string;
+function StringToMode(const S: string    ): longint;
 
 // =============================================================================
 // IMPLEMENTATION
@@ -173,62 +168,136 @@ function StringToMode(const S: string  ): longint;
 implementation
 
 uses
-  DateUtils,
-  Math,
-  ZStream;
+  DateUtils, Math, ZStream;
 
 const
   GulpMarker : TGulpMarker = ('G','U','L','P',char(0),char(0),char(2),char(0));
-  GulpDescription =  'GULP v0.0.2 journaling archiver, copyright (c) 2014-2015 Melchiorre Caruso.' + LineEnding +
-                     'GULP archiver for user-level incremental backups with rollback capability.';
+  GulpDescription =
+      'GULP v0.0.2 journaling archiver, copyright (c) 2014-2015 Melchiorre Caruso.' + LineEnding +
+      'GULP archiver for user-level incremental backups with rollback capability.'  + LineEnding ;
 
 type
-  // --- The Gulp Reader ---
+  // --- The Gulp Reader class ---
   TGulpReader = class(TObject)
   private
     FList   : TList;
     FStream : TStream;
-    procedure Clear;
-    procedure Add(Rec: TGulpRec);
-    procedure Delete(Index: longint);
-    function Find(const FileName: string): longint;
-    function ReadRec(Rec: TGulpRec): boolean;
-    function ReadStream (Stream: TStream; Size: int64): string;
-    function ReadOffSet(var OffSet: int64): boolean;
-    procedure ExtractTo(Index: longint; Stream: TStream);
-    procedure Extract(Index: longint);
-    function GetItem(Index: longint): TGulpRec;
-    function GetCount: longint;
+    procedure Add        (Item: TGulpItem);
+    procedure Delete     (Index: longint);
+    function  Find       (const FileName: string): longint;
+
+    function  ReadOffSet (var OffSet: int64): boolean;
+    function  ReadItem   (Item: TGulpItem): boolean;
+    function  ReadStream (Stream: TStream; Size: int64): string;
+    procedure ExtractTo  (Stream: TStream; Index: longint);
+    procedure Extract    (Index: longint);
+    function  GetItem    (Index: longint): TGulpItem;
+    function  GetCount: longint;
   public
-    constructor Create(Stream: TStream);
-    destructor Destroy; override;
-    function Load(Version: longword): boolean;
-    property Items[Index: longint]: TGulpRec read GetItem;
+    constructor Create   (Stream: TStream);
+    destructor  Destroy; override;
+    procedure   Load     (Version: longword);
+    procedure   Clear;
+  public
+    property Items[Index: longint]: TGulpItem read GetItem;
     property Count: longint read GetCount;
   end;
 
-  // --- The Gulp Writer ---
+  // --- The Gulp Writer class ---
   TGulpWriter = class(TObject)
   private
     FList         : TList;
     FStream       : TStream;
     FStreamSize   : int64;
     FStorageFlags : TGulpStorageFlags;
-    function WriteRec(Rec: TGulpRec): boolean;
-    function WriteStream(Stream: TStream; Size: int64): string;
-    function WriteOffSet(const OffSet: int64): boolean;
-    function GetItem(Index: longint): TGulpRec;
+    function WriteOffSet (const OffSet: int64): boolean;
+    function WriteItem   (Item: TGulpItem): boolean;
+    function WriteStream (Stream: TStream; Size: int64): string;
+    function GetItem     (Index: longint): TGulpItem;
     function GetCount: longint;
   public
-    constructor Create(Stream: TStream);
-    destructor Destroy; override;
-    procedure Delete(const FileName: string);
-    procedure Add(const FileName: string);
-    property Items[Index: longint]: TGulpRec read GetItem;
-    property Count: longint read GetCount;
- public
+    constructor Create   (Stream: TStream);
+    destructor  Destroy; override;
+    procedure   Delete   (const FileName: string);
+    procedure   Add      (const FileName: string);
+  public
     property StorageFlags : TGulpStorageFlags read FStorageFlags write FStorageFlags;
+    property Items[Index: longint]: TGulpItem read GetItem;
+    property Count: longint read GetCount;
   end;
+
+// =============================================================================
+// Internal rutines
+// =============================================================================
+
+function ClearItem(Item: TGulpItem): TGulpItem; inline;
+begin
+  Result               := Item;
+  Result.FFlags        := [gfPlatform];
+  Result.FVersion      := 0;
+  Result.FName         := '';
+  Result.FTime         := 0.0;
+  Result.FAttributes   := 0;
+  Result.FMode         := 0;
+  Result.FSize         := 0;
+  Result.FLinkName     := '';
+  Result.FUserID       := 0;
+  Result.FUserName     := '';
+  Result.FGroupID      := 0;
+  Result.FGroupName    := '';
+  Result.FOffSet       := 0;
+  Result.FStoredSize   := 0;
+  Result.FStoredDigest := '';
+  Result.FComment      := '';
+  {$IFDEF UNIX}
+    Result.FPlatform   := gpUNIX;
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+      Result.FPlatform := gpMSWINDOWS;
+    {$ELSE}
+      Unsupported platform...
+    {$ENDIF}
+  {$ENDIF}
+end;
+
+function CompareItemName(I1, I2: TGulpItem): longint; inline;
+begin
+  Result := AnsiCompareFileName(I1.FName, I2.FName);
+  if Result = 0 then
+  begin
+    if I1.FPosition < I2.FPosition then
+      Result := - 1
+    else
+      if I1.FPosition > I2.FPosition then
+        Result := 1;
+  end;
+end;
+
+function GetItemDigest(Item: TGulpItem): string; inline;
+var
+  Context : TSHA1Context;
+   Digest : TSHA1Digest;
+begin
+  SHA1Init  (Context);
+  SHA1Update(Context,         Item.FFlags,          SizeOf(Item.FFlags       ));
+  SHA1Update(Context, Pointer(Item.FName)^,         Length(Item.FName        ));
+  SHA1Update(Context,         Item.FTime,           SizeOf(Item.FTime        ));
+  SHA1Update(Context,         Item.FAttributes,     SizeOf(Item.FAttributes  ));
+  SHA1Update(Context,         Item.FMode,           SizeOf(Item.FMode        ));
+  SHA1Update(Context,         Item.FSize,           SizeOf(Item.FSize        ));
+  SHA1Update(Context, Pointer(Item.FLinkName)^,     Length(Item.FLinkName    ));
+  SHA1Update(Context,         Item.FUserID,         SizeOf(Item.FUserID      ));
+  SHA1Update(Context, Pointer(Item.FUserName)^,     Length(Item.FUserName    ));
+  SHA1Update(Context,         Item.FGroupID,        SizeOf(Item.FGroupID     ));
+  SHA1Update(Context, Pointer(Item.FGroupName)^,    Length(Item.FGroupName   ));
+  SHA1Update(Context,         Item.FOffSet,         SizeOf(Item.FOffSet      ));
+  SHA1Update(Context,         Item.FStoredSize,     SizeOf(Item.FStoredSize  ));
+  SHA1Update(Context, Pointer(Item.FStoredDigest)^, Length(Item.FStoredDigest));
+  SHA1Update(Context, Pointer(Item.FComment)^,      Length(Item.FComment     ));
+  SHA1Update(Context,         Item.FPlatform,       SizeOf(Item.FPlatform    ));
+  SHA1Final (Context, Digest);
+  Result := SHA1Print(Digest);
+end;
 
 // =============================================================================
 // Library routines
@@ -317,7 +386,7 @@ function GetUID(const FileName: string): longword;
 var
   Info : stat;
 begin
-  Result := longword(-1);
+  Result := $FFFFFFFF;
   if fpLstat(FileName, Info) = 0 then
     Result := GetUID(Info)
   else
@@ -334,7 +403,7 @@ function GetGID(const FileName: string): longword;
 var
   Info : stat;
 begin
-  Result := longword(-1);
+  Result := $FFFFFFFF;
   if fpLstat(FileName, Info) = 0 then
     Result := GetGID(Info)
   else
@@ -348,49 +417,49 @@ begin
 end;
 {$ENDIF}
 
-function VerToString(var Rec: TGulpRec): string;
+function VerToString(var Item: TGulpItem): string;
 begin
-  Result := IntTostr(Rec.Version);
+  Result := IntTostr(Item.Version);
 end;
 
-function FlagToString(var Rec: TGulpRec): string;
+function FlagToString(var Item: TGulpItem): string;
 begin
-  if gfNew in Rec.Flags then
+  if gfNew in Item.Flags then
     Result := 'ADD'
   else
     Result := 'DEL';
 end;
 
-function TimeToString(var Rec: TGulpRec): string;
+function TimeToString(var Item: TGulpItem): string;
 begin
   Result := '.......... ........';
-  if gfNew in Rec.Flags then
-    if gfTime in Rec.Flags then
+  if gfNew in Item.Flags then
+    if gfTime in Item.Flags then
       Result := FormatDateTime(
         DefaultFormatSettings.LongDateFormat + ' ' +
-        DefaultFormatSettings.LongTimeFormat, Rec.Time);
+        DefaultFormatSettings.LongTimeFormat, Item.Time);
 end;
 
-function SizeToString(var Rec: TGulpRec): string;
+function SizeToString(var Item: TGulpItem): string;
 begin
   Result := '';
-  if gfNew in Rec.Flags then
-    if gfSize in Rec.Flags then
-      Result := Format('%u', [Rec.Size])
+  if gfNew in Item.Flags then
+    if gfSize in Item.Flags then
+      Result := Format('%u', [Item.Size])
 end;
 
-function AttrToString(var Rec: TGulpRec): string;
+function AttrToString(var Item: TGulpItem): string;
 begin
   Result := '.......';
-  if gfNew in Rec.Flags then
+  if gfNew in Item.Flags then
   begin
-    if Rec.Attributes and faReadOnly  <> 0 then Result[1] := 'R';
-    if Rec.Attributes and faHidden    <> 0 then Result[2] := 'H';
-    if Rec.Attributes and faSysFile   <> 0 then Result[3] := 'S';
-    if Rec.Attributes and faVolumeId  <> 0 then Result[4] := 'V';
-    if Rec.Attributes and faDirectory <> 0 then Result[5] := 'D';
-    if Rec.Attributes and faArchive   <> 0 then Result[6] := 'A';
-    if Rec.Attributes and faSymLink   <> 0 then Result[7] := 'L';
+    if Item.Attributes and faReadOnly  <> 0 then Result[1] := 'R';
+    if Item.Attributes and faHidden    <> 0 then Result[2] := 'H';
+    if Item.Attributes and faSysFile   <> 0 then Result[3] := 'S';
+    if Item.Attributes and faVolumeId  <> 0 then Result[4] := 'V';
+    if Item.Attributes and faDirectory <> 0 then Result[5] := 'D';
+    if Item.Attributes and faArchive   <> 0 then Result[6] := 'A';
+    if Item.Attributes and faSymLink   <> 0 then Result[7] := 'L';
   end;
 end;
 
@@ -409,14 +478,14 @@ begin
   end;
 end;
 
-function ModeToString(var Rec: TGulpRec): string;
+function ModeToString(var Item: TGulpItem): string;
 begin
   {$IFDEF UNIX}
     Result := '...';
-    if Rec.Platform = gpUNIX then
+    if Item.Platform = gpUNIX then
     begin
-      if gfNew in Rec.Flags then
-        Result := OctStr(Rec.Mode, 3);
+      if gfNew in Item.Flags then
+        Result := OctStr(Item.Mode, 3);
     end;
   {$ELSE}
     {$IFDEF MSWINDOWS}
@@ -447,80 +516,6 @@ begin
 end;
 
 // =============================================================================
-// Internal rutines
-// =============================================================================
-
-function ClearRec(Rec: TGulpRec): TGulpRec; inline;
-begin
-  Result               := Rec;
-  Result.FFlags        := [gfPlatform];
-  Result.FVersion      := 0;
-  Result.FName         := '';
-  Result.FTime         := 0.0;
-  Result.FAttributes   := 0;
-  Result.FMode         := 0;
-  Result.FSize         := 0;
-  Result.FLinkName     := '';
-  Result.FUserID       := 0;
-  Result.FUserName     := '';
-  Result.FGroupID      := 0;
-  Result.FGroupName    := '';
-  Result.FOffSet       := 0;
-  Result.FStoredSize   := 0;
-  Result.FStoredDigest := '';
-  Result.FComment      := '';
-  {$IFDEF UNIX}
-    Result.FPlatform   := gpUNIX;
-  {$ELSE}
-    {$IFDEF MSWINDOWS}
-      Result.FPlatform := gpMSWINDOWS;
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
-  {$ENDIF}
-end;
-
-function CompareRecName(R1, R2: TGulpRec): longint; inline;
-begin
-  Result := AnsiCompareFileName(R1.Name, R2.Name);
-  if Result = 0 then
-  begin
-    if R1.Version < R2.Version then
-      Result := - 1
-    else
-      if R1.Version > R2.Version then
-        Result := 1;
-  end;
-end;
-
-function GetRecDigest(Rec: TGulpRec): string; inline;
-var
-  Context : TSHA1Context;
-   Digest : TSHA1Digest;
-begin
-  SHA1Init  (Context);
-  SHA1Update(Context,         Rec.FFlags,          SizeOf(Rec.FFlags       ));
-  SHA1Update(Context,         Rec.FVersion,        SizeOf(Rec.FVersion     ));
-  SHA1Update(Context, Pointer(Rec.FName)^,         Length(Rec.FName        ));
-  SHA1Update(Context,         Rec.FTime,           SizeOf(Rec.FTime        ));
-  SHA1Update(Context,         Rec.FAttributes,     SizeOf(Rec.FAttributes  ));
-  SHA1Update(Context,         Rec.FMode,           SizeOf(Rec.FMode        ));
-  SHA1Update(Context,         Rec.FSize,           SizeOf(Rec.FSize        ));
-  SHA1Update(Context, Pointer(Rec.FLinkName)^,     Length(Rec.FLinkName    ));
-  SHA1Update(Context,         Rec.FUserID,         SizeOf(Rec.FUserID      ));
-  SHA1Update(Context, Pointer(Rec.FUserName)^,     Length(Rec.FUserName    ));
-  SHA1Update(Context,         Rec.FGroupID,        SizeOf(Rec.FGroupID     ));
-  SHA1Update(Context, Pointer(Rec.FGroupName)^,    Length(Rec.FGroupName   ));
-  SHA1Update(Context,         Rec.FOffSet,         SizeOf(Rec.FOffSet      ));
-  SHA1Update(Context,         Rec.FStoredSize,     SizeOf(Rec.FStoredSize  ));
-  SHA1Update(Context, Pointer(Rec.FStoredDigest)^, Length(Rec.FStoredDigest));
-  SHA1Update(Context, Pointer(Rec.FComment)^,      Length(Rec.FComment     ));
-  SHA1Update(Context,         Rec.FPlatform,       SizeOf(Rec.FPlatform    ));
-  SHA1Final (Context, Digest);
-  Result := SHA1Print(Digest);
-end;
-
-// =============================================================================
 // TGulpReader
 // =============================================================================
 
@@ -534,7 +529,7 @@ end;
 destructor TGulpReader.Destroy;
 begin
   Clear;
-  FList.Destroy;
+  FreeAndNil(FList);
   inherited Destroy;
 end;
 
@@ -546,11 +541,11 @@ end;
 
 procedure TGulpReader.Delete(Index: longint);
 begin
-  TGulpRec(FList[Index]).Destroy;
+  TGulpItem(FList[Index]).Destroy;
   FList.Delete(Index);
 end;
 
-procedure TGulpReader.Add(Rec: TGulpRec);
+procedure TGulpReader.Add(Item: TGulpItem);
 var
   L, M, H, I : longint;
 begin
@@ -559,7 +554,7 @@ begin
   while H >= L do
   begin
     M := (L + H) div 2;
-    I := CompareRecName(Items[M], Rec);
+    I := CompareItemName(Items[M], Item);
     if I < 0 then
       L := M + 1
     else
@@ -572,14 +567,14 @@ begin
   if FList.Count <> 0 then
   begin
     if I < 0 then
-      FList.Insert(M + 1, Rec)
+      FList.Insert(M + 1, Item)
     else
       if I > 0 then
-        FList.Insert(M, Rec)
+        FList.Insert(M, Item)
       else
         raise Exception.Create('Duplicates not allowed');
   end else
-    FList.Add(Rec);
+    FList.Add(Item);
 end;
 
 function TGulpReader.Find(const FileName: string): longint;
@@ -645,7 +640,7 @@ begin
   Result := SHA1Print(Digest);
 end;
 
-function TGulpReader.ReadRec(Rec: TGulpRec): boolean;
+function TGulpReader.ReadItem(Item: TGulpItem): boolean;
 var
   Marker : TGulpMarker;
 begin
@@ -655,36 +650,36 @@ begin
   Result := Marker = GulpMarker;
   if Result then
   begin
-    ClearRec(Rec);
-    FStream.Read(Rec.FFlags, SizeOf(Rec.FFlags));
+    ClearItem(Item);
+    FStream.Read(Item.FFlags, SizeOf(Item.FFlags));
 
-    if gfName         in Rec.Flags then Rec.FName := FStream.ReadAnsiString;
+    if gfName         in Item.Flags then Item.FName := FStream.ReadAnsiString;
 
-    if gfTime         in Rec.Flags then FStream.Read(Rec.FTime, SizeOf(Rec.FTime));
-    if gfAttributes   in Rec.Flags then FStream.Read(Rec.FAttributes, SizeOf(Rec.FAttributes));
-    if gfMode         in Rec.Flags then FStream.Read(Rec.FMode, SizeOf(Rec.FMode));
-    if gfSize         in Rec.Flags then FStream.Read(Rec.FSize, SizeOf(Rec.FSize));
+    if gfTime         in Item.Flags then FStream.Read(Item.FTime, SizeOf(Item.FTime));
+    if gfAttributes   in Item.Flags then FStream.Read(Item.FAttributes, SizeOf(Item.FAttributes));
+    if gfMode         in Item.Flags then FStream.Read(Item.FMode, SizeOf(Item.FMode));
+    if gfSize         in Item.Flags then FStream.Read(Item.FSize, SizeOf(Item.FSize));
 
-    if gfLinkName     in Rec.Flags then Rec.FLinkName := FStream.ReadAnsiString;
+    if gfLinkName     in Item.Flags then Item.FLinkName := FStream.ReadAnsiString;
 
-    if gfUserID       in Rec.Flags then FStream.Read(Rec.FUserID, SizeOf(Rec.FUserID));
-    if gfUserName     in Rec.Flags then Rec.FUserName := FStream.ReadAnsiString;
+    if gfUserID       in Item.Flags then FStream.Read(Item.FUserID, SizeOf(Item.FUserID));
+    if gfUserName     in Item.Flags then Item.FUserName := FStream.ReadAnsiString;
 
-    if gfGroupID      in Rec.Flags then FStream.Read(Rec.FGroupID, SizeOf(Rec.FGroupID));
-    if gfGroupName    in Rec.Flags then Rec.FGroupName := FStream.ReadAnsiString;
+    if gfGroupID      in Item.Flags then FStream.Read(Item.FGroupID, SizeOf(Item.FGroupID));
+    if gfGroupName    in Item.Flags then Item.FGroupName := FStream.ReadAnsiString;
 
-    if gfOffSet       in Rec.Flags then FStream.Read(Rec.FOffSet, SizeOf(Rec.FOffSet));
-    if gfStoredSize   in Rec.Flags then FStream.Read(Rec.FStoredSize, SizeOf(Rec.FStoredSize));
+    if gfOffSet       in Item.Flags then FStream.Read(Item.FOffSet, SizeOf(Item.FOffSet));
+    if gfStoredSize   in Item.Flags then FStream.Read(Item.FStoredSize, SizeOf(Item.FStoredSize));
 
-    if gfStoredDigest in Rec.Flags then Rec.FStoredDigest := FStream.ReadAnsiString;
-    if gfComment      in Rec.Flags then Rec.FComment      := FStream.ReadAnsiString;
+    if gfStoredDigest in Item.Flags then Item.FStoredDigest := FStream.ReadAnsiString;
+    if gfComment      in Item.Flags then Item.FComment      := FStream.ReadAnsiString;
 
-    if gfPlatform     in Rec.Flags then FStream.Read(Rec.FPlatform, SizeOf(Rec.FPlatform));
+    if gfPlatform     in Item.Flags then FStream.Read(Item.FPlatform, SizeOf(Item.FPlatform));
 
-    Result := FStream.ReadAnsiString = GetRecDigest(Rec);
+    Result := FStream.ReadAnsiString = GetItemDigest(Item);
 
-    DoDirSeparators(Rec.FLinkName);
-    DoDirSeparators(Rec.FName    );
+    DoDirSeparators(Item.FLinkName);
+    DoDirSeparators(Item.FName    );
   end;
 end;
 
@@ -714,92 +709,98 @@ begin
   end;
 end;
 
-function TGulpReader.Load(Version: longword): boolean;
+procedure TGulpReader.Load(Version: longword);
 var
-       I : longint;
-     Rec : TGulpRec;
-  OffSet : int64 = 0;
-    Size : int64 = 0;
+        I : longint;
+     Item : TGulpItem;
+  ItemVer : longword = 0;
+   OffSet : int64 = 0;
+     Size : int64 = 0;
 begin
-  Result := FALSE;
-  FStream.Seek(0, soBeginning);
+  Size := FStream.Seek(0, soBeginning);
   if ReadOffSet(OffSet) = TRUE then
-    FStream.Seek(OffSet, soBeginning);
-
-  Rec := TGulpRec.Create;
-  while ReadRec(Rec) = TRUE do
   begin
-    Result := gfLast in Rec.Flags;
-    if Result then
+    FStream.Seek(OffSet, soBeginning);
+    Inc(ItemVer);
+  end;
+
+  Item := TGulpItem.Create;
+  while ReadItem(Item) = TRUE do
+  begin
+    Item.FPosition := Count;
+    Item.FVersion  := ItemVer;
+    if gfLast in Item.FFlags then
     begin
       Size := FStream.Seek(0, soCurrent);
       if ReadOffSet(OffSet) = TRUE then
-        FStream.Seek(OffSet, soBeginning)
+      begin
+        FStream.Seek(OffSet, soBeginning);
+        Inc(ItemVer);
+      end;
     end;
 
-    if Version = longword(-1) then
+    if Version = 0 then
     begin
-      Add(Rec);
-      Rec := TGulpRec.Create;
+      Add(Item);
+      Item := TGulpItem.Create;
     end else
-      if Rec.Version <= Version then
+      if Item.Version <= Version then
       begin
-        if gfNew in REc.FFlags then
+        if gfNew in Item.FFlags then
         begin
-          Add(Rec);
-          Rec := TGulpRec.Create;
+          Add(Item);
+          Item := TGulpItem.Create;
         end else
         begin
-          I := Find(Rec.FName);
+          I := Find(Item.FName);
           if I <> - 1 then
             Delete(I);
         end;
       end;
   end;
-  FreeAndNil(Rec);
+  FreeAndNil(Item);
 
-  if Result = FALSE then
-  begin
-    raise Exception.CreateFmt('Mismatched flags for "%s"', [Rec.Name]);
-  end else
+  if FList.Count = 0 then
   begin
     if FStream.Size <> 0 then
       raise Exception.Create('Invalid signature value');
-  end;
+  end else
+    if (gfLast in Items[Count - 1].FFlags) = FALSE then
+      raise Exception.Create('Archive is broken, try with fix command');
 
-  if FStream.Seek(0, soEnd) = Size then
-    raise Exception.CreateFmt('Mismatched flags for "%s"', [Rec.Name]);
+  if FStream.Seek(0, soEnd) <> Size then
+    raise Exception.Create('Archive is broken, try with fix command');
 end;
 
-procedure TGulpReader.ExtractTo(Index: longint; Stream: TStream);
+procedure TGulpReader.ExtractTo(Stream: TStream; Index: longint);
 var
-  LibRec : TGulpRec;
+  Item : TGulpItem;
 begin
-  LibRec := Items[Index];
-  if LibRec.FSize > 0 then
+  Item := Items[Index];
+  if Item.FSize > 0 then
   begin
-    FStream.Seek(LibRec.FOffset, soBeginning);
-    if ReadStream(Stream, LibRec.FSize) <> LibRec.FStoredDigest then
-      raise Exception.CreateFmt('Mismatched checksum for "%s"', [LibRec.FName]);
+    FStream.Seek(Item.FOffset, soBeginning);
+    if ReadStream(Stream, Item.FSize) <> Item.FStoredDigest then
+      raise Exception.CreateFmt('Mismatched checksum for "%s"', [Item.FName]);
   end;
 end;
 
 procedure TGulpReader.Extract(Index: longint);
 var
-  Dest : TFileStream;
-   Rec : TGulpRec;
+    Item : TGulpItem;
+  Stream : TFileStream;
 begin
-  Rec  := Items[Index];
-  if ForceDirectories(ExtractFileDir(Rec.FName)) = FALSE then
+  Item := Items[Index];
+  if ForceDirectories(ExtractFileDir(Item.FName)) = FALSE then
     raise Exception.CreateFmt('Unable to create path "%s"',
-      [ExtractFileDir(Rec.FName)]);
+      [ExtractFileDir(Item.FName)]);
   {$IFDEF UNIX}
-    if Rec.FAttributes and faSymLink = faSymLink then
+    if Item.FAttributes and faSymLink = faSymLink then
     begin
       //if FpLink(RecLinkName, RecName) <> 0 then
       //  raise Exception.CreateFmt('Unable to create hardlink %s', [RecName]);
-      if FpSymLink(pchar(Rec.FLinkName), pchar(Rec.FName)) <> 0 then
-        raise Exception.CreateFmt('Unable to create symlink "%s"', [Rec.FName]);
+      if FpSymLink(pchar(Item.FLinkName), pchar(Item.FName)) <> 0 then
+        raise Exception.CreateFmt('Unable to create symlink "%s"', [Item.FName]);
     end else
   {$ELSE}
     {$IFDEF MSWINDOWS}
@@ -807,21 +808,21 @@ begin
       Unsupported platform...
     {$ENDIF}
   {$ENDIF}
-      if Rec.FAttributes and faDirectory = faDirectory then
+      if Item.FAttributes and faDirectory = faDirectory then
       begin
-        if DirectoryExists(Rec.FName) = FALSE then
-          if CreateDir(Rec.FName) = FALSE then
-            raise Exception.CreateFmt('Unable to create directory "%s"', [Rec.FName]);
+        if DirectoryExists(Item.FName) = FALSE then
+          if CreateDir(Item.FName) = FALSE then
+            raise Exception.CreateFmt('Unable to create directory "%s"', [Item.FName]);
       end else
       begin
-        Dest := TFileStream.Create(Rec.FName, fmCreate);
-        ExtractTo (Index, Dest);
-        FreeAndNil(Dest);
+        Stream := TFileStream.Create(Item.FName, fmCreate);
+        ExtractTo (Stream, Index);
+        FreeAndNil(Stream);
       end;
   {$IFDEF UNIX}
-    if Rec.FPlatform = gpUNIX then
-      if FpChmod(Rec.FName, Rec.FMode) <> 0 then
-        raise Exception.CreateFmt('Unable to set mode for "%s"', [Rec.FName]);
+    if Item.FPlatform = gpUNIX then
+      if FpChmod(Item.FName, Item.FMode) <> 0 then
+        raise Exception.CreateFmt('Unable to set mode for "%s"', [Item.FName]);
   {$ELSE}
     {$IFDEF MSWINDOWS}
       if FileSetAttr(RecName, Rec.FAttributes) <> 0 then
@@ -830,13 +831,13 @@ begin
       Unsupported platform...
     {$ENDIF}
   {$ENDIF}
-  if FileSetDate(Rec.FName, DateTimeToFileDate(UniversalTimeToLocal(Rec.FTime))) <> 0 then
-    raise Exception.CreateFmt('Unable to set date for "%s"', [Rec.FName]);
+  if FileSetDate(Item.FName, DateTimeToFileDate(UniversalTimeToLocal(Item.FTime))) <> 0 then
+    raise Exception.CreateFmt('Unable to set date for "%s"', [Item.FName]);
 end;
 
-function TGulpReader.GetItem(Index: longint): TGulpRec;
+function TGulpReader.GetItem(Index: longint): TGulpItem;
 begin
-  Result := TGulpRec(FList[Index]);
+  Result := TGulpItem(FList[Index]);
 end;
 
 function TGulpReader.GetCount: longint;
@@ -869,39 +870,39 @@ begin
     WriteOffSet(Size);
 
     FStream.Seek(0, soEnd);
-    Include(TGulpRec(FList.Last).FFlags, gfLast);
-    for I := 0 to FList.Count - 1 do
-      WriteRec(TGulpRec(FList.Last));
+    Include(Items[Count - 1].FFlags, gfLast);
+    for I := 0 to Count - 1 do
+      WriteItem(Items[I]);
 
     FStreamSize := FStream.Seek(0, soEnd);
-    for I := 0 to FList.Count - 1 do
-      TGulpRec(FList[I]).Destroy;
+    for I := 0 to Count - 1 do
+      Items[I].Destroy;
   end;
-  FList.Destroy;
+  FreeandNil(FList);
   inherited Destroy;
 end;
 
 procedure TGulpWriter.Add(const FileName: string);
 var
-     Rec : TGulpRec;
+    Item : TGulpItem;
       SR : TSearchRec;
-  Source : TStream;
+  Stream : TStream;
 begin
   if SysUtils.FindFirst(FileName,
     faReadOnly  or faHidden  or faSysFile or faVolumeId or
     faDirectory or faArchive or faSymLink or faAnyFile, SR) = 0 then
     if GetAttr(SR) and (faSysFile or faVolumeId) = 0 then
     begin
-      Rec := TGulpRec(FList[FList.Add(ClearRec(TGulpRec.Create))]);
+      Item := Items[FList.Add(ClearItem(TGulpItem.Create))];
 
-      Include(Rec.FFlags, gfNew);
-      Include(Rec.FFlags, gfName);        Rec.FName       := FileName;
-      Include(Rec.FFlags, gfTime);        Rec.FTime       := GetTime(SR);
-      Include(Rec.FFlags, gfAttributes);  Rec.FAttributes := GetAttr(SR);
+      Include(Item.FFlags, gfNew);
+      Include(Item.FFlags, gfName);        Item.FName       := FileName;
+      Include(Item.FFlags, gfTime);        Item.FTime       := GetTime(SR);
+      Include(Item.FFlags, gfAttributes);  Item.FAttributes := GetAttr(SR);
       {$IFDEF UNIX}
-        Include(Rec.FFlags, gfMode    );  Rec.FMode       := GetMode(FileName);
-        Include(Rec.FFlags, gfUserID  );  Rec.FUserID     := GetUID (FileName);
-        Include(Rec.FFlags, gfGroupID );  Rec.FGroupID    := GetGID (FileName);
+        Include(Item.FFlags, gfMode    );  Item.FMode       := GetMode(FileName);
+        Include(Item.FFlags, gfUserID  );  Item.FUserID     := GetUID (FileName);
+        Include(Item.FFlags, gfGroupID );  Item.FGroupID    := GetGID (FileName);
       {$ELSE}
         {$IFDEF MSWINDOWS}
         {$ELSE}
@@ -910,9 +911,9 @@ begin
       {$ENDIF}
 
       {$IFDEF UNIX}
-        if Rec.FAttributes and faSymLink = faSymLink then
+        if Item.FAttributes and faSymLink = faSymLink then
         begin
-          Include(Rec.FFlags, gfLinkName);  Rec.FLinkName := fpReadLink(FileName);
+          Include(Item.FFlags, gfLinkName);  Item.FLinkName := fpReadLink(FileName);
         end else
       {$ELSE}
         {$IFDEF MSWINDOWS}
@@ -920,15 +921,15 @@ begin
           Unsupported platform...
         {$ENDIF}
       {$ENDIF}
-          if Rec.FAttributes and faDirectory = 0 then
+          if Item.FAttributes and faDirectory = 0 then
             if GetSize(SR) > 0 then
             begin
-              Source := TFileStream.Create(Rec.FName, fmOpenRead or fmShareDenyNone);
-              Include(Rec.FFlags, gfSize);          Rec.FSize         := GetSize(SR);
-              Include(Rec.FFlags, gfOffSet);        Rec.FOffSet       := FStream.Seek(0, soCurrent);
-              Include(Rec.FFlags, gfStoredDigest);  Rec.FStoredDigest := WriteStream (Source, Rec.FSize);
-              Include(Rec.FFlags, gfStoredSize);    Rec.FStoredSize   := FStream.Seek(0, soCurrent) - Rec.FOffSet;
-              FreeAndNil(Source);
+              Stream := TFileStream.Create(Item.FName, fmOpenRead or fmShareDenyNone);
+              Include(Item.FFlags, gfSize);          Item.FSize         := GetSize(SR);
+              Include(Item.FFlags, gfOffSet);        Item.FOffSet       := FStream.Seek(0, soCurrent);
+              Include(Item.FFlags, gfStoredDigest);  Item.FStoredDigest := WriteStream (Stream, Item.FSize);
+              Include(Item.FFlags, gfStoredSize);    Item.FStoredSize   := FStream.Seek(0, soCurrent) - Item.FOffSet;
+              FreeAndNil(Stream);
             end;
     end;
   SysUtils.FindClose(SR);
@@ -936,12 +937,11 @@ end;
 
 procedure TGulpWriter.Delete(const FileName: string);
 var
-  Rec : TGulpRec;
+  Item : TGulpItem;
 begin
-  Rec := TGulpRec(FList[FList.Add(ClearRec(TGulpRec.Create))]);
-  Include(Rec.FFlags, gfName);
-  Rec.FName := FileName;
-  FList.Add(Rec);
+  Item := Items[FList.Add(ClearItem(TGulpItem.Create))];
+  Include(Item.FFlags, gfName);
+  Item.FName := FileName;
 end;
 
 function TGulpWriter.WriteStream(Stream: TStream; Size: int64): string;
@@ -982,35 +982,35 @@ begin
   Result := SHA1Print(Digest);
 end;
 
-function TGulpWriter.WriteRec(Rec: TGulpRec): boolean;
+function TGulpWriter.WriteItem(Item: TGulpItem): boolean;
 begin
-  FStream.Write(GulpMarker, SizeOf(GulpMarker));
-  FStream.Write(Rec.FFlags, SizeOf(Rec.FFlags));
+  FStream.Write(GulpMarker,  SizeOf(GulpMarker));
+  FStream.Write(Item.FFlags, SizeOf(Item.FFlags));
 
-  if gfName         in Rec.Flags then FStream.WriteAnsiString(Rec.FName);
+  if gfName         in Item.Flags then FStream.WriteAnsiString(Item.FName);
 
-  if gfTime         in Rec.Flags then FStream.Write(Rec.FTime, SizeOf(Rec.FTime));
-  if gfAttributes   in Rec.Flags then FStream.Write(Rec.FAttributes, SizeOf(Rec.FAttributes));
-  if gfMode         in Rec.Flags then FStream.Write(Rec.FMode, SizeOf(Rec.FMode));
-  if gfSize         in Rec.Flags then FStream.Write(Rec.FSize, SizeOf(Rec.FSize));
+  if gfTime         in Item.Flags then FStream.Write(Item.FTime, SizeOf(Item.FTime));
+  if gfAttributes   in Item.Flags then FStream.Write(Item.FAttributes, SizeOf(Item.FAttributes));
+  if gfMode         in Item.Flags then FStream.Write(Item.FMode, SizeOf(Item.FMode));
+  if gfSize         in Item.Flags then FStream.Write(Item.FSize, SizeOf(Item.FSize));
 
-  if gfLinkName     in Rec.Flags then FStream.WriteAnsiString(Rec.FLinkName);
+  if gfLinkName     in Item.Flags then FStream.WriteAnsiString(Item.FLinkName);
 
-  if gfUserID       in Rec.Flags then FStream.Write(Rec.FUserID, SizeOf(Rec.FUserID));
-  if gfUserName     in Rec.Flags then FStream.WriteAnsiString(Rec.FUserName);
+  if gfUserID       in Item.Flags then FStream.Write(Item.FUserID, SizeOf(Item.FUserID));
+  if gfUserName     in Item.Flags then FStream.WriteAnsiString(Item.FUserName);
 
-  if gfGroupID      in Rec.Flags then FStream.Write(Rec.FGroupID, SizeOf(Rec.FGroupID));
-  if gfGroupName    in Rec.Flags then FStream.WriteAnsiString(Rec.FGroupName);
+  if gfGroupID      in Item.Flags then FStream.Write(Item.FGroupID, SizeOf(Item.FGroupID));
+  if gfGroupName    in Item.Flags then FStream.WriteAnsiString(Item.FGroupName);
 
-  if gfOffSet       in Rec.Flags then FStream.Write(Rec.FOffSet, SizeOf(Rec.FOffSet));
-  if gfStoredSize   in Rec.Flags then FStream.Write(Rec.FStoredSize, SizeOf(Rec.FStoredSize));
+  if gfOffSet       in Item.Flags then FStream.Write(Item.FOffSet, SizeOf(Item.FOffSet));
+  if gfStoredSize   in Item.Flags then FStream.Write(Item.FStoredSize, SizeOf(Item.FStoredSize));
 
-  if gfStoredDigest in Rec.Flags then FStream.WriteAnsiString(Rec.FStoredDigest);
-  if gfComment      in Rec.Flags then FStream.WriteAnsiString(Rec.FComment);
+  if gfStoredDigest in Item.Flags then FStream.WriteAnsiString(Item.FStoredDigest);
+  if gfComment      in Item.Flags then FStream.WriteAnsiString(Item.FComment);
 
-  if gfPlatform     in Rec.Flags then FStream.Write(Rec.FPlatform, SizeOf(Rec.FPlatform));
+  if gfPlatform     in Item.Flags then FStream.Write(Item.FPlatform, SizeOf(Item.FPlatform));
 
-  FStream.WriteAnsiString(GetRecDigest(Rec));
+  FStream.WriteAnsiString(GetItemDigest(Item));
   Result := TRUE;
 end;
 
@@ -1030,9 +1030,9 @@ begin
   Result := TRUE;
 end;
 
-function TGulpWriter.GetItem(Index: longint): TGulpRec;
+function TGulpWriter.GetItem(Index: longint): TGulpItem;
 begin
-  Result := TGulpRec(FList[Index]);
+  Result := TGulpItem(FList[Index]);
 end;
 
 function TGulpWriter.GetCount: longint;
@@ -1068,7 +1068,7 @@ begin
   FInclude .Sorted     := TRUE;
   FStorageFlags        := [];
   FNodelete            := FALSE;
-  FUntilVersion        := longword(-1);
+  FUntilVersion        := $FFFFFFFF;
 end;
 
 destructor TGulpApplication.Destroy;
@@ -1078,10 +1078,10 @@ begin
   inherited Destroy;
 end;
 
-procedure TGulpApplication.DoList(Rec: TGulpRec);
+procedure TGulpApplication.DoList(Item: TGulpItem);
 begin
   if Assigned(FOnList) then
-    FOnList(Rec);
+    FOnList(Item);
 end;
 
 procedure TGulpApplication.DoMessage(const Message: string);
@@ -1090,7 +1090,7 @@ begin
     FOnMessage(Message);
 end;
 
-procedure TGulpApplication.Synchronize(const FileName: string);
+procedure TGulpApplication.Sync(const FileName: string);
 var
   LibReader : TGulpReader;
   LibWriter : TGulpWriter;
@@ -1100,24 +1100,17 @@ var
      Stream : TStream;
 begin
   DoMessage(GulpDescription);
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage(Format('Synch the content of %s', [FileName]));
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage('Scanning archive...      ');
+  DoMessage(Format('Sync the content of "%s" %s', [FileName, LineEnding]));
+  DoMessage(Format('%sScanning archive...      ', [#13]));
   if FileExists(FileName) then
     Stream := TFileStream.Create (FileName, fmOpenReadWrite)
   else
     Stream := TFileStream.Create (FileName, fmCreate);
   LibReader:= TGulpReader.Create(Stream);
-  LibReader.Load(longword(-1));
+  LibReader.Load($FFFFFFFF);
   Size := Stream.Seek(0, soEnd);
-  if LibReader.Count = 0 then
-  begin
-    if Size <> 0 then
-      raise Exception.Create('Invalid signature value');
-  end;
-  {$IFDEF CONSOLEAPP} DoMessage(#13); {$ENDIF}
-  DoMessage('Scanning filesystem...   ');
+
+  DoMessage(Format('%sScanning filesystem...   ', [#13]));
   Scan := TSysScanner.Create;
   for I := FInclude.Count - 1 downto 0 do
     if DirectoryExists(FInclude[I]) = TRUE then
@@ -1140,8 +1133,8 @@ begin
   for I := Scan.Count - 1 downto 0 do
     if FileNameMatch(Scan.Items[I], FExclude) = TRUE then
       Scan.Delete(I);
-  {$IFDEF CONSOLEAPP} DoMessage(#13); {$ENDIF}
-  DoMessage('Update records...      ');
+
+  DoMessage(Format('%sSyncing items...         ', [#13]));
   LibWriter := TGulpWriter.Create(Stream);
   if FNoDelete = FALSE then
   begin
@@ -1165,37 +1158,30 @@ begin
   end;
   FreeAndNil(LibWriter);
   FreeAndNil(LibReader);
-  {$IFDEF CONSOLEAPP} DoMessage(#13); {$ENDIF}
-  DoMessage(Format('Finished (%u added bytes)', [Stream.Seek(0, soEnd) - Size]));
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
   FreeAndNil(Stream);
   FreeandNil(Scan);
+
+  DoMessage(Format('%sFinished (%u added bytes) %s',
+    [#13, GetSize(FileName) - Size, LineEnding]));
 end;
 
 procedure TGulpApplication.Restore(const FileName: string);
 var
   LibReader : TGulpReader;
-     LibRec : TGulpRec;
+     LibRec : TGulpItem;
        I, J : longint;
        Scan : TSysScanner;
-       Size : int64;
+       Size : int64 = 0;
      Stream : TStream;
 begin
   DoMessage(GulpDescription);
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage(Format('Restore the content of %s', [FileName]));
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage('Scanning archive...      ');
+  DoMessage(Format('Restore the content of "%s" %s', [FileName, LineEnding]));
+  DoMessage(Format('%sScanning archive...         ', [#13]));
   Stream := TFileStream.Create(FileName, fmOpenRead);
   LibReader := TGulpReader.Create(Stream);
-  LibReader.Load(longword(-1));
-  if LibReader.Count = 0 then
-  begin
-    if Stream.Size <> 0 then
-      raise Exception.Create('Invalid signature value');
-  end;
-  {$IFDEF CONSOLEAPP} DoMessage(#13); {$ENDIF}
-  DoMessage('Scanning filesystem...   ');
+  LibReader.Load(FUntilVersion);
+
+  DoMessage(Format('%sScanning filesystem...      ', [#13]));
   Scan := TSysScanner.Create;
   Scan.Add('*');
   for I := FInclude.Count - 1 downto 0 do
@@ -1224,8 +1210,8 @@ begin
           FExclude.Add(IncludeTrailingPathDelimiter(FExclude[I]) + '*')
     end;
   FExclude.Add(FileName);
-  {$IFDEF CONSOLEAPP} DoMessage(#13); {$ENDIF}
-  DoMessage('Restore records...    ');
+
+  DoMessage(Format('%sRestoring items...          ', [#13]));
   if FNoDelete = FALSE then
     for I := Scan.Count - 1 downto 0 do
     begin
@@ -1241,7 +1227,6 @@ begin
       end;
     end;
 
-  Size  := 0;
   for I := LibReader.Count - 1 downto 0 do
   begin
     LibRec := LibReader.Items[I];
@@ -1261,12 +1246,12 @@ begin
           end;
       end;
   end;
-  {$IFDEF CONSOLEAPP} DoMessage(#13); {$ENDIF}
-  DoMessage(Format('Finished (%u extracted bytes)', [Size]));
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
   FreeAndNil(LibReader);
   FreeAndNil(Stream);
   FreeAndNil(Scan);
+
+  DoMessage(Format('%s Finished (%u extracted bytes) %s',
+    [#13, Size, LineEnding]));
 end;
 
 procedure TGulpApplication.Check(const FileName: string);
@@ -1277,49 +1262,40 @@ var
      Stream : TStream;
 begin
   DoMessage(GulpDescription);
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage(Format('Check the content of %s', [FileName]));
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage('Scanning archive...      ');
+  DoMessage(Format('Check the content of "%s" %s', [FileName, LineEnding]));
+  DoMessage(Format('%sScanning archive...       ', [#13]));
   Stream := TFileStream.Create(FileName, fmOpenRead);
   LibReader := TGulpReader.Create(Stream);
-  LibReader.Load(longword(-1));
-  if LibReader.Count = 0 then
-  begin
-    if Stream.Size <> 0 then
-      raise Exception.Create('Invalid signature value');
-  end;
-  {$IFDEF CONSOLEAPP} DoMessage(#13); {$ENDIF}
-  DoMessage('Checking records...      ');
+  LibReader.Load(0);
+
+  DoMessage(Format('%sChecking items...         ', [#13]));
   Nul   := TNulStream.Create;
   for I := 0 to LibReader.Count - 1 do
   begin
-    LibReader.ExtractTo(I, Nul);
+    LibReader.ExtractTo(Nul, I);
   end;
-  {$IFDEF CONSOLEAPP} DoMessage(#13); {$ENDIF}
-  DoMessage(Format('Finished (%u checked bytes)', [Stream.Size]));
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
   FreeAndNil(LibReader);
   FreeAndNil(Stream);
   FreeAndNil(Nul);
+
+  DoMessage(Format('%sFinished (%u checked bytes) %s',
+    [#13, GetSize(FileName), LineEnding]));
 end;
 
 procedure TGulpApplication.Fix(const FileName: string);
 var
   LibReader : TGulpReader;
-     LibRec : TGulpRec;
+     LibRec : TGulpItem;
      OffSet : int64 = 0;
        Size : int64 = 0;
      Stream : TStream;
 begin
   DoMessage(GulpDescription);
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage(Format('Fix the content of %s', [FileName]));
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage('Fixing archive...        ');
+  DoMessage(Format('Fix the content of "%s" %s', [FileName, LineEnding]));
+  DoMessage(Format('%sFixing items...         ', [#13]));
   Stream    := TFileStream.Create(FileName, fmOpenReadWrite);
   LibReader := TGulpReader.Create(Stream);
-  LibRec    := TGulpRec.Create;
+  LibRec    := TGulpItem.Create;
   try
     if LibReader.ReadOffSet(OffSet) = TRUE then
     begin
@@ -1327,7 +1303,7 @@ begin
         Stream.Seek(OffSet, soBeginning);
     end;
 
-    while LibReader.ReadRec(LibRec) = TRUE do
+    while LibReader.ReadItem(LibRec) = TRUE do
       if  gfLast in LibRec.FFlags then
       begin
         Size := Stream.Seek(0, soCurrent);
@@ -1340,22 +1316,22 @@ begin
   except
     // nothing to do
   end;
-  FreeAndNil(LibReader);
-  FreeAndNil(LibRec);
-
+  OffSet := Stream.Size - Size;
   if Size > 0 then
     Stream.Size := Size
   else
     raise Exception.Create('Stream is not a valid archive');
-  {$IFDEF CONSOLEAPP} DoMessage(#13); {$ENDIF}
-  DoMessage(Format('Finished (%u removed bytes)', [Size - Stream.Size]));
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
+  FreeAndNil(LibReader);
+  FreeAndNil(LibRec);
   FreeAndNil(Stream);
+
+  DoMessage(Format('%sFinished (%u removed bytes) %s',
+    [#13, OffSet, LineEnding]));
 end;
 
 procedure TGulpApplication.Purge(const FileName: string);
 var
-     LibRec : TGulpRec;
+    LibItem : TGulpItem;
   LibReader : TGulpReader;
   LibWriter : TGulpWriter;
           I : longint;
@@ -1365,18 +1341,12 @@ var
     TmpName : string;
 begin
   DoMessage(GulpDescription);
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage(Format('Purge the content of %s', [FileName]));
+  DoMessage(Format('Purge the content of "%s" %s', [FileName, LineEnding]));
+  DoMessage(Format('%sScanning archive...       ', [#13]));
   Stream    := TFileStream.Create(FileName, fmOpenRead);
   LibReader := TGulpReader.Create(Stream);
-  LibReader.Load(longword(-1));
-  if LibReader.Count = 0 then
-  begin
-    if Stream.Size <> 0 then
-      raise Exception.Create('Invalid signature value');
-  end;
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage('Moving records...        ');
+  LibReader.Load($FFFFFFFF);
+  DoMessage(Format('%sMoving items...           ', [#13]));
   TmpName   := GetTempFileName(ExtractFileDir(FileName), '');
   Tmp       := TFileStream.Create(TmpName, fmCreate);
   LibWriter := TGulpWriter.Create(Tmp);
@@ -1386,12 +1356,12 @@ begin
     LibWriter.WriteOffSet(0);
     for I := 0 to LibReader.Count - 1 do
     begin
-      LibRec := LibReader.Items[I];
-      if LibRec.FStoredSize > 0 then
+      LibItem := LibReader.Items[I];
+      if LibItem.FStoredSize > 0 then
       begin
-        Stream.Seek(LibRec.FOffset, soBeginning);
-        LibRec.FOffSet := Tmp.Seek(0, soCurrent);
-        Tmp.CopyFrom(Stream, LibRec.FStoredSize);
+        Stream.Seek(LibItem.FOffset, soBeginning);
+        LibItem.FOffSet := Tmp.Seek(0, soCurrent);
+        Tmp.CopyFrom(Stream, LibItem.FStoredSize);
       end;
     end;
 
@@ -1402,15 +1372,13 @@ begin
     Tmp.Seek(0, soEnd);
     for I := 0 to LibReader.Count - 1 do
     begin
-      LibRec := LibReader.Items[I];
-      LibWriter.WriteRec(LibRec);
+      LibItem := LibReader.Items[I];
+      LibWriter.WriteItem(LibItem);
     end;
   end;
+  OffSet := Stream.Size - Tmp.Size;
   FreeAndNil(LibReader);
   FreeAndNil(LibWriter);
-  {$IFDEF CONSOLEAPP} DoMessage(#13); {$ENDIF}
-  DoMessage(Format('Finished (%u removed bytes)', [Stream.Size - Tmp.Size]));
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
   FreeAndNil(Stream);
   FreeAndNil(Tmp);
 
@@ -1419,29 +1387,26 @@ begin
   else
     if RenameFile(TmpName, FileName)= FALSE then
       raise Exception.CreateFmt('Unable to rename file "%s"', [TmpName]);
+
+  DoMessage(Format('%sFinished (%u removed bytes) %s',
+    [#13, Offset, LineEnding]));
 end;
 
 procedure TGulpApplication.List(const FileName: string);
 var
       Count : longint = 0;
   LibReader : TGulpReader;
-     LibRec : TGulpRec;
+     LibRec : TGulpItem;
        I, J : longint;
      Stream : TStream;
+    Version : longword = 0;
 begin
   DoMessage(GulpDescription);
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage(Format('List the content of %s', [FileName]));
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage('Scanning archive...      ');
+  DoMessage(Format('List the content of "%s" %s', [FileName, LineEnding]));
+  DoMessage(Format('%sScanning archive...      ', [#13]));
   Stream    := TFileStream.Create (FileName, fmOpenRead);
   LibReader := TGulpReader.Create(Stream);
   LibReader.Load(FUntilVersion);
-  if LibReader.Count = 0 then
-  begin
-    if Stream.Size <> 0 then
-      raise Exception.Create('Invalid signature value');
-  end;
 
   for I := FInclude.Count - 1 downto 0 do
     if FInclude[I][Length(FInclude[I])] = PathDelim then
@@ -1468,24 +1433,24 @@ begin
         if LibReader.Items[J].Attributes and faDirectory = faDirectory then
           FExclude.Add(IncludeTrailingPathDelimiter(FExclude[I]) + '*')
     end;
-  {$IFDEF CONSOLEAPP} DoMessage(#13); {$ENDIF}
-  DoMessage('Listing records...       ');
+
+  DoMessage(Format('%sListing items...       %s', [#13, LineEnding]));
   for I := 0 to LibReader.Count - 1 do
   begin
-    LibRec := LibReader.Items[I];
+    LibRec  := LibReader.Items[I];
     if FileNameMatch(LibRec.Name, FInclude) = TRUE then
       if FileNameMatch(LibRec.Name, FExclude) = FALSE then
       begin
         DoList(LibRec);
         Inc(Count);
       end;
+    Version := Max(Version, LibRec.Version);
   end;
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
-  DoMessage(Format('Finished (%u listed records)', [Count]));
-  {$IFDEF CONSOLEAPP} DoMessage(LineEnding); {$ENDIF}
   FreeAndNil(LibReader);
-  FreeAndNil(LibRec);
   FreeAndNil(Stream);
+
+  DoMessage(Format('Finished (%u listed items) %s', [Count, LineEnding]));
+  DoMessage(Format('Lastest version %u %s', [Version, LineEnding]));
 end;
 
 end.
