@@ -53,6 +53,6 @@ transacted update, normally based on changes to the last-modified dates.
 - END FILE
 
  FLAGS NOTE:
- - bit 00 is reserved for mark last header in currebt central direcotory;
+ - bit 00 is reserved for mark last header in current central directory;
  - bit 01 is reserved for mark header added or deleted from archive;
  - bit 02 is reserved but unused.
