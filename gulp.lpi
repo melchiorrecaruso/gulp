@@ -15,7 +15,6 @@
       <Title Value="Gulp"/>
       <UseAppBundle Value="False"/>
       <ResourceType Value="res"/>
-      <Icon Value="0"/>
     </General>
     <i18n>
       <EnableI18N LFM="False"/>
@@ -45,8 +44,9 @@
         <UnitName Value="Gulp"/>
         <EditorIndex Value="2"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="72"/>
-        <CursorPos X="35" Y="197"/>
+        <TopLine Value="17"/>
+        <CursorPos X="52" Y="22"/>
+        <FoldState Value=" T3i70M4 pjLkA031 pkGkT282h"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
@@ -57,9 +57,9 @@
         <UnitName Value="GulpCommon"/>
         <EditorIndex Value="1"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="38"/>
-        <CursorPos X="36" Y="55"/>
-        <UsageCount Value="87"/>
+        <TopLine Value="236"/>
+        <CursorPos X="24" Y="24"/>
+        <UsageCount Value="88"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit1>
@@ -69,10 +69,9 @@
         <UnitName Value="GulpLibrary"/>
         <IsVisibleTab Value="True"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="583"/>
-        <CursorPos X="24" Y="687"/>
-        <FoldState Value=" T3n60B01BI2*"/>
-        <UsageCount Value="87"/>
+        <TopLine Value="40"/>
+        <CursorPos X="24" Y="24"/>
+        <UsageCount Value="88"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit2>

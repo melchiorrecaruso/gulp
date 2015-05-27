@@ -21,7 +21,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.05.24 by Melchiorre Caruso.
+    v0.0.2 - 2015.05.27 by Melchiorre Caruso.
 }
 
 unit GulpLibrary;
@@ -1394,6 +1394,10 @@ begin
     for I := 0 to LibReader.Count - 1 do
     begin
       LibItem := LibReader.Items[I];
+      if I = LibReader.Count - 1 then
+        System.Include(LibItem.FFlags, gfLast)
+      else
+        System.Exclude(LibItem.FFlags, gfLast);
       LibWriter.WriteItem(LibItem);
     end;
   end;

@@ -21,7 +21,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.05.23 by Melchiorre Caruso.
+    v0.0.2 - 2015.05.27 by Melchiorre Caruso.
 }
 
 unit GulpCommon;
