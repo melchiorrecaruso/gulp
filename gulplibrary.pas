@@ -38,12 +38,12 @@ type
   TGulpMarker = array [0..7] of char;
 
   // --- Gulp Flags ---
-  TGulpFlag = (gfNew,        gfName,         gfTime,
-               gfAttributes, gfMode,         gfSize,
-               gfLinkName,   gfUserID,       gfUserName,
-               gfGroupID,    gfGroupName,    gfOffSet,
-               gfStoredSize, gfStoredDigest, gfComment,
-               gfPlatform,   gfLast);
+  TGulpFlag = (gfLast,         gfAdd,      gfUnused,
+               gfName,         gfTime,     gfAttributes,
+               gfMode,         gfSize,     gfLinkName,
+               gfUserID,       gfUserName, gfGroupID,
+               gfGroupName,    gfOffSet,   gfStoredSize,
+               gfStoredDigest, gfComment,  gfPlatform);
 
   TGulpFlags = set of TGulpFlag;
 
@@ -136,6 +136,7 @@ type
 
 // --- Some useful routines ---
 
+function GetTime(const Time: TDateTime ): TDateTime; overload;
 function GetTime(const FileName: string): TDateTime; overload;
 function GetTime(var   SR: TSearchRec  ): TDateTime; overload;
 function GetSize(const FileName: string): int64;     overload;
@@ -215,6 +216,7 @@ type
     function WriteStream (Stream: TStream; Size: int64): string;
     function GetItem     (Index: longint): TGulpItem;
     function GetCount: longint;
+    function GetNew: TGulpItem;
   public
     constructor Create   (Stream: TStream);
     destructor  Destroy; override;
@@ -303,9 +305,14 @@ end;
 // Library routines
 // =============================================================================
 
+function GetTime(const Time: TDateTime): TDateTime;
+begin
+  Result := LocalTimeToUniversal(Time);
+end;
+
 function GetTime(var SR: TSearchRec): TDateTime;
 begin
-  Result := LocalTimeToUniversal(FileDateToDateTime(SR.Time));
+  Result := GetTime(FileDateToDateTime(SR.Time));
 end;
 
 function GetTime(const FileName: string): TDateTime;
@@ -424,7 +431,7 @@ end;
 
 function FlagToString(var Item: TGulpItem): string;
 begin
-  if gfNew in Item.Flags then
+  if gfAdd in Item.Flags then
     Result := 'ADD'
   else
     Result := 'DEL';
@@ -433,7 +440,7 @@ end;
 function TimeToString(var Item: TGulpItem): string;
 begin
   Result := '.......... ........';
-  if gfNew in Item.Flags then
+  if gfAdd in Item.Flags then
     if gfTime in Item.Flags then
       Result := FormatDateTime(
         DefaultFormatSettings.LongDateFormat + ' ' +
@@ -443,7 +450,7 @@ end;
 function SizeToString(var Item: TGulpItem): string;
 begin
   Result := '';
-  if gfNew in Item.Flags then
+  if gfAdd in Item.Flags then
     if gfSize in Item.Flags then
       Result := Format('%u', [Item.Size])
 end;
@@ -451,7 +458,7 @@ end;
 function AttrToString(var Item: TGulpItem): string;
 begin
   Result := '.......';
-  if gfNew in Item.Flags then
+  if gfAdd in Item.Flags then
   begin
     if Item.Attributes and faReadOnly  <> 0 then Result[1] := 'R';
     if Item.Attributes and faHidden    <> 0 then Result[2] := 'H';
@@ -484,7 +491,7 @@ begin
     Result := '...';
     if Item.Platform = gpUNIX then
     begin
-      if gfNew in Item.Flags then
+      if gfAdd in Item.Flags then
         Result := OctStr(Item.Mode, 3);
     end;
   {$ELSE}
@@ -604,21 +611,17 @@ end;
 
 function TGulpReader.ReadStream(Stream: TStream; Size: int64): string;
 var
-     Buffer : array[0..$FFFF] of byte;
-    Context : TSHA1Context;
-     Digest : TSHA1Digest;
-     Method : longint = 0;
-     Readed : longint;
-    ZStream : TStream;
+   Buffer : array[0..$FFFF] of byte;
+  Context : TSHA1Context;
+   Digest : TSHA1Digest;
+    Flags : TGulpStorageFlags = [];
+   Readed : longint;
+  ZStream : TStream;
 begin
-  FillChar    (Method, SizeOf(Method), 0);
-  FStream.Read(Method, SizeOf(Method));
-  FStream.ReadAnsiString;
-
-  case Method and $0000FF00 of
-    $0000: ZStream := FStream;
-    $0100: ZStream := TDecompressionStream.Create(FStream, FALSE);
-    else Exception.Create('Internal error');
+  FStream.Read(Flags, SizeOf(TGulpStorageFlags));
+  case gsfGZ in Flags of
+    FALSE: ZStream := FStream;
+    TRUE : ZStream := TDecompressionStream.Create(FStream, FALSE);
   end;
 
   SHA1Init(Context);
@@ -632,10 +635,9 @@ begin
     Dec(Size, Readed);
   end;
   SHA1Final(Context, Digest);
-
-  case Method and $0000FF00 of
-    $0100: FreeAndNil(ZStream);
-    $0000: ZStream := nil;
+  case gsfGZ in Flags of
+    FALSE: ZStream := nil;
+    TRUE : FreeAndNil(ZStream);
   end;
   Result := SHA1Print(Digest);
 end;
@@ -685,9 +687,10 @@ end;
 
 function TGulpReader.ReadOffSet(var OffSet: int64): boolean;
 var
-  Context : TSHA1Context;
-   Digest : TSHA1Digest;
-   Marker : TGulpMarker;
+     Context : TSHA1Context;
+      Digest : TSHA1Digest;
+      Marker : TGulpMarker;
+  OffSetTime : TDateTime = 0.0;
 begin
   FillChar    (Marker, SizeOf(Marker), 0);
   FStream.Read(Marker, SizeOf(Marker));
@@ -696,8 +699,10 @@ begin
   if Result then
   begin
     SHA1Init    (Context);
-    FStream.Read(         OffSet, SizeOf(OffSet));
-    SHA1Update  (Context, OffSet, SizeOf(OffSet));
+    FStream.Read(         OffSet,     SizeOf(OffSet));
+    SHA1Update  (Context, OffSet,     SizeOf(OffSet));
+    FStream.Read(         OffSetTime, SizeOf(OffSetTime));
+    SHA1Update  (Context, OffSetTime, SizeOf(OffSetTime));
     SHA1Final   (Context, Digest);
 
     Result := FStream.ReadAnsiString = SHA1Print(Digest);
@@ -746,7 +751,7 @@ begin
     end else
       if Item.Version <= Version then
       begin
-        if gfNew in Item.FFlags then
+        if gfAdd in Item.FFlags then
         begin
           Add(Item);
           Item := TGulpItem.Create;
@@ -777,12 +782,13 @@ var
   Item : TGulpItem;
 begin
   Item := Items[Index];
-  if Item.FSize > 0 then
-  begin
-    FStream.Seek(Item.FOffset, soBeginning);
-    if ReadStream(Stream, Item.FSize) <> Item.FStoredDigest then
-      raise Exception.CreateFmt('Mismatched checksum for "%s"', [Item.FName]);
-  end;
+  if gfAdd in Item.FFlags then
+    if Item.FSize > 0 then
+    begin
+      FStream.Seek(Item.FOffset, soBeginning);
+      if ReadStream(Stream, Item.FSize) <> Item.FStoredDigest then
+        raise Exception.CreateFmt('Mismatched checksum for "%s"', [Item.FName]);
+    end;
 end;
 
 procedure TGulpReader.Extract(Index: longint);
@@ -893,9 +899,9 @@ begin
     faDirectory or faArchive or faSymLink or faAnyFile, SR) = 0 then
     if GetAttr(SR) and (faSysFile or faVolumeId) = 0 then
     begin
-      Item := Items[FList.Add(ClearItem(TGulpItem.Create))];
+      Item := GetNew;
 
-      Include(Item.FFlags, gfNew);
+      Include(Item.FFlags, gfAdd);
       Include(Item.FFlags, gfName);        Item.FName       := FileName;
       Include(Item.FFlags, gfTime);        Item.FTime       := GetTime(SR);
       Include(Item.FFlags, gfAttributes);  Item.FAttributes := GetAttr(SR);
@@ -939,7 +945,7 @@ procedure TGulpWriter.Delete(const FileName: string);
 var
   Item : TGulpItem;
 begin
-  Item := Items[FList.Add(ClearItem(TGulpItem.Create))];
+  Item := GetNew;
   Include(Item.FFlags, gfName);
   Item.FName := FileName;
 end;
@@ -1016,18 +1022,33 @@ end;
 
 function TGulpWriter.WriteOffSet(const OffSet: int64): boolean;
 var
-  Context : TSHA1Context;
-   Digest : TSHA1Digest;
+     Context : TSHA1Context;
+      Digest : TSHA1Digest;
+  OffSetTime : TDateTime;
 begin
-  FStream.Write(GulpMarker, SizeOf(GulpMarker));
+  OffSetTime := GetTime(Now);
+  begin
+    FStream.Write(GulpMarker, SizeOf(GulpMarker));
 
-  SHA1Init     (Context);
-  FStream.Write(         OffSet, SizeOf(OffSet));
-  SHA1Update   (Context, OffSet, SizeOf(OffSet));
-  SHA1Final    (Context, Digest);
+    SHA1Init     (Context);
+    FStream.Write(         OffSet,     SizeOf(OffSet));
+    SHA1Update   (Context, OffSet,     SizeOf(OffSet));
+    FStream.Write(         OffSetTime, SizeOf(OffSetTime));
+    SHA1Update   (Context, OffSetTime, SizeOf(OffSetTime));
+    SHA1Final    (Context, Digest);
 
-  FStream.WriteAnsiString(SHA1Print(Digest));
+    FStream.WriteAnsiString(SHA1Print(Digest));
+  end;
   Result := TRUE;
+end;
+
+function TGulpWriter.GetNew: TGulpItem;
+begin
+  if FList.Count = 0 then
+  begin
+    WriteOffSet(FStreamSize);
+  end;
+  Result := Items[FList.Add(ClearItem(TGulpItem.Create))];
 end;
 
 function TGulpWriter.GetItem(Index: longint): TGulpItem;
@@ -1143,7 +1164,7 @@ begin
         LibWriter.Delete(LibReader.Items[I].Name);
   end;
 
-  LibWriter.FStorageFlags := StorageFlags;
+  LibWriter.FStorageFlags := FStorageFlags;
   for I := 0 to Scan.Count - 1 do
   begin
     J := LibReader.Find(Scan.Items[I]);

@@ -86,7 +86,7 @@ end;
 
 procedure TShellApplication.DoList(Item: TGulpItem);
 begin
-  if gfNew in Item.Flags then
+  if gfAdd in Item.Flags then
     writeln(Format('%4s %3s %3s %7s %19s %12s %s', [
        VerTostring(Item),
       FlagToString(Item),
