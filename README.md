@@ -1,14 +1,10 @@
-GULP v0.0.2
-
-0.0 ===== DESCRIPTION ========================================================
-
-GULP  stores  and extracts files from a disk archive. 
+GULP stores and extracts files from a disk archive.
 
 A GULP archive is a sequence of timestamped updates, each listing the files 
 and directories that have been added, changed, or deleted since the previous 
 transacted update, normally based on changes to the last-modified dates.
 
-1.0 ===== GENERAL FILE FORMAT FOR VERSION 0.0.2 ==============================
+1.0 - GENERAL FILE FORMAT FOR VERSION 0.0.2 
 
 - BEGIN FILE
 - CENTRAL DIRECTORY OFFSET-1
@@ -60,12 +56,3 @@ transacted update, normally based on changes to the last-modified dates.
  - bit 00 is reserved for mark last header in currebt central direcotory;
  - bit 01 is reserved for mark header added or deleted from archive;
  - bit 02 is reserved but unused.
-
-2.0 ===== DESCRIPTION ========================================================
-
-
-
-
-
-
-0.0 ===== 
