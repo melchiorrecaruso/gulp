@@ -101,7 +101,7 @@ type
 
   // --- The Gulp Application events ---
   TGulpOnMessage = procedure(const Message: string) of object;
-  TGulpOnList    = procedure(Item: TGulpItem) of object;
+  TGulpOnList    = procedure(var Item: TGulpItem) of object;
 
   // --- The Gulp Application class ---
   TGulpApplication = class(TObject)
@@ -113,7 +113,7 @@ type
     FUntilVersion : longword;
     FOnList       : TGulpOnList;
     FOnMessage    : TGulpOnMessage;
-    procedure DoList(Item: TGulpItem);
+    procedure DoList(var Item: TGulpItem);
     procedure DoMessage(const Message: string);
   public
     constructor Create;
@@ -128,7 +128,7 @@ type
     property Exclude      : TStringList       read FExclude;
     property Include      : TStringList       read FInclude;
     property NoDelete     : boolean           read FNoDelete     write FNoDelete;
-    property StorageFlags : TGulpStorageFlags read FStorageFlags write FStorageFlags;
+  //property StorageFlags : TGulpStorageFlags read FStorageFlags write FStorageFlags;
     property UntilVersion : longword          read FUntilVersion write FUntilVersion;
     property OnList       : TGulpOnList       read FOnList       write FOnList;
     property OnMessage    : TGulpOnMessage    read FOnMessage    write FOnMessage;
@@ -548,7 +548,8 @@ end;
 
 procedure TGulpReader.Delete(Index: longint);
 begin
-  TGulpItem(FList[Index]).Destroy;
+  if Assigned(FList[Index]) then
+    TGulpItem(FList[Index]).Destroy;
   FList.Delete(Index);
 end;
 
@@ -1099,7 +1100,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TGulpApplication.DoList(Item: TGulpItem);
+procedure TGulpApplication.DoList(var Item: TGulpItem);
 begin
   if Assigned(FOnList) then
     FOnList(Item);
@@ -1460,16 +1461,20 @@ begin
     end;
 
   DoMessage(Format('%sListing items...       %s', [#13, LineEnding]));
-  for I := 0 to LibReader.Count - 1 do
+  while LibReader.Count <> 0 do
   begin
-    LibRec  := LibReader.Items[I];
+    LibRec  := LibReader.Items[0];
+
+    Version := Max(Version, LibRec.Version);
     if FileNameMatch(LibRec.Name, FInclude) = TRUE then
       if FileNameMatch(LibRec.Name, FExclude) = FALSE then
       begin
         DoList(LibRec);
         Inc(Count);
       end;
-    Version := Max(Version, LibRec.Version);
+
+    LibReader.FList [0] := LibRec;
+    LibReader.Delete(0);
   end;
   FreeAndNil(LibReader);
   FreeAndNil(Stream);
