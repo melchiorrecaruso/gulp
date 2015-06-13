@@ -38,7 +38,7 @@ type
          Switches : TStringList;
     ShortSwitches : string;
   protected
-    procedure DoList(Item: TGulpItem);
+    procedure DoList(var Item: TGulpItem);
     procedure DoMessage(const Message: string);
     procedure DoRun; override;
     procedure Abort;
@@ -84,7 +84,7 @@ begin
   write(Message);
 end;
 
-procedure TShellApplication.DoList(Item: TGulpItem);
+procedure TShellApplication.DoList(var Item: TGulpItem);
 begin
   if gfAdd in Item.Flags then
     writeln(Format('%4s %3s %3s %7s %19s %12s %s', [

@@ -128,7 +128,7 @@ type
     property Exclude      : TStringList       read FExclude;
     property Include      : TStringList       read FInclude;
     property NoDelete     : boolean           read FNoDelete     write FNoDelete;
-  //property StorageFlags : TGulpStorageFlags read FStorageFlags write FStorageFlags;
+    property StorageFlags : TGulpStorageFlags read FStorageFlags write FStorageFlags;
     property UntilVersion : longword          read FUntilVersion write FUntilVersion;
     property OnList       : TGulpOnList       read FOnList       write FOnList;
     property OnMessage    : TGulpOnMessage    read FOnMessage    write FOnMessage;

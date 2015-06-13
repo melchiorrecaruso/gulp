@@ -45,8 +45,8 @@
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="2"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="166"/>
-        <CursorPos X="65" Y="182"/>
+        <TopLine Value="137"/>
+        <CursorPos X="60" Y="156"/>
         <FoldState Value=" T3iV05212-"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
@@ -58,7 +58,7 @@
         <UnitName Value="GulpCommon"/>
         <EditorIndex Value="1"/>
         <WindowIndex Value="1"/>
-        <TopLine Value="102"/>
+        <TopLine Value="24"/>
         <CursorPos X="24" Y="24"/>
         <UsageCount Value="88"/>
         <Loaded Value="True"/>
@@ -69,7 +69,8 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="GulpLibrary"/>
         <WindowIndex Value="1"/>
-        <CursorPos X="24" Y="24"/>
+        <TopLine Value="113"/>
+        <CursorPos X="5" Y="131"/>
         <UsageCount Value="88"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
