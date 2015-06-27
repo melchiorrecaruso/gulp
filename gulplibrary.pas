@@ -21,7 +21,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.05.27 by Melchiorre Caruso.
+    v0.0.2 - 2015.06.27 by Melchiorre Caruso.
 }
 
 unit GulpLibrary;
@@ -31,7 +31,7 @@ interface
 uses
   {$IFDEF UNIX} BaseUnix, {$ENDIF}
   {$IFDEF MSWINDOWS} Windows, {$ENDIF}
-  Classes, GulpCommon, Sha1, SysUtils;
+  Classes, GulpCommon, Sha1, SysUtils, Dialogs;
 
 type
   // --- Gulp Marker ---
@@ -124,6 +124,7 @@ type
     procedure   List     (const FileName: string);
     procedure   Fix      (const FileName: string);
     procedure   Check    (const FileName: string);
+    procedure   Reset;
   public
     property Exclude      : TStringList       read FExclude;
     property Include      : TStringList       read FInclude;
@@ -580,7 +581,7 @@ begin
       if I > 0 then
         FList.Insert(M, Item)
       else
-        raise Exception.Create('Duplicates not allowed');
+        raise Exception.Create('Duplicates not allowed (ex0006)');
   end else
     FList.Add(Item);
 end;
@@ -630,7 +631,7 @@ begin
   begin
     Readed := ZStream.Read(Buffer, Min(SizeOf(Buffer), Size));
     if Readed = 0 then
-      raise Exception.Create('Unable to read stream');
+      raise Exception.Create('Unable to read stream (ex0005)');
     SHA1Update  (Context, Buffer, Readed);
     Stream.Write(         Buffer, Readed);
     Dec(Size, Readed);
@@ -710,18 +711,19 @@ begin
     if Result then
     begin
       if OffSet = 0 then
-        raise Exception.Create('Archive is damaged, try with the "fix" command');
+        raise Exception.Create('Archive is damaged, try with the "fix" command (ex0004)');
     end;
   end;
 end;
 
 procedure TGulpReader.Load(Version: longword);
 var
-        I : longint;
-     Item : TGulpItem;
-  ItemVer : longword = 0;
-   OffSet : int64 = 0;
-     Size : int64 = 0;
+         I : longint;
+      Item : TGulpItem;
+   ItemVer : longword = 0;
+  LastItem : TGulpItem;
+    OffSet : int64 = 0;
+      Size : int64 = 0;
 begin
   Size := FStream.Seek(0, soBeginning);
   if ReadOffSet(OffSet) = TRUE then
@@ -745,6 +747,7 @@ begin
       end;
     end;
 
+    LastItem := Item;
     if Version = 0 then
     begin
       Add(Item);
@@ -769,13 +772,13 @@ begin
   if FList.Count = 0 then
   begin
     if FStream.Size <> 0 then
-      raise Exception.Create('Invalid signature value');
+      raise Exception.Create('Invalid signature value (ex0001)');
   end else
-    if (gfLast in Items[Count - 1].FFlags) = FALSE then
-      raise Exception.Create('Archive is broken, try with fix command');
+    if (gfLast in LastItem.FFlags) = FALSE then
+      raise Exception.Create('Archive is broken, try with fix command (ex0002)');
 
   if FStream.Seek(0, soEnd) <> Size then
-    raise Exception.Create('Archive is broken, try with fix command');
+    raise Exception.Create('Archive is broken, try with fix command (ex0003)');
 end;
 
 procedure TGulpReader.ExtractTo(Stream: TStream; Index: longint);
@@ -976,7 +979,7 @@ begin
   begin
     Readed := Stream.Read(Buffer, Min(SizeOf(Buffer), Size));
     if Readed = 0 then
-      raise Exception.Create('Unable to read stream');
+      raise Exception.Create('Unable to read stream (ex0007)');
     SHA1Update   (Context, Buffer, Readed);
     ZStream.Write(         Buffer, Readed);
     Dec(Size, Readed);
@@ -1098,6 +1101,15 @@ begin
   FreeAndNil(FExclude);
   FreeAndNil(FInclude);
   inherited Destroy;
+end;
+
+procedure TGulpApplication.Reset;
+begin
+  FExclude.Clear;
+  FInclude.Clear;
+  FStorageFlags := [];
+  FNodelete     := FALSE;
+  FUntilVersion := $FFFFFFFF;
 end;
 
 procedure TGulpApplication.DoList(var Item: TGulpItem);
@@ -1326,7 +1338,7 @@ begin
     end;
 
     while LibReader.ReadItem(LibRec) = TRUE do
-      if  gfLast in LibRec.FFlags then
+      if gfLast in LibRec.FFlags then
       begin
         Size := Stream.Seek(0, soCurrent);
         if LibReader.ReadOffSet(OffSet) = TRUE then
@@ -1338,11 +1350,12 @@ begin
   except
     // nothing to do
   end;
+
   OffSet := Stream.Size - Size;
   if Size > 0 then
     Stream.Size := Size
   else
-    raise Exception.Create('Stream is not a valid archive');
+    raise Exception.Create('Stream is not a valid archive (ex0008)');
   FreeAndNil(LibReader);
   FreeAndNil(LibRec);
   FreeAndNil(Stream);
