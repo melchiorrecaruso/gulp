@@ -21,7 +21,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.06.27 by Melchiorre Caruso.
+    v0.0.2 - 2015.07.12 by Melchiorre Caruso.
 }
 
 unit GulpLibrary;
@@ -64,7 +64,7 @@ type
   TGulpItem = class(TObject)
   private
     FFlags        : TGulpFlags;    // Flags
-    FVersion      : longword;      // File version (reserved)
+    FVersion      : longword;      // File version       (reserved)
     FName         : string;        // File path and name
     FTime         : TDateTime;     // Last modification date and time (UTC)
     FAttributes   : longint;       // File Attributes (MSWindows)
@@ -544,7 +544,9 @@ end;
 procedure TGulpReader.Clear;
 begin
   while FList.Count <> 0 do
+  begin
     Delete(0);
+  end;
 end;
 
 procedure TGulpReader.Delete(Index: longint);
@@ -737,6 +739,8 @@ begin
   begin
     Item.FPosition := Count;
     Item.FVersion  := ItemVer;
+
+    LastItem := Item;
     if gfLast in Item.FFlags then
     begin
       Size := FStream.Seek(0, soCurrent);
@@ -747,13 +751,12 @@ begin
       end;
     end;
 
-    LastItem := Item;
     if Version = 0 then
     begin
       Add(Item);
       Item := TGulpItem.Create;
     end else
-      if Item.Version <= Version then
+      if Item.FVersion <= Version then
       begin
         if gfAdd in Item.FFlags then
         begin
@@ -767,7 +770,6 @@ begin
         end;
       end;
   end;
-  FreeAndNil(Item);
 
   if FList.Count = 0 then
   begin
@@ -779,6 +781,8 @@ begin
 
   if FStream.Seek(0, soEnd) <> Size then
     raise Exception.Create('Archive is broken, try with fix command (ex0003)');
+
+  FreeAndNil(Item);
 end;
 
 procedure TGulpReader.ExtractTo(Stream: TStream; Index: longint);
