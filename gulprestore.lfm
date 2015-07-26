@@ -1,0 +1,380 @@
+object RestoreForm: TRestoreForm
+  Left = 637
+  Height = 530
+  Top = 138
+  Width = 460
+  Caption = 'Ripristino'
+  ClientHeight = 530
+  ClientWidth = 460
+  Color = clWhite
+  Constraints.MinHeight = 530
+  Constraints.MinWidth = 460
+  Position = poMainFormCenter
+  LCLVersion = '1.5'
+  object TopPanel: TPanel
+    Left = 0
+    Height = 65
+    Top = 0
+    Width = 460
+    Align = alTop
+    AutoSize = True
+    BevelOuter = bvNone
+    ClientHeight = 65
+    ClientWidth = 460
+    Color = clForm
+    Constraints.MaxHeight = 65
+    Constraints.MinHeight = 65
+    ParentColor = False
+    TabOrder = 0
+    object TopLabel: TLabel
+      AnchorSideLeft.Control = TopPanel
+      AnchorSideTop.Control = TopPanel
+      AnchorSideRight.Control = TopPanel
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = TopPanel
+      AnchorSideBottom.Side = asrBottom
+      Left = 15
+      Height = 65
+      Top = 0
+      Width = 445
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      AutoSize = False
+      BorderSpacing.Left = 15
+      Caption = '  Ripristino da backup'
+      Font.Height = -21
+      Font.Style = [fsBold]
+      Layout = tlCenter
+      ParentColor = False
+      ParentFont = False
+    end
+    object TopImage: TImage
+      AnchorSideRight.Control = TopPanel
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = TopPanel
+      AnchorSideBottom.Side = asrBottom
+      Left = 402
+      Height = 48
+      Top = 7
+      Width = 48
+      Anchors = [akRight, akBottom]
+      AutoSize = True
+      BorderSpacing.Right = 10
+      BorderSpacing.Bottom = 10
+      Center = True
+      Picture.Data = {
+        1754506F727461626C654E6574776F726B477261706869634304000089504E47
+        0D0A1A0A0000000D49484452000000300000003008060000005702F987000000
+        0473424954080808087C086488000000097048597300000B1300000B1301009A
+        9C18000003E5494441546881ED58DF4B1451183DDF9D719D1077D5324A34B648
+        D3322C76EDA1A2ADE8878644D063A91408FD0741FF40D05B8F62504B4F3D0845
+        85B2510F45F4500A49510F056DF40389B24C5DDD99B9B70777B65D67C6766667
+        DC2D3A8F77EE7EE79C7BE7DCEFEE007F39243F8B47BAFACE37346FDFF3F9CDC4
+        63BF387C33D0D9DD3B00A2CB043ABCAEB9E3E3E737CFC7FDE0F1C540B4BBFF24
+        388F8388008038EF69D8DCF1E2D3DB89575E7391D705A3477B0F0174170C81BC
+        071C69223AF674347EDF4B3E4F0D448EF4ED22090F0054D94C998160079F8D5E
+        7BEA15A76706761EEB6D23418F18B07AB9791CF84A3AED1D4BC45F7BC1EB8981
+        484FEF06A1D363063416329F031F48127BC6EE5C7F5F2C372BB6C08EAE33F542
+        A57B858ACF90360A9D123BBACED417CB5F94815D5DA78232D411C6D0E282788B
+        0C7564F7F1B3D5C568706D2016EB5738E82688455CB3138BA4D3E95BB158BFE2
+        B684AB3E108BC5E4592574038CBADD126741B45195D0DEDC58339C4C26B9D39F
+        CB760FA6AFD42408ECF0D27121804B630CA349A754CB80E1C4BEAD4CBD7DBA0E
+        6473AC08810BC1816F17CD3FB501C1FAD5187CD986D164935BA9B61879D784C1
+        976DB6CF09DC528FE50E4C5D0D85A1A3CEEA597CBC1EC0B4695CA90A1624D4C0
+        FCACB9467CBC1EE7DAED6E1BD60B6AB903922EB90FA65F2084BF0F054D8B6AB9
+        030411B1EB714FFA1E5A8E1F18EE71A4C7AECE7290498E0248E48E59EE808088
+        3AAEBE02E002A637C3D2805D804B0DAB209B0C4C5D0D8501EB00971EE6853565
+        C008F0DC972AE8A90ADFA4FC7C5FE3687E656D0A81EA85F0F7A1605DCDC0F437
+        63DCB4038B010684EAEBDF65C7E0193D99206761322020A242103495396EEB7E
+        424DB149C01C648B1D6011A131302AFEAAED2934290498839C27D2083057CB4B
+        3B008048119CB034C8794A8D0073AD0C0D00101A3375E4BC53C8E8C0DC4580AD
+        EE365E435725B0809ED791F396DAE8C0BA565E279001E3D5CE0DF2921D609923
+        D4F92B94D83F519CBA02C0330B9B1BE4AC5223C0821316C3527EF87DB830B381
+        6C80CBAC81E542680C10C80B72D680D181CBF208CD400802D717F5191D399B01
+        BD556F201024A4508594F3E22AC3DCC35A40FFF35CA95683D2F9C3318781CC15
+        A101F0E0C39601AAE0A86C99FDF3440908B4CE7845EBED75416E9A476073CAF6
+        8325C902CACE69B0EA02B6A9504ECF2A6550B1690ED2EA34D2EF56814FC9102A
+        03291CF2DA342AC22950A5B77744CF0D00000B69503A7EFA51DACCB5222C3EE2
+        BF8152E3BF8152236B80ABE4FA1B7D29F1FB2EA423544A218E2116B5670D8805
+        E9AF32C067E435406E063839FB3E5E62F0145B0FE4746279923FA349695BE924
+        39830CFD39F00F9C42BF00E6CA1F8D19D1BF8C0000000049454E44AE426082
+      }
+      Transparent = True
+    end
+  end
+  object OkBitBtn: TBitBtn
+    AnchorSideTop.Control = ExcludeMemo
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 350
+    Height = 32
+    Top = 488
+    Width = 100
+    Anchors = [akRight, akBottom]
+    BorderSpacing.Top = 15
+    BorderSpacing.Right = 10
+    BorderSpacing.Bottom = 10
+    Caption = 'Ok'
+    Constraints.MaxHeight = 32
+    Constraints.MaxWidth = 100
+    Constraints.MinHeight = 32
+    Constraints.MinWidth = 100
+    ModalResult = 1
+    TabOrder = 1
+  end
+  object CancelBitBtn: TBitBtn
+    AnchorSideTop.Control = OkBitBtn
+    AnchorSideRight.Control = OkBitBtn
+    AnchorSideBottom.Control = OkBitBtn
+    AnchorSideBottom.Side = asrBottom
+    Left = 240
+    Height = 32
+    Top = 488
+    Width = 100
+    Anchors = [akTop, akRight, akBottom]
+    BorderSpacing.Right = 10
+    Caption = 'Cancel'
+    Constraints.MaxWidth = 100
+    Constraints.MinWidth = 100
+    ModalResult = 2
+    TabOrder = 2
+  end
+  object RevisionComboBox: TComboBox
+    AnchorSideTop.Control = OptionDividerBevel
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Left = 177
+    Height = 29
+    Top = 168
+    Width = 273
+    Anchors = [akTop, akLeft, akRight]
+    BorderSpacing.Top = 10
+    BorderSpacing.Right = 10
+    Constraints.MinHeight = 29
+    ItemHeight = 0
+    Items.Strings = (
+      ''
+    )
+    Style = csDropDownList
+    TabOrder = 3
+  end
+  object OptionDividerBevel: TDividerBevel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = FolderEdit
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Left = 10
+    Height = 15
+    Top = 143
+    Width = 440
+    Caption = 'Opzioni'
+    Anchors = [akTop, akLeft, akRight]
+    BorderSpacing.Left = 10
+    BorderSpacing.Top = 10
+    BorderSpacing.Right = 10
+    Font.Style = [fsBold]
+    ParentFont = False
+  end
+  object RevisionLabel: TLabel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = RevisionComboBox
+    AnchorSideRight.Control = ModeComboBox
+    AnchorSideBottom.Control = RevisionComboBox
+    AnchorSideBottom.Side = asrBottom
+    Left = 10
+    Height = 29
+    Top = 168
+    Width = 157
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    AutoSize = False
+    BorderSpacing.Left = 10
+    BorderSpacing.Right = 10
+    Caption = 'Fino alla revisione'
+    Layout = tlCenter
+    ParentColor = False
+  end
+  object FolderBitBtn: TBitBtn
+    AnchorSideTop.Control = FolderEdit
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = FolderEdit
+    AnchorSideBottom.Side = asrBottom
+    Left = 423
+    Height = 27
+    Top = 106
+    Width = 27
+    Anchors = [akTop, akRight, akBottom]
+    BorderSpacing.Right = 10
+    Caption = '...'
+    OnClick = FolderBitBtnClick
+    TabOrder = 4
+  end
+  object FolderEdit: TEdit
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = FolderDividerBevel
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = FolderBitBtn
+    Left = 10
+    Height = 27
+    Top = 106
+    Width = 408
+    Anchors = [akTop, akLeft, akRight]
+    BorderSpacing.Left = 10
+    BorderSpacing.Top = 10
+    BorderSpacing.Right = 5
+    TabOrder = 5
+  end
+  object IncludeMemo: TMemo
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = IncludeDividerBevel
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = ExcludeDividerBevel
+    Left = 10
+    Height = 99
+    Top = 271
+    Width = 440
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    BorderSpacing.Left = 10
+    BorderSpacing.Top = 10
+    BorderSpacing.Right = 10
+    ScrollBars = ssAutoBoth
+    TabOrder = 6
+  end
+  object ExcludeMemo: TMemo
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = ExcludeDividerBevel
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = OkBitBtn
+    Left = 10
+    Height = 68
+    Top = 405
+    Width = 440
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    BorderSpacing.Left = 10
+    BorderSpacing.Top = 10
+    BorderSpacing.Right = 10
+    ScrollBars = ssAutoBoth
+    TabOrder = 7
+  end
+  object ExcludeDividerBevel: TDividerBevel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Side = asrBottom
+    Left = 10
+    Height = 15
+    Top = 380
+    Width = 440
+    Caption = 'Excludi files'
+    Anchors = [akLeft, akRight]
+    BorderSpacing.Left = 10
+    BorderSpacing.Top = 10
+    BorderSpacing.Right = 10
+    BorderSpacing.Bottom = 10
+    Font.Style = [fsBold]
+    ParentFont = False
+  end
+  object IncludeDividerBevel: TDividerBevel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = ModeComboBox
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Left = 10
+    Height = 15
+    Top = 246
+    Width = 440
+    Caption = 'Includi files'
+    Anchors = [akTop, akLeft, akRight]
+    BorderSpacing.Left = 10
+    BorderSpacing.Top = 10
+    BorderSpacing.Right = 10
+    Font.Style = [fsBold]
+    ParentFont = False
+  end
+  object ModeLabel: TLabel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = ModeComboBox
+    AnchorSideRight.Control = ModeComboBox
+    AnchorSideBottom.Control = ModeComboBox
+    AnchorSideBottom.Side = asrBottom
+    Left = 10
+    Height = 29
+    Top = 207
+    Width = 157
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    AutoSize = False
+    BorderSpacing.Left = 10
+    BorderSpacing.Right = 10
+    Caption = 'Modalità ripristino'
+    Layout = tlCenter
+    ParentColor = False
+  end
+  object ModeComboBox: TComboBox
+    AnchorSideTop.Control = RevisionComboBox
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Left = 177
+    Height = 29
+    Top = 207
+    Width = 273
+    Anchors = [akTop, akLeft, akRight]
+    BorderSpacing.Top = 10
+    BorderSpacing.Right = 10
+    Constraints.MinHeight = 29
+    ItemHeight = 0
+    Items.Strings = (
+      'Sincroniza contenuto della cartella di destinazione'
+      'Aggiorna contenuto della cartella di destinazione'
+    )
+    Style = csDropDownList
+    TabOrder = 8
+  end
+  object FolderDividerBevel: TDividerBevel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = TopShape
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Left = 10
+    Height = 15
+    Top = 81
+    Width = 440
+    Caption = 'Cartella di destinazione'
+    Anchors = [akTop, akLeft, akRight]
+    BorderSpacing.Left = 10
+    BorderSpacing.Top = 15
+    BorderSpacing.Right = 10
+    Font.Style = [fsBold]
+    ParentFont = False
+  end
+  object TopShape: TShape
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = TopPanel
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    Left = 0
+    Height = 1
+    Top = 65
+    Width = 460
+    Anchors = [akTop, akLeft, akRight]
+    Constraints.MaxHeight = 1
+    Constraints.MinHeight = 1
+    Pen.Color = clGray
+  end
+  object SelectDirectoryDialog: TSelectDirectoryDialog
+    left = 320
+    top = 8
+  end
+end
