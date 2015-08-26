@@ -1,42 +1,80 @@
 object MainForm: TMainForm
-  Left = 491
+  Left = 408
   Height = 439
-  Top = 221
-  Width = 707
+  Top = 81
+  Width = 625
   Caption = 'Gulp - A simple journaling archiver'
   ClientHeight = 439
-  ClientWidth = 707
+  ClientWidth = 625
   Constraints.MinHeight = 375
-  Constraints.MinWidth = 575
+  Constraints.MinWidth = 625
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   ParentFont = True
+  SessionProperties = 'Width;Height;WindowState'
   LCLVersion = '1.5'
-  object TreeView: TTreeView
+  object ListView: TListView
     AnchorSideLeft.Control = Owner
-    AnchorSideTop.Control = TopShape
+    AnchorSideTop.Control = FiltersPanel
     AnchorSideTop.Side = asrBottom
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
     Left = 0
-    Height = 373
-    Top = 66
-    Width = 707
+    Height = 279
+    Top = 160
+    Width = 625
     Anchors = [akTop, akLeft, akRight, akBottom]
+    AutoWidthLastColumn = True
     BorderStyle = bsNone
-    DefaultItemHeight = 18
-    ExpandSignType = tvestPlusMinus
-    Images = ImageList
+    Columns = <    
+      item
+        AutoSize = True
+        Caption = 'Name'
+        Width = 0
+      end    
+      item
+        AutoSize = True
+        Caption = 'Size'
+        Width = 0
+      end    
+      item
+        AutoSize = True
+        Caption = 'Time'
+        Width = 0
+      end    
+      item
+        AutoSize = True
+        Caption = 'Attributes'
+        Width = 0
+      end    
+      item
+        AutoSize = True
+        Caption = 'Mode'
+        Width = 0
+      end    
+      item
+        AutoSize = True
+        Caption = 'Platform'
+        Width = 0
+      end    
+      item
+        Caption = 'Path'
+        Width = 625
+      end>
+    Enabled = False
     MultiSelect = True
-    ParentColor = True
+    OwnerData = True
+    PopupMenu = PopupMenu1
     ReadOnly = True
+    RowSelect = True
     ScrollBars = ssAutoBoth
-    TabOrder = 0
-    OnDblClick = TreeViewDblClick
-    OnExpanding = TreeViewExpanding
-    Options = [tvoAllowMultiselect, tvoAutoItemHeight, tvoHideSelection, tvoKeepCollapsedNodes, tvoReadOnly, tvoShowButtons, tvoShowLines, tvoShowRoot, tvoToolTips, tvoThemedDraw]
+    ShowColumnHeaders = False
+    SmallImages = ImageList
+    TabOrder = 5
+    ViewStyle = vsReport
+    OnData = ListViewData
   end
   object SyncBitBtn: TBitBtn
     AnchorSideLeft.Control = Owner
@@ -185,7 +223,7 @@ object MainForm: TMainForm
       0000000000000000000000000000000000000000000000000000
     }
     OnClick = SyncBitBtnClick
-    TabOrder = 1
+    TabOrder = 0
   end
   object RestoreBitBtn: TBitBtn
     AnchorSideLeft.Control = SyncBitBtn
@@ -336,15 +374,15 @@ object MainForm: TMainForm
       0000000000000000000000000000000000000000000000000000
     }
     OnClick = RestoreBitBtnClick
-    TabOrder = 2
+    TabOrder = 1
   end
-  object OptionBitBtn: TBitBtn
+  object HomeBitBtn: TBitBtn
     AnchorSideTop.Control = SyncBitBtn
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = SyncBitBtn
     AnchorSideBottom.Side = asrBottom
-    Left = 654
+    Left = 572
     Height = 43
     Top = 8
     Width = 43
@@ -483,28 +521,15 @@ object MainForm: TMainForm
       0000000000000000000000000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000
     }
-    OnClick = OptionBitBtnClick
-    TabOrder = 3
-  end
-  object TopShape: TShape
-    AnchorSideLeft.Control = Owner
-    AnchorSideTop.Control = Owner
-    AnchorSideRight.Control = Owner
-    AnchorSideRight.Side = asrBottom
-    Left = 0
-    Height = 1
-    Top = 65
-    Width = 707
-    Anchors = [akTop, akLeft, akRight]
-    BorderSpacing.Top = 65
-    Pen.Color = clGray
+    OnClick = HomeBitBtnClick
+    TabOrder = 2
   end
   object RevisionComboBox: TComboBox
     AnchorSideTop.Control = SyncBitBtn
-    AnchorSideRight.Control = OptionBitBtn
+    AnchorSideRight.Control = HomeBitBtn
     AnchorSideBottom.Control = SyncBitBtn
     AnchorSideBottom.Side = asrBottom
-    Left = 549
+    Left = 467
     Height = 43
     Top = 8
     Width = 100
@@ -519,14 +544,14 @@ object MainForm: TMainForm
     OnChange = RevisionComboBoxChange
     ParentColor = True
     Style = csDropDownList
-    TabOrder = 4
+    TabOrder = 3
   end
   object RevisionLabel: TLabel
     AnchorSideTop.Control = RevisionComboBox
     AnchorSideRight.Control = RevisionComboBox
     AnchorSideBottom.Control = RevisionComboBox
     AnchorSideBottom.Side = asrBottom
-    Left = 457
+    Left = 375
     Height = 43
     Top = 8
     Width = 87
@@ -538,34 +563,37 @@ object MainForm: TMainForm
     ParentColor = False
   end
   object WelcomePanel: TPanel
-    AnchorSideTop.Control = TreeView
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = FiltersPanel
+    AnchorSideTop.Side = asrBottom
+    AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = Owner
     AnchorSideBottom.Side = asrBottom
-    Left = 498
-    Height = 166
-    Top = 116
-    Width = 187
-    Anchors = [akTop]
+    Left = 0
+    Height = 279
+    Top = 160
+    Width = 625
+    Anchors = [akTop, akLeft, akRight, akBottom]
     AutoSize = True
-    BorderSpacing.Top = 50
     BevelOuter = bvNone
-    ClientHeight = 166
-    ClientWidth = 187
+    ClientHeight = 279
+    ClientWidth = 625
+    Color = clBackground
     ParentColor = False
-    TabOrder = 5
+    TabOrder = 4
     Visible = False
     object OpenAFileLabel: TLabel
       AnchorSideLeft.Control = WelcomePanel
+      AnchorSideLeft.Side = asrCenter
       AnchorSideTop.Control = NoFileOpenLabel
       AnchorSideTop.Side = asrBottom
-      AnchorSideRight.Control = WelcomePanel
       AnchorSideRight.Side = asrBottom
-      Left = 0
+      Left = 219
       Height = 15
-      Top = 20
+      Top = 70
       Width = 187
       Alignment = taCenter
-      Anchors = [akTop, akLeft, akRight]
       BorderSpacing.Top = 5
       Caption = 'Aprire un file per iniziare a lavorare'
       ParentColor = False
@@ -576,9 +604,9 @@ object MainForm: TMainForm
       AnchorSideTop.Side = asrBottom
       AnchorSideRight.Control = OpenAFileLabel
       AnchorSideRight.Side = asrBottom
-      Left = 0
+      Left = 219
       Height = 58
-      Top = 45
+      Top = 95
       Width = 187
       Anchors = [akTop, akLeft, akRight]
       BorderSpacing.Top = 10
@@ -887,9 +915,9 @@ object MainForm: TMainForm
       AnchorSideTop.Side = asrBottom
       AnchorSideRight.Control = OpenAFileLabel
       AnchorSideRight.Side = asrBottom
-      Left = 0
+      Left = 219
       Height = 58
-      Top = 108
+      Top = 158
       Width = 187
       Anchors = [akTop, akLeft, akRight]
       BorderSpacing.Top = 5
@@ -1194,68 +1222,395 @@ object MainForm: TMainForm
       ParentFont = False
     end
     object NoFileOpenLabel: TLabel
-      AnchorSideLeft.Control = OpenAFileLabel
+      AnchorSideLeft.Control = WelcomePanel
+      AnchorSideLeft.Side = asrCenter
       AnchorSideTop.Control = WelcomePanel
-      AnchorSideRight.Control = OpenAFileLabel
       AnchorSideRight.Side = asrBottom
-      Left = 0
+      Left = 264
       Height = 15
-      Top = 0
-      Width = 187
+      Top = 50
+      Width = 96
       Alignment = taCenter
-      Anchors = [akTop, akLeft, akRight]
+      BorderSpacing.Top = 50
       Caption = 'Nessun file aperto'
       ParentColor = False
     end
   end
-  object ProgressPanel: TPanel
-    AnchorSideTop.Control = TreeView
+  object FiltersPanel: TPanel
+    AnchorSideLeft.Control = Owner
+    AnchorSideTop.Control = Owner
+    AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
-    AnchorSideBottom.Control = WelcomePanel
-    AnchorSideBottom.Side = asrBottom
-    Left = 136
-    Height = 15
-    Top = 116
-    Width = 116
-    Anchors = [akTop]
+    Left = 0
+    Height = 95
+    Top = 65
+    Width = 625
+    Anchors = [akTop, akLeft, akRight]
     AutoSize = True
-    BorderSpacing.Top = 50
+    BorderSpacing.Top = 65
     BevelOuter = bvNone
-    ClientHeight = 15
-    ClientWidth = 116
+    ClientHeight = 95
+    ClientWidth = 625
+    Color = clBackground
     ParentColor = False
     TabOrder = 6
-    Visible = False
-    object ProgressLabel: TLabel
-      AnchorSideLeft.Control = ProgressPanel
-      AnchorSideTop.Control = ProgressPanel
+    object TopShape: TShape
       Left = 0
-      Height = 15
+      Height = 1
       Top = 0
-      Width = 116
-      Alignment = taCenter
-      Caption = 'Working in progress...'
+      Width = 625
+      Align = alTop
+      Constraints.MaxHeight = 1
+      Constraints.MinHeight = 1
+      Pen.Color = clGray
+    end
+    object BottomShape: TShape
+      Left = 0
+      Height = 1
+      Top = 94
+      Width = 625
+      Align = alBottom
+      Constraints.MaxHeight = 1
+      Constraints.MinHeight = 1
+      Pen.Color = clGray
+    end
+    object NameLabel: TLabel
+      AnchorSideLeft.Control = FiltersPanel
+      AnchorSideTop.Control = NameComboBox
+      AnchorSideBottom.Control = NameComboBox
+      AnchorSideBottom.Side = asrBottom
+      Left = 10
+      Height = 27
+      Top = 15
+      Width = 70
+      Alignment = taRightJustify
+      Anchors = [akTop, akLeft, akBottom]
+      AutoSize = False
+      BorderSpacing.Left = 10
+      Caption = 'Name:'
+      Constraints.MaxWidth = 70
+      Constraints.MinWidth = 70
+      Layout = tlCenter
       ParentColor = False
     end
+    object PathLabel: TLabel
+      AnchorSideLeft.Control = FiltersPanel
+      AnchorSideTop.Control = PathComboBox
+      AnchorSideBottom.Control = PathComboBox
+      AnchorSideBottom.Side = asrBottom
+      Left = 10
+      Height = 27
+      Top = 52
+      Width = 70
+      Alignment = taRightJustify
+      Anchors = [akTop, akLeft, akBottom]
+      AutoSize = False
+      BorderSpacing.Left = 10
+      Caption = 'Path:'
+      Layout = tlCenter
+      ParentColor = False
+    end
+    object NameComboBox: TComboBox
+      AnchorSideLeft.Control = NameLabel
+      AnchorSideLeft.Side = asrBottom
+      AnchorSideTop.Control = FiltersPanel
+      AnchorSideRight.Control = AttributesLabel
+      Left = 90
+      Height = 27
+      Top = 15
+      Width = 140
+      Anchors = [akTop, akLeft, akRight]
+      BorderSpacing.Left = 10
+      BorderSpacing.Top = 15
+      BorderSpacing.Right = 10
+      ItemHeight = 0
+      TabOrder = 0
+      Text = '*'
+    end
+    object PathComboBox: TComboBox
+      AnchorSideLeft.Control = PathLabel
+      AnchorSideLeft.Side = asrBottom
+      AnchorSideTop.Control = NameComboBox
+      AnchorSideTop.Side = asrBottom
+      AnchorSideRight.Control = ApplyBitBtn
+      Left = 90
+      Height = 27
+      Top = 52
+      Width = 440
+      Anchors = [akTop, akLeft, akRight]
+      BorderSpacing.Left = 10
+      BorderSpacing.Top = 10
+      BorderSpacing.Right = 15
+      BorderSpacing.Bottom = 16
+      ItemHeight = 0
+      TabOrder = 1
+      Text = '*'
+    end
+    object ResetBitBtn: TBitBtn
+      AnchorSideTop.Control = NameComboBox
+      AnchorSideRight.Control = FiltersPanel
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = NameComboBox
+      AnchorSideBottom.Side = asrBottom
+      Left = 545
+      Height = 27
+      Top = 15
+      Width = 70
+      Anchors = [akTop, akRight, akBottom]
+      BorderSpacing.Right = 10
+      Caption = 'Reset'
+      Enabled = False
+      OnClick = ResetBitBtnClick
+      TabOrder = 2
+    end
+    object ApplyBitBtn: TBitBtn
+      AnchorSideTop.Control = PathComboBox
+      AnchorSideRight.Control = FiltersPanel
+      AnchorSideRight.Side = asrBottom
+      AnchorSideBottom.Control = PathComboBox
+      AnchorSideBottom.Side = asrBottom
+      Left = 545
+      Height = 27
+      Top = 52
+      Width = 70
+      Anchors = [akTop, akRight, akBottom]
+      BorderSpacing.Right = 10
+      Caption = 'Apply'
+      Enabled = False
+      OnClick = ApplyBitBtnClick
+      TabOrder = 3
+    end
+    object AttributesLabel: TLabel
+      AnchorSideLeft.Side = asrBottom
+      AnchorSideTop.Control = AttributesEdit
+      AnchorSideRight.Control = AttributesEdit
+      AnchorSideBottom.Control = AttributesEdit
+      AnchorSideBottom.Side = asrBottom
+      Left = 240
+      Height = 27
+      Top = 15
+      Width = 70
+      Alignment = taRightJustify
+      Anchors = [akTop, akRight, akBottom]
+      AutoSize = False
+      BorderSpacing.Left = 10
+      BorderSpacing.Right = 10
+      Caption = 'Attributes:'
+      Constraints.MaxWidth = 70
+      Constraints.MinWidth = 70
+      Layout = tlCenter
+      ParentColor = False
+    end
+    object AttributesEdit: TEdit
+      AnchorSideLeft.Side = asrBottom
+      AnchorSideTop.Control = NameComboBox
+      AnchorSideRight.Control = ModeLabel
+      AnchorSideBottom.Control = NameComboBox
+      AnchorSideBottom.Side = asrBottom
+      Left = 320
+      Height = 27
+      Top = 15
+      Width = 70
+      Anchors = [akTop, akRight, akBottom]
+      BorderSpacing.Left = 10
+      BorderSpacing.Right = 10
+      Constraints.MaxWidth = 70
+      Constraints.MinWidth = 70
+      TabOrder = 4
+      Text = '*'
+    end
+    object ModeLabel: TLabel
+      AnchorSideLeft.Side = asrBottom
+      AnchorSideTop.Control = ModeEdit
+      AnchorSideRight.Control = ModeEdit
+      AnchorSideBottom.Control = ModeEdit
+      AnchorSideBottom.Side = asrBottom
+      Left = 400
+      Height = 27
+      Top = 15
+      Width = 50
+      Alignment = taRightJustify
+      Anchors = [akTop, akRight, akBottom]
+      AutoSize = False
+      BorderSpacing.Left = 10
+      BorderSpacing.Right = 10
+      Caption = 'Mode:'
+      Constraints.MaxWidth = 50
+      Constraints.MinWidth = 50
+      Layout = tlCenter
+      ParentColor = False
+    end
+    object ModeEdit: TEdit
+      AnchorSideLeft.Side = asrBottom
+      AnchorSideTop.Control = NameComboBox
+      AnchorSideRight.Control = ResetBitBtn
+      AnchorSideBottom.Control = NameComboBox
+      AnchorSideBottom.Side = asrBottom
+      Left = 460
+      Height = 27
+      Top = 15
+      Width = 70
+      Anchors = [akTop, akRight, akBottom]
+      BorderSpacing.Left = 10
+      BorderSpacing.Right = 15
+      Constraints.MaxWidth = 70
+      Constraints.MinWidth = 70
+      TabOrder = 5
+      Text = '*'
+    end
   end
-  object DetailsPanel: TPanel
-    AnchorSideTop.Control = TreeView
+  object FiltersBitBtn: TBitBtn
+    AnchorSideTop.Control = SyncBitBtn
+    AnchorSideBottom.Control = SyncBitBtn
+    AnchorSideBottom.Side = asrBottom
     Left = 264
-    Height = 282
-    Top = 116
-    Width = 224
-    Anchors = [akTop]
-    BorderSpacing.Top = 50
-    BevelOuter = bvNone
+    Height = 43
+    Top = 8
+    Width = 43
+    Anchors = [akTop, akLeft, akBottom]
+    Enabled = False
+    Glyph.Data = {
+      36100000424D3610000000000000360000002800000020000000200000000100
+      2000000000000010000064000000640000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      000000000000000000000000000000000000000000000000000000000000A9A0
+      971B000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000A5A59580A4A3
+      93F0A6A694370000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      00000000000000000000000000000000000000000000A5A59580A6A595FFA6A5
+      95FFA4A393F0A6A6943700000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      000000000000000000000000000000000000A5A59580A6A595FFA6A595FFA6A5
+      95FFA6A595FFA4A393F0A6A69437000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000A5A59580A6A595FFA6A595FFA6A595FFA6A5
+      95FFA6A595FFA6A595FFA6A595DBBFBF7F040000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      00000000000000000000A5A59580A6A595FFA6A595FFA6A595FFA6A595FFA6A5
+      95FFA6A595FFA6A593E9A8A2962C000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000FFFF7F02C8C4
+      BD46C6C3BC9AC6C1BBD4C5C3BDF4C7C3BDFCC5C2BDECC6C2BDC2C7C3BD80C6C6
+      BF2400000000949485BD969487FFA5A493FFA6A595FFA6A595FFA6A595FFA6A5
+      95FFA6A593E9A6A6942B00000000000000000000000000000000000000000000
+      00000000000000000000000000000000000000000000C8C1BD42C7C2BCD3C7C3
+      BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC5C1
+      BBFEB7B5ACE5939185FF8D8C7FFF929083FFA4A393FFA6A595FFA6A595FFA6A5
+      93E9A3A3972A0000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000FFFFFF01C6C2BC82C7C3BDFFC7C3BDFFC7C3
+      BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3
+      BDFFC7C3BDFFC3BFB7FF9B9A8EFF8D8C7FFF929284FFA6A594FFA4A395E8A3A3
+      972A000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000C7C3BC8EC7C3BDFFC7C3BDFFC7C3BDFFC7C3
+      BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3
+      BDFFC7C3BDFFC7C3BDFFC5C1BBFF9B9A8EFF8D8C7FFF989889F3A7A795290000
+      0000000000000000000000000000000000000000000000000000000000000000
+      00000000000000000000C7C2BC5CC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC8C4
+      BEFFD6D4CEFFE6E4E0FFEFEDE9FFF1F0EBFFEDEBE6FFE1DFDAFFCECBC5FFC7C3
+      BDFFC7C3BDFFC7C3BDFFC7C3BDFFC3BFB7FF959387FD99958950000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      000000000000C6C6B812C7C1BDEDC7C3BDFFC7C3BDFFC7C3BDFFCBC7C1FFE7E5
+      E1FFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0EBFFDCD9
+      D4FFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFBEBBB5C100000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      000000000000C7C3BD7CC7C3BDFFC7C3BDFFC7C3BDFFC8C5BFFFEAE8E3FFF1F0
+      ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0
+      ECFFDCD9D4FFC7C3BDFFC7C3BDFFC7C3BDFFC5C1BBFEC6C6BF24000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      000000000000C7C2BBDBC7C3BDFFC7C3BDFFC7C3BDFFDEDBD6FFF1F0ECFFF1F0
+      ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0
+      ECFFF1F0EBFFCECBC5FFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BD80000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000CAC1B81DC7C3BDFFC7C3BDFFC7C3BDFFC9C4BEFFEFEEEAFFF1F0ECFFF1F0
+      ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0
+      ECFFF1F0ECFFE1DFDAFFC7C3BDFFC7C3BDFFC7C3BDFFC6C2BDC2000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000C7C3BC45C7C3BDFFC7C3BDFFC7C3BDFFD1CDC9FFF1F0ECFFF1F0ECFFF1F0
+      ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0
+      ECFFF1F0ECFFEDEBE6FFC7C3BDFFC7C3BDFFC7C3BDFFC5C2BDEC000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000C6C3BD55C7C3BDFFC7C3BDFFC7C3BDFFD5D2CDFFF1F0ECFFF1F0ECFFF1F0
+      ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0
+      ECFFF1F0ECFFF1F0EBFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFC000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000C6C3BC4DC7C3BDFFC7C3BDFFC7C3BDFFD3D0CAFFF1F0ECFFF1F0ECFFF1F0
+      ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0
+      ECFFF1F0ECFFEFEDE9FFC7C3BDFFC7C3BDFFC7C3BDFFC5C3BDF4000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000C7C2BC2EC7C3BDFFC7C3BDFFC7C3BDFFCBC8C1FFF1F0ECFFF1F0ECFFF1F0
+      ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0
+      ECFFF1F0ECFFE6E4E0FFC7C3BDFFC7C3BDFFC7C3BDFFC6C1BBD4000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000BFBFBF04C7C1BBF2C7C3BDFFC7C3BDFFC7C3BDFFE5E3DEFFF1F0ECFFF1F0
+      ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0
+      ECFFF1F0ECFFD6D4CEFFC7C3BDFFC7C3BDFFC7C3BDFFC6C3BC9A000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      000000000000C7C1BCA1C7C3BDFFC7C3BDFFC7C3BDFFCECAC5FFEFEEEBFFF1F0
+      ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0
+      ECFFE7E5E1FFC8C4BEFFC7C3BDFFC7C3BDFFC7C3BDFFC8C4BD46000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      000000000000C5C0BB31C7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFD4D1CBFFEFEE
+      EBFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFEAE8
+      E3FFCBC7C1FFC7C3BDFFC7C3BDFFC7C3BDFFC7C2BCD3FFFF7F02000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      00000000000000000000C7C3BD9BC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFCECA
+      C5FFE5E3DEFFF1F0ECFFF1F0ECFFF1F0ECFFF1F0ECFFEFEEEAFFDEDBD6FFC8C5
+      BFFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC8C1BD4200000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      00000000000000000000BFBFBF0CC5C3BDD1C7C3BDFFC7C3BDFFC7C3BDFFC7C3
+      BDFFC7C3BDFFCBC8C1FFD3D0CAFFD5D2CDFFD1CDC9FFC9C4BEFFC7C3BDFFC7C3
+      BDFFC7C3BDFFC7C3BDFFC7C3BDFFC6C2BC820000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000C9BFBF18C5C3BDD1C7C3BDFFC7C3BDFFC7C3
+      BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3
+      BDFFC7C3BDFFC7C3BDFFC7C3BC8EFFFFFF010000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      000000000000000000000000000000000000BFBFBF0CC7C3BD9BC7C3BDFFC7C3
+      BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3
+      BDFFC7C1BDEDC7C2BC5C00000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000C5C0BB31C7C1
+      BCA1C7C1BBF2C7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C2BBDBC7C3
+      BD7CC6C6B8120000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000BFBFBF04C7C2BC2EC6C3BC4DC6C3BD55C7C3BC45CAC1B81D000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000000000000000
+      0000000000000000000000000000000000000000000000000000
+    }
+    OnClick = FiltersBitBtnClick
     TabOrder = 7
   end
   object OpenDialog: TOpenDialog
-    left = 32
-    top = 80
+    left = 88
+    top = 184
   end
   object ImageList: TImageList
-    left = 32
-    top = 192
+    left = 24
+    top = 248
     Bitmap = {
       4C69040000001000000010000000000000000000000000000000000000000000
       0000000000000000000000000000000000000000000000000000000000000000
@@ -1388,16 +1743,42 @@ object MainForm: TMainForm
       0000000000000000000000000000
     }
   end
-  object PopupMenu: TPopupMenu
-    left = 32
-    top = 136
-    object MenuItem1: TMenuItem
-      Caption = 'New Item1'
-      OnClick = MenuItem1Click
-    end
-  end
   object SaveDialog: TSaveDialog
-    left = 33
-    top = 264
+    left = 24
+    top = 184
+  end
+  object PopupMenu1: TPopupMenu
+    left = 88
+    top = 248
+    object MenuItem1: TMenuItem
+      Caption = 'Open'
+    end
+    object MenuItem4: TMenuItem
+      Caption = '-'
+    end
+    object MenuItem3: TMenuItem
+      Caption = 'New Item3'
+      object byNameMenuItem: TMenuItem
+        Caption = 'by Name'
+      end
+      object MenuItem9: TMenuItem
+        Caption = 'New Item9'
+      end
+      object MenuItem8: TMenuItem
+        Caption = 'New Item8'
+      end
+      object MenuItem7: TMenuItem
+        Caption = 'New Item7'
+      end
+      object MenuItem6: TMenuItem
+        Caption = 'New Item6'
+      end
+      object MenuItem5: TMenuItem
+        Caption = 'New Item5'
+      end
+    end
+    object MenuItem2: TMenuItem
+      Caption = 'New Item2'
+    end
   end
 end

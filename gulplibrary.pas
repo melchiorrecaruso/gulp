@@ -101,7 +101,7 @@ type
 
   // --- The Gulp Application events ---
   TGulpOnMessage = procedure(const Message: string) of object;
-  TGulpOnList    = procedure(var Item: TGulpItem) of object;
+  TGulpOnList    = procedure(const Item: TGulpItem) of object;
 
   // --- The Gulp Application class ---
   TGulpApplication = class(TObject)
@@ -154,14 +154,16 @@ function GetGID (const FileName: string): longword;  overload;
 function GetGID (var   Info: stat      ): longword;  overload;
 {$ENDIF}
 
-function  VerToString(var Item: TGulpItem): string;
-function FlagToString(var Item: TGulpItem): string;
-function AttrToString(var Item: TGulpItem): string;
-function StringToAttr(const S: string    ): longint;
-function SizeToString(var Item: TGulpItem): string;
-function TimeToString(var Item: TGulpItem): string;
-function ModeToString(var Item: TGulpItem): string;
-function StringToMode(const S: string    ): longint;
+function  VerToString(const Version: longword): string;
+function FlagToString(const Flags: TGulpFlags): string;
+function AttrToString(const Attr: longint    ): string;
+function SizeToString(const Size: int64      ): string;
+function TimeToString(const T: TDateTime     ): string;
+function ModeToString(const Mode: longint    ): string;
+
+function StringToAttr(const S: string        ): longint;
+function StringToMode(const S: string        ): longint;
+function PlatToString(const P: TGulpPlatform ): string;
 
 // =============================================================================
 // IMPLEMENTATION
@@ -425,50 +427,41 @@ begin
 end;
 {$ENDIF}
 
-function VerToString(var Item: TGulpItem): string;
+function VerToString(const Version: longword): string;
 begin
-  Result := IntTostr(Item.Version);
+  Result := IntTostr(Version);
 end;
 
-function FlagToString(var Item: TGulpItem): string;
+function FlagToString(const Flags: TGulpFlags): string;
 begin
-  if gfAdd in Item.Flags then
+  if gfAdd in Flags then
     Result := 'ADD'
   else
     Result := 'DEL';
 end;
 
-function TimeToString(var Item: TGulpItem): string;
+function TimeToString(const T: TDateTime): string;
 begin
-  Result := '.......... ........';
-  if gfAdd in Item.Flags then
-    if gfTime in Item.Flags then
-      Result := FormatDateTime(
-        DefaultFormatSettings.LongDateFormat + ' ' +
-        DefaultFormatSettings.LongTimeFormat, Item.Time);
+  Result := FormatDateTime(
+    DefaultFormatSettings.LongDateFormat + ' ' +
+    DefaultFormatSettings.LongTimeFormat, T);
 end;
 
-function SizeToString(var Item: TGulpItem): string;
+function SizeToString(const Size: int64): string;
 begin
-  Result := '';
-  if gfAdd in Item.Flags then
-    if gfSize in Item.Flags then
-      Result := Format('%u', [Item.Size])
+  Result := Format('%u', [Size]);
 end;
 
-function AttrToString(var Item: TGulpItem): string;
+function AttrToString(const Attr: longint): string;
 begin
   Result := '.......';
-  if gfAdd in Item.Flags then
-  begin
-    if Item.Attributes and faReadOnly  <> 0 then Result[1] := 'R';
-    if Item.Attributes and faHidden    <> 0 then Result[2] := 'H';
-    if Item.Attributes and faSysFile   <> 0 then Result[3] := 'S';
-    if Item.Attributes and faVolumeId  <> 0 then Result[4] := 'V';
-    if Item.Attributes and faDirectory <> 0 then Result[5] := 'D';
-    if Item.Attributes and faArchive   <> 0 then Result[6] := 'A';
-    if Item.Attributes and faSymLink   <> 0 then Result[7] := 'L';
-  end;
+  if Attr and faReadOnly  <> 0 then Result[1] := 'R';
+  if Attr and faHidden    <> 0 then Result[2] := 'H';
+  if Attr and faSysFile   <> 0 then Result[3] := 'S';
+  if Attr and faVolumeId  <> 0 then Result[4] := 'V';
+  if Attr and faDirectory <> 0 then Result[5] := 'D';
+  if Attr and faArchive   <> 0 then Result[6] := 'A';
+  if Attr and faSymLink   <> 0 then Result[7] := 'L';
 end;
 
 function StringToAttr(const S: string  ): longint;
@@ -486,15 +479,10 @@ begin
   end;
 end;
 
-function ModeToString(var Item: TGulpItem): string;
+function ModeToString(const Mode: longint): string;
 begin
   {$IFDEF UNIX}
-    Result := '...';
-    if Item.Platform = gpUNIX then
-    begin
-      if gfAdd in Item.Flags then
-        Result := OctStr(Item.Mode, 3);
-    end;
+    Result := OctStr(Mode, 3);
   {$ELSE}
     {$IFDEF MSWINDOWS}
       Result := '...';
@@ -521,6 +509,16 @@ begin
       Unsupported platform...
     {$ENDIF}
   {$ENDIF}
+end;
+
+function PlatToString(const P: TGulpPlatform): string;
+begin
+  case P of
+    gpUNIX      : Result := 'UNIX';
+    gpMSWINDOWS : Result := 'WIN';
+    gpMAC       : Result := 'MAC';
+  else            Result := ''
+  end;
 end;
 
 // =============================================================================
@@ -1490,7 +1488,6 @@ begin
         Inc(Count);
       end;
 
-    LibReader.FList [0] := LibRec;
     LibReader.Delete(0);
   end;
   FreeAndNil(LibReader);

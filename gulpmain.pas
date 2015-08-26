@@ -3,7 +3,7 @@ unit gulpmain;
 interface
 
 uses
-  Classes, SysUtils, FileUtil,
+  Classes, SysUtils, FileUtil, DividerBevel,
   Forms, Controls, Graphics, Dialogs, ComCtrls, StdCtrls, Buttons, ExtCtrls,
   Menus, GulpLibrary, Math;
 
@@ -12,47 +12,69 @@ type
   { TMainForm }
 
   TMainForm = class(TForm)
-    DetailsPanel: TPanel;
-    ProgressLabel: TLabel;
+    AttributesEdit: TEdit;
+    AttributesLabel: TLabel;
+    ModeEdit: TEdit;
+    ModeLabel: TLabel;
+    MenuItem4: TMenuItem;
+    ResetBitBtn: TBitBtn;
+    ApplyBitBtn: TBitBtn;
+    NameComboBox: TComboBox;
+    PathComboBox: TComboBox;
+    FiltersBitBtn: TBitBtn;
+    NameLabel: TLabel;
+    PathLabel: TLabel;
+    MenuItem1: TMenuItem;
+    MenuItem2: TMenuItem;
+    MenuItem3: TMenuItem;
+    byNameMenuItem: TMenuItem;
+    MenuItem5: TMenuItem;
+    MenuItem6: TMenuItem;
+    MenuItem7: TMenuItem;
+    MenuItem8: TMenuItem;
+    MenuItem9: TMenuItem;
+    ListView: TListView;
     OpenAFileLabel: TLabel;
     NoFileOpenLabel: TLabel;
-    MenuItem1: TMenuItem;
+    FiltersPanel: TPanel;
+    PopupMenu1: TPopupMenu;
     SaveDialog: TSaveDialog;
+    TopShape: TShape;
+    BottomShape: TShape;
     WelcomePanel: TPanel;
-    ProgressPanel: TPanel;
-    PopupMenu: TPopupMenu;
     RevisionLabel: TLabel;
     RevisionComboBox: TComboBox;
     NewSpeedButton: TSpeedButton;
     OpenSpeedButton: TSpeedButton;
     SyncBitBtn: TBitBtn;
     RestoreBitBtn: TBitBtn;
-    OptionBitBtn: TBitBtn;
+    HomeBitBtn: TBitBtn;
     ImageList: TImageList;
     OpenDialog: TOpenDialog;
-    TopShape: TShape;
-    TreeView: TTreeView;
-    procedure MenuItem1Click(Sender: TObject);
+
+    procedure ApplyBitBtnClick(Sender: TObject);
+    procedure FiltersBitBtnClick(Sender: TObject);
+    procedure ListViewData(Sender: TObject; Item: TListItem);
     procedure NewSpeedButtonClick(Sender: TObject);
     procedure OpenSpeedButtonClick(Sender: TObject);
-    procedure OptionBitBtnClick(Sender: TObject);
+    procedure HomeBitBtnClick(Sender: TObject);
+    procedure ResetBitBtnClick(Sender: TObject);
     procedure RevisionComboBoxChange(Sender: TObject);
 
     procedure SyncBitBtnClick(Sender: TObject);
     procedure RestoreBitBtnClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
-    procedure TreeViewDblClick(Sender: TObject);
-    procedure TreeViewExpanding(Sender: TObject; Node: TTreeNode;
-      var AllowExpansion: Boolean);
+
 
 
 
   private
     { private declarations }
     App: TGulpApplication;
-    AppFolders: TStringList;
+    AppFileName: string;
     AppList: TList;
+    AppListAux: TList;
 
     procedure Wait(Value: boolean);
     procedure Open(const FileName: string);
@@ -62,8 +84,8 @@ type
 
 
 
-    procedure SetPath(Node: TTreeNode);
-    procedure DoList(var Item: TGulpItem);
+
+    procedure DoList(const Item: TGulpItem);
     procedure DoMessage(const Message: string);
   public
     { public declarations }
@@ -75,8 +97,26 @@ var
 implementation
 
 uses
+  GulpCommon,
   GulpRestore,
-  GulpSync;
+  GulpSync,
+  IniFiles;
+
+type
+  TLiteGulpItem = class
+  private
+    FVersion  : longword;
+    FName     : string;
+    FPath     : string;
+    FTime     : TDateTime;
+    FAttr     : longint;
+    FMode     : longint;
+    FSize     : int64;
+    FPlatform : TGulpPlatform;
+
+
+    FVisible      : boolean;
+  end;
 
 {$R gulpmain.lfm}
 
@@ -84,29 +124,39 @@ uses
 
 procedure TMainForm.Wait(Value: boolean);
 begin
-  TreeView        .Enabled := Value;
-  SyncBitBtn      .Enabled := Value;
-  RestoreBitBtn   .Enabled := Value;
-  RevisionComboBox.Enabled := Value;
-  OptionBitBtn    .Enabled := Value;
+  WelcomePanel      .Visible := FALSE;
+  SyncBitBtn        .Enabled := Value;
+  RestoreBitBtn     .Enabled := Value;
+  FiltersBitBtn     .Enabled := Value;
+  RevisionComboBox  .Enabled := Value;
+  HomeBitBtn        .Enabled := Value;
 
-  ProgressPanel.Visible := not Value;
-  Application.ProcessMessages;
+
+  NameComboBox      .Enabled := Value;
+  AttributesEdit    .Enabled := Value;
+  ModeEdit          .Enabled := Value;
+  PathComboBox      .Enabled := Value;
+
+
+  ResetBitBtn       .Enabled := Value;
+  ApplyBitBtn       .Enabled := Value;
+
+
+
+  ListView          .Enabled := Value;
+  ListView.ShowColumnHeaders := Value;
 end;
 
 procedure TMainForm.Open(const FileName: string);
 var
-     I : longint;
-  Root : TTreeNode;
-   Ver : longword = 0;
+    I : longint;
+  Ver : longword = 0;
 begin
-  TreeView.Items.Clear;
   Wait(FALSE);
-
-  AppFolders.Clear;
+  AppListAux.Clear;
   while AppList.Count <> 0 do
   begin
-    TGulpItem(AppList[0]).Destroy;
+    TLiteGulpItem(AppList[0]).Destroy;
     AppList.Delete(0);
   end;
 
@@ -118,42 +168,21 @@ begin
 
   try
     App.List(FileName);
-    Root := TreeView.Items.AddChild(nil, ExtractFileName(FileName));
-    Root.HasChildren   := TRUE;
-    Root.ImageIndex    := 0;
-    Root.SelectedIndex := 0;
-    Root.StateIndex    := 0;
-    Root.Expand(FALSE);
-
-
-    Root := TreeView.Items.AddChild(TreeView.Items[0], '');
-    Root.HasChildren   := TRUE;
-    Root.ImageIndex    := 0;
-    Root.SelectedIndex := 0;
-    Root.StateIndex    := 0;
-    //Root.Expand(FALSE);
-
-    Root := TreeView.Items.AddChild(TreeView.Items[0], PathDelim);
-    Root.HasChildren   := TRUE;
-    Root.ImageIndex    := 0;
-    Root.SelectedIndex := 0;
-    Root.StateIndex    := 0;
-    //Root.Expand(FALSE);
-
-
-    Wait(TRUE);
+    ResetBitBtn.Click;
+    ApplyBitBtn.Click;
   except
     on E: Exception do
     begin
       ShowMessage(Format('An exception was raised: "%s"', [E.Message]));
-      OptionBitBtn.Click;
+      HomeBitBtn.Click;
     end;
   end;
+  Wait(TRUE);
 
   if App.UntilVersion = $FFFFFFFF then
   begin
     for I := 0 to AppList.Count - 1 do
-      Ver := Max(Ver, TGulpItem(AppList[I]).Version);
+      Ver := Max(Ver, TLiteGulpItem(AppList[I]).FVersion);
 
     RevisionComboBox.Clear;
     for I := 0 to Ver - 1 do
@@ -209,7 +238,7 @@ begin
       on E: Exception do
       begin
         ShowMessage(Format('An exception was raised: "%s"', [E.Message]));
-        OptionBitBtn.Click;
+        HomeBitBtn.Click;
       end;
     end;
   end;
@@ -232,103 +261,27 @@ end;
 
 
 
-procedure TMainForm.DoList(var Item: TGulpItem);
+procedure TMainForm.DoList(const Item: TGulpItem);
 var
-  S : String;
+  T : TLiteGulpItem;
 begin
-  S := ExtractFileDir(Item.Name);
-  while AppFolders.IndexOf(S) = - 1 do
-  begin
-    AppFolders.Add(S);
-    if S <> ExtractFileDir(S) then
-      S := ExtractFileDir(S)
-    else
-      Break;
-  end;
+  T             := TLiteGulpItem.Create;
+  T.FVersion    := Item.Version;
+  T.FName       := ExtractFileName(Item.Name);
+  T.FPath       := ExtractFilePath(Item.Name);
+  T.FTime       := Item.Time;
+  T.FAttr       := Item.Attributes;
+  T.FMode       := Item.Mode;
+  T.FSize       := Item.Size;
+  T.FPlatform   := Item.Platform;
+  T.FVisible    := FALSE;
 
-  AppList.Add(Item);
-  begin
-    Item := nil;
-  end;
+  AppList.Add(T);
 end;
 
 procedure TMainForm.DoMessage(const Message: string);
 begin
 
-end;
-
-procedure TMainForm.SetPath(Node: TTreeNode);
-var
-  Added : TStringList;
-      I : longint;
-   Name : string = '';
-   Path : string = '';
-  Start : TTreeNode;
-begin
-  Added := TStringList.Create;
-  {$IFDEF UNIX}
-    Added.CaseSensitive := TRUE;
-  {$ELSE}
-    {$IFDEF MSWINDOWS}
-      Added.CaseSensitive := FALSE;
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
-  {$ENDIF}
-  Added.Duplicates := dupIgnore;
-  Added.Sorted     := TRUE;
-
-  if Node.Level > 0 then
-  begin
-    Start := Node;
-    Path  := IncludeTrailingPathDelimiter(Start.Text);
-    while Start.Level > 1 do
-    begin
-      Start := Start.Parent;
-      Path  := IncludeTrailingPathDelimiter(Start.Text) + Path;
-    end;
-  end;
-
-  TreeView.BeginUpdate;
-
-  for I := AppFolders.Count - 1 downto 0 do
-  begin
-
-
-    if AnsiCompareFileName(Path, ExtractFilePath(AppFolders[I])) = 0 then
-    begin
-      Name := ExtractFileName(AppFolders[I]);
-      if Added.IndexOf(Name) = -1 then
-      begin
-        Start := TreeView.Items.AddChildFirst(Node, Name);
-        Start.ImageIndex    := 1;
-        Start.SelectedIndex := 1;
-        Start.StateIndex    := 1;
-        Start.HasChildren   := TRUE;
-        Added.Add(Name);
-      end;
-    end;
-  end;
-
-  for I := AppList.Count - 1 downto 0 do
-    if AnsiCompareFileName(Path, ExtractFilePath(TGulpItem(AppList[I]).Name)) = 0 then
-    begin
-      Name := ExtractFileName(TGulpItem(AppList[I]).Name);
-      if Added.IndexOf(Name) = -1 then
-      begin
-        Start := TreeView.Items.AddChild(Node, Name);
-        Start.ImageIndex    := 3;
-        Start.SelectedIndex := 3;
-        Start.StateIndex    := 3;
-        Start.HasChildren   := FALSE;
-        Added.Add(Name);
-      end;
-    end;
-
-  if Node.Count = 0 then
-    Node.HasChildren := FALSE;
-  TreeView.EndUpdate;
-  FreeAndNil(Added);
 end;
 
 procedure TMainForm.RestoreBitBtnClick(Sender: TObject);
@@ -351,6 +304,8 @@ begin
 
     F.ExcludeMemo.Clear;
     F.IncludeMemo.Clear;
+    (*
+
     for I := TreeView.SelectionCount - 1 downto 0 do
     begin
       Start     := TreeView.Selections[I];
@@ -362,6 +317,9 @@ begin
       end;
       F.IncludeMemo.Lines.Add(StartName);
     end;
+    *)
+
+
     if F.IncludeMemo.Lines.Count = 0 then
       F.IncludeMemo.Lines.Add('*');
 
@@ -378,29 +336,32 @@ begin
 end;
 
 procedure TMainForm.FormCreate(Sender: TObject);
+var
+    I : longint;
+  Ini : TIniFile;
 begin
+  // LOAD SETTINGS
+  Ini := TIniFile.Create(GetAppConfigFile(FALSE));
+
+  Self.Top         :=              Ini.ReadInteger('Settings', 'Main.Top',        200);
+  Self.Height      :=              Ini.ReadInteger('Settings', 'Main.Height',     400);
+  Self.Left        :=              Ini.ReadInteger('Settings', 'Main.Left',       400);
+  Self.Width       :=              Ini.ReadInteger('Settings', 'Main.Width',      600);
+  Self.WindowState := TWindowState(Ini.ReadInteger('Settings', 'Main.WindowState', 0));
+
+  Ini.Destroy;
+
+
+
+
+
+
   App           := TGulpApplication.Create;
   App.OnMessage := DoMessage;
   App.OnList    := DoList;
 
-  AppFolders := TStringList.Create;
-  {$IFDEF UNIX}
-    AppFolders.CaseSensitive := TRUE;
-  {$ELSE}
-    {$IFDEF MSWINDOWS}
-      AppFolders.CaseSensitive := FALSE;
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
-  {$ENDIF}
-  AppFolders.Duplicates := dupIgnore;
-  AppFolders.Sorted     := TRUE;
-
-
-  AppList := TList.Create;
-
-
-
+  AppList       := TList.Create;
+  AppListAux    := TList.Create;
 
   // --- FORM STYLE --- //
   Font.Name := 'Droid Sans';
@@ -409,46 +370,50 @@ begin
   OpenAFileLabel.Font.Size   := 14;
   OpenAFileLabel.Font.Style  := [];
 
+  FiltersPanel.AutoSize := FALSE;
+  FiltersPanel.Height   := 1;
+
   WelcomePanel.Color   := clNone;
   WelcomePanel.Left    := (Width  - WelcomePanel.Width ) div 2;
   WelcomePanel.Visible := TRUE;
 
-  ProgressLabel.Font.Size  := 20;
-  ProgressLabel.Font.Style := [fsBold];
-  ProgressPanel.Color   := clNone;
-  ProgressPanel.Left    := (Width  - ProgressPanel.Width ) div 2;
-  ProgressPanel.Visible := FALSE;
-
-  DetailsPanel.Visible  := FALSE;
 end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);
+var
+    I : longint;
+  Ini : TIniFile;
 begin
-  AppFolders.Destroy;
+  // SAVE SETTINGS
+  Ini := TIniFile.Create(GetAppConfigFile(FALSE));
+
+  if Self.WindowState = wsNormal then
+  begin
+    Ini.WriteInteger('Settings', 'Main.Top',    Self.Top);
+    Ini.WriteInteger('Settings', 'Main.Height', Self.Height);
+    Ini.WriteInteger('Settings', 'Main.Left',   Self.Left);
+    Ini.WriteInteger('Settings', 'Main.Width',  Self.Width);
+  end;
+  Ini.WriteInteger  ('Settings', 'Main.WindowState', longint(Self.WindowState));
+
+
+
+
+  Ini.Destroy;
+
+
+  AppListAux.Clear;
   while AppList.Count <> 0 do
   begin
-    TGulpItem(AppList[0]).Destroy;
+    TLiteGulpItem(AppList[0]).Destroy;
     AppList.Delete(0);
   end;
+  AppListAux.Destroy;
   AppList.Destroy;
   App.Destroy;
 end;
 
-procedure TMainForm.TreeViewDblClick(Sender: TObject);
-begin
-  if TreeView.Selected <> nil then
-    TreeView.Selected.Expand(FALSE);
-end;
 
-procedure TMainForm.TreeViewExpanding(Sender: TObject; Node: TTreeNode;
-  var AllowExpansion: Boolean);
-begin
-  AllowExpansion := TRUE;
-  if Node.Count = 0 then
-  begin
-    SetPath(Node);
-  end;
-end;
 
 procedure TMainForm.SyncBitBtnClick(Sender: TObject);
 var
@@ -466,7 +431,7 @@ begin
     if F.ShowModal = mrOk then
     begin
       Wait(FALSE);
-      ProgressPanel.Visible := TRUE;
+
 
       App.Reset;
       case F.CompressionModeComboBox.ItemIndex of
@@ -492,7 +457,7 @@ begin
         on E: Exception do
         begin
           ShowMessage(Format('An exception was raised: "%s"', [E.Message]));
-          OptionBitBtn.Click;
+          HomeBitBtn.Click;
         end;
       end;
 
@@ -508,40 +473,82 @@ begin
   end;
 end;
 
-procedure TMainForm.RevisionComboBoxChange(Sender: TObject);
-begin
-  Open(TreeView.Items.GetFirstNode.Text);
-end;
 
-procedure TMainForm.MenuItem1Click(Sender: TObject);
+
+procedure TMainForm.ListViewData(Sender: TObject; Item: TListItem);
 var
-    I : longint;
-  Ver : longword = 0;
+  T : TLiteGulpItem;
 begin
-  if OpenDialog.Execute then
-  begin
-    Open(OpenDialog.FileName);
+  T := TLiteGulpItem(AppListAux[Item.Index]);
 
-    for I := 0 to AppList.Count - 1 do
-      Ver := Max(Ver, TGulpItem(AppList[I]).Version);
+  if T.FVisible = TRUE then
+  begin;
+    Item.Caption := T.FName;
+    Item.SubItems.Add(SizeToString(T.FSize));
+    Item.SubItems.Add(TimeToString(T.FTime));
+    Item.SubItems.Add(AttrToString(T.FAttr));
+    Item.SubItems.Add(ModeToString(T.FMode));
+    Item.SubItems.Add(PlatToString(T.FPlatform));
+    Item.SubItems.Add(T.FPath);
 
-    RevisionComboBox.Clear;
-    for I := 0 to Ver - 1 do
-      RevisionComboBox.AddItem(' Revision ' + IntToStr(I + 1), nil);
-    RevisionComboBox.ItemIndex := RevisionComboBox.Items.Count - 1;
+    if T.FAttr and faDirectory = 0 then
+    begin
+      Item.ImageIndex := 3;
+      Item.StateIndex := 3;
+    end else
+    begin
+      Item.ImageIndex := 1;
+      Item.StateIndex := 1;
+    end;
   end;
 end;
 
-procedure TMainForm.NewSpeedButtonClick(Sender: TObject);
+procedure TMainForm.FiltersBitBtnClick(Sender: TObject);
+begin
+  if FiltersPanel.Height < 10 then
+  begin
+    FiltersPanel.AutoSize := TRUE;
+  end else
+  begin
+    FiltersPanel.AutoSize := FALSE;
+    FiltersPanel.Height   := 1;
+  end;
+end;
+
+procedure TMainForm.ApplyBitBtnClick(Sender: TObject);
 var
-  FileName : string;
+  I : longint;
+  T : TLiteGulpItem;
+begin
+  ListView.Items.BeginUpdate;
+  ListView.Items.Clear;
+  AppListAux.Clear;
+  for I := 0 to AppList.Count- 1 do
+  begin
+    T := TLiteGulpItem(AppList[I]);
+    T.FVisible :=
+      FileNameMatch(T.FName, NameComboBox  .Text) and
+      FileNameMatch(T.FPath, PathComboBox  .Text) and
+      FileNameMatch(AttrToString(T.FAttr), AttributesEdit.Text) and
+      FileNameMatch(ModeToString(T.FMode), ModeEdit      .Text);
+
+    if T.FVisible = TRUE then
+    begin
+      AppListAux.Add(T);
+    end;
+  end;
+  ListView.Items.Count := AppListAux.Count;
+  ListView.Items.EndUpdate;
+end;
+
+procedure TMainForm.NewSpeedButtonClick(Sender: TObject);
 begin
   if SaveDialog.Execute then
   begin
-    FileName := SaveDialog.FileName;
-    if Sync(FileName) = mrOK then
+    AppFileName := SaveDialog.FileName;
+    if Sync(AppFileName) = mrOK then
     begin
-      Open(FileName);
+      Open(AppFileName);
     end;
   end;
 end;
@@ -550,24 +557,43 @@ procedure TMainForm.OpenSpeedButtonClick(Sender: TObject);
 begin
   if OpenDialog.Execute then
   begin
-    WelcomePanel.Visible := FALSE;
-    Open(OpenDialog.FileName);
+    AppFileName := OpenDialog.FileName;
+    begin
+      Open(AppFileName);
+    end;
   end;
 end;
 
-procedure TMainForm.OptionBitBtnClick(Sender: TObject);
+procedure TMainForm.HomeBitBtnClick(Sender: TObject);
 begin
+  Wait(FALSE);
 
+  FiltersPanel.AutoSize := FALSE;
+  FiltersPanel.Height   := 1;
+
+
+
+  ListView.Items.Clear;
+  RevisionComboBox.Clear;
   while AppList.Count <> 0 do
   begin
-    TGulpItem(AppList[0]).Destroy;
+    TLiteGulpItem(AppList[0]).Destroy;
     AppList.Delete(0);
   end;
-  RevisionComboBox.Clear;
-  TreeView.Items.Clear;
+  WelcomePanel.Visible := TRUE;
+end;
 
-  Wait(FALSE);
-  WelcomePanel.Visible  := TRUE;
+procedure TMainForm.ResetBitBtnClick(Sender: TObject);
+begin
+  NameComboBox  .Text := '*';
+  AttributesEdit.Text := '*';
+  ModeEdit      .Text := '*';
+  PathComboBox  .Text := '*';
+end;
+
+procedure TMainForm.RevisionComboBoxChange(Sender: TObject);
+begin
+  Open(AppFileName);
 end;
 
 end.
