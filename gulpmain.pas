@@ -287,17 +287,16 @@ procedure TMainForm.DoList(const Item: TGulpItem);
 var
   T : TLiteGulpItem;
 begin
-  T             := TLiteGulpItem.Create;
-  T.FVersion    := Item.Version;
-  T.FName       := ExtractFileName(Item.Name);
-  T.FPath       := ExtractFilePath(Item.Name);
-  T.FTime       := Item.Time;
-  T.FAttr       := Item.Attributes;
-  T.FMode       := Item.Mode;
-  T.FSize       := Item.Size;
-  T.FPlatform   := Item.Platform;
-  T.FVisible    := FALSE;
-
+  T := TLiteGulpItem.Create;
+  T.FVersion  := Item.Version;
+  T.FName     := ExtractFileName(Item.Name);
+  T.FPath     := ExtractFilePath(Item.Name);
+  T.FTime     := Item.Time;
+  T.FAttr     := Item.Attributes;
+  T.FMode     := Item.Mode;
+  T.FSize     := Item.Size;
+  T.FPlatform := Item.Platform;
+  T.FVisible  := FALSE;
   AppList.Add(T);
 end;
 
@@ -428,8 +427,7 @@ begin
   if ListView.SelCount = 1 then
   begin
     T := TLiteGulpItem(AppListAux[ListView.Selected.Index]);
-
-    if T.FAttr and faDirectory <> 0 then
+    if T.FAttr and faDirectory = faDirectory then
     begin
       NameComboBox  .Text := '*';
       AttributesEdit.Text := '*';
@@ -439,7 +437,6 @@ begin
       ApplyBitBtn.Click;
     end;
   end;
-
 end;
 
 
@@ -449,7 +446,7 @@ end;
 
 
 
-// Filter panel Routines //
+// Filter panel routines //
 
 procedure TMainForm.NameComboBoxKeyPress(Sender: TObject; var Key: char);
 begin
@@ -660,10 +657,8 @@ end;
 
 procedure TMainForm.RestoreBitBtnClick(Sender: TObject);
 var
-          F : TRestoreForm;
-          I : longint;
-      Start : TTreeNode;
-  StartName : string;
+  F : TRestoreForm;
+  I : longint;
 begin
   F := TRestoreForm.Create(nil);
   try
@@ -678,21 +673,6 @@ begin
 
     F.ExcludeMemo.Clear;
     F.IncludeMemo.Clear;
-    (*
-
-    for I := TreeView.SelectionCount - 1 downto 0 do
-    begin
-      Start     := TreeView.Selections[I];
-      StartName := Start.Text;
-      while Start.Level > 1 do
-      begin
-        Start      := Start.Parent;
-        StartName  := IncludeTrailingPathDelimiter(Start.Text) + StartName;
-      end;
-      F.IncludeMemo.Lines.Add(StartName);
-    end;
-    *)
-
 
     if F.IncludeMemo.Lines.Count = 0 then
       F.IncludeMemo.Lines.Add('*');
