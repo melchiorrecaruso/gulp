@@ -21,7 +21,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.07.12 by Melchiorre Caruso.
+    v0.0.2 - 2015.08.26 by Melchiorre Caruso.
 }
 
 unit GulpLibrary;
@@ -31,7 +31,7 @@ interface
 uses
   {$IFDEF UNIX} BaseUnix, {$ENDIF}
   {$IFDEF MSWINDOWS} Windows, {$ENDIF}
-  Classes, GulpCommon, Sha1, SysUtils, Dialogs;
+  Classes, GulpCommon, Sha1, SysUtils;
 
 type
   // --- Gulp Marker ---
