@@ -53,11 +53,17 @@ type
     OpenDialog: TOpenDialog;
 
     procedure ApplyBitBtnClick(Sender: TObject);
+    procedure AttributesEditKeyPress(Sender: TObject; var Key: char);
     procedure FiltersBitBtnClick(Sender: TObject);
     procedure ListViewData(Sender: TObject; Item: TListItem);
+    procedure MenuItem1Click(Sender: TObject);
+    procedure ModeEditKeyPress(Sender: TObject; var Key: char);
+    procedure NameComboBoxKeyPress(Sender: TObject; var Key: char);
     procedure NewSpeedButtonClick(Sender: TObject);
     procedure OpenSpeedButtonClick(Sender: TObject);
     procedure HomeBitBtnClick(Sender: TObject);
+    procedure PathComboBoxCloseUp(Sender: TObject);
+    procedure PathComboBoxKeyPress(Sender: TObject; var Key: char);
     procedure ResetBitBtnClick(Sender: TObject);
     procedure RevisionComboBoxChange(Sender: TObject);
 
@@ -113,9 +119,7 @@ type
     FMode     : longint;
     FSize     : int64;
     FPlatform : TGulpPlatform;
-
-
-    FVisible      : boolean;
+    FVisible  : boolean;
   end;
 
 {$R gulpmain.lfm}
@@ -151,6 +155,7 @@ procedure TMainForm.Open(const FileName: string);
 var
     I : longint;
   Ver : longword = 0;
+  Folders: TStringList;
 begin
   Wait(FALSE);
   AppListAux.Clear;
@@ -179,16 +184,44 @@ begin
   end;
   Wait(TRUE);
 
+
+
+
+
   if App.UntilVersion = $FFFFFFFF then
   begin
     for I := 0 to AppList.Count - 1 do
+    begin
       Ver := Max(Ver, TLiteGulpItem(AppList[I]).FVersion);
+    end;
 
     RevisionComboBox.Clear;
     for I := 0 to Ver - 1 do
       RevisionComboBox.AddItem(' Revision ' + IntToStr(I + 1), nil);
     RevisionComboBox.ItemIndex := RevisionComboBox.Items.Count - 1;
   end;
+
+  Folders := TStringList.Create;
+  {$IFDEF UNIX}
+    Folders.CaseSensitive := TRUE;
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+      Folders.CaseSensitive := FALSE;
+    {$ELSE}
+      Unsupported platform...
+    {$ENDIF}
+  {$ENDIF}
+  Folders.Duplicates  := dupIgnore;
+  Folders.Sorted      := TRUE;
+
+  for I := 0 to AppList.Count - 1 do
+    Folders.Add(TLiteGulpItem(AppList[I]).FPath);
+
+  PathComboBox.Items.Clear;
+  for I := 0 to Folders.Count - 1 do
+    PathComboBox.Items.Add(Folders[I]);
+
+  Folders.Destroy;
 end;
 
 function TMainForm.Sync(var FileName: string): longint;
@@ -505,6 +538,43 @@ begin
   end;
 end;
 
+procedure TMainForm.MenuItem1Click(Sender: TObject);
+var
+  T : TLiteGulpItem;
+begin
+  if ListView.SelCount = 1 then
+  begin
+    T := TLiteGulpItem(AppListAux[ListView.Selected.Index]);
+
+    if T.FAttr and faDirectory <> 0 then
+    begin
+      NameComboBox  .Text := '*';
+      AttributesEdit.Text := '*';
+      ModeEdit      .Text := '*';
+      PathComboBox  .Text := T.FPath + IncludeTrailingPathDelimiter(T.FName);
+
+      ApplyBitBtn.Click;
+    end;
+  end;
+
+end;
+
+procedure TMainForm.ModeEditKeyPress(Sender: TObject; var Key: char);
+begin
+  if Key = #13 then
+  begin
+    ApplyBitBtn.Click;
+  end;
+end;
+
+procedure TMainForm.NameComboBoxKeyPress(Sender: TObject; var Key: char);
+begin
+  if Key = #13 then
+  begin
+    ApplyBitBtn.Click;
+  end;
+end;
+
 procedure TMainForm.FiltersBitBtnClick(Sender: TObject);
 begin
   if FiltersPanel.Height < 10 then
@@ -541,6 +611,14 @@ begin
   end;
   ListView.Items.Count := AppListAux.Count;
   ListView.Items.EndUpdate;
+end;
+
+procedure TMainForm.AttributesEditKeyPress(Sender: TObject; var Key: char);
+begin
+  if Key = #13 then
+  begin
+    ApplyBitBtn.Click;
+  end;
 end;
 
 procedure TMainForm.NewSpeedButtonClick(Sender: TObject);
@@ -583,6 +661,19 @@ begin
     AppList.Delete(0);
   end;
   WelcomePanel.Visible := TRUE;
+end;
+
+procedure TMainForm.PathComboBoxCloseUp(Sender: TObject);
+begin
+  ApplyBitBtn.Click;
+end;
+
+procedure TMainForm.PathComboBoxKeyPress(Sender: TObject; var Key: char);
+begin
+  if Key = #13 then
+  begin
+    ApplyBitBtn.Click;
+  end;
 end;
 
 procedure TMainForm.ResetBitBtnClick(Sender: TObject);

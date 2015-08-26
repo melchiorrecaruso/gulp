@@ -1324,6 +1324,7 @@ object MainForm: TMainForm
       BorderSpacing.Top = 15
       BorderSpacing.Right = 10
       ItemHeight = 0
+      OnKeyPress = NameComboBoxKeyPress
       TabOrder = 0
       Text = '*'
     end
@@ -1343,8 +1344,9 @@ object MainForm: TMainForm
       BorderSpacing.Right = 15
       BorderSpacing.Bottom = 16
       ItemHeight = 0
+      OnCloseUp = PathComboBoxCloseUp
+      OnKeyPress = PathComboBoxKeyPress
       TabOrder = 1
-      Text = '*'
     end
     object ResetBitBtn: TBitBtn
       AnchorSideTop.Control = NameComboBox
@@ -1416,6 +1418,7 @@ object MainForm: TMainForm
       BorderSpacing.Right = 10
       Constraints.MaxWidth = 70
       Constraints.MinWidth = 70
+      OnKeyPress = AttributesEditKeyPress
       TabOrder = 4
       Text = '*'
     end
@@ -1455,6 +1458,7 @@ object MainForm: TMainForm
       BorderSpacing.Right = 15
       Constraints.MaxWidth = 70
       Constraints.MinWidth = 70
+      OnKeyPress = ModeEditKeyPress
       TabOrder = 5
       Text = '*'
     end
@@ -1752,6 +1756,7 @@ object MainForm: TMainForm
     top = 248
     object MenuItem1: TMenuItem
       Caption = 'Open'
+      OnClick = MenuItem1Click
     end
     object MenuItem4: TMenuItem
       Caption = '-'
