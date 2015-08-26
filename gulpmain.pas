@@ -124,6 +124,57 @@ type
 
 {$R gulpmain.lfm}
 
+function Compare(Item1, Item2: TLiteGulpItem): longint;
+begin
+  if ((Item1.FAttr and FaDirectory = faDirectory) xor
+      (Item2.FAttr and FaDirectory = faDirectory)) = FALSE then
+    Result := AnsiCompareFileName(Item1.FName, Item2.FName)
+  else
+    if (Item1.FAttr and FaDirectory = faDirectory) then
+      Result := -1
+    else
+      Result :=  1;
+
+  if Result = 0 then
+    Result := AnsiCompareFileName(Item1.FPath, Item2.FPath);
+end;
+
+procedure Insert(List: TList; Item: TLiteGulpItem);
+var
+  L, M, H, I : longint;
+begin
+  L := 0;
+  H := List.Count - 1;
+  while H >= L do
+  begin
+    M := (L + H) div 2;
+    I := Compare(TLiteGulpItem(List[M]), Item);
+    if I < 0 then
+      L := M + 1
+    else
+      if I > 0 then
+        H := M - 1
+      else
+        H := -2;
+  end;
+
+  if List.Count <> 0 then
+  begin
+    if I < 0 then
+      List.Insert(M + 1, Item)
+    else
+      if I > 0 then
+        List.Insert(M, Item)
+      else
+        List.Insert(M, Item);
+  end else
+    List.Add(Item);
+end;
+
+
+
+
+
 { TMainForm }
 
 procedure TMainForm.Wait(Value: boolean);
@@ -224,66 +275,8 @@ begin
   Folders.Destroy;
 end;
 
-function TMainForm.Sync(var FileName: string): longint;
-var
-  I : longint;
-  F : TSyncForm;
-begin
-  F := TSyncForm.Create(nil);
-  try
-    // --- COPY FORM STYLE --- //
-    F.Font.Name := Font.Name;
-
-    F.FileNameEdit.Text := FileName;
-    F.UpdateModeComboBox.ItemIndex := 1;
-    F.CompressionModeComboBox.ItemIndex := 0;
-
-    Result := F.ShowModal;
-    if Result = mrOk then
-    begin
-      App.Reset;
-      FileName := F.FileNameEdit.Text;
-      case F.CompressionModeComboBox.ItemIndex of
-        0: App.StorageFlags := [];
-        1: App.StorageFlags := [gsfGZ, gsfFASTEST];
-        2: App.StorageFlags := [gsfGZ, gsfDEFAULT];
-        3: App.StorageFlags := [gsfGZ, gsfMAX];
-      end;
-      case F.UpdateModeComboBox.ItemIndex of
-        0: App.NoDelete := FALSE;
-        1: App.NoDelete := TRUE;
-      end;
-      for I := 0 to F.IncludeMemo.Lines.Count - 1 do
-        App.Include.Add(F.IncludeMemo.Lines[I]);
-      for I := 0 to F.ExcludeMemo.Lines.Count - 1 do
-        App.Exclude.Add(F.ExcludeMemo.Lines[I]);
-    end;
-
-  finally
-    FreeAndNil(F);
-  end;
-
-  if Result = mrOK then
-  begin
-    try
-      App.Sync(FileName);
-    except
-      on E: Exception do
-      begin
-        ShowMessage(Format('An exception was raised: "%s"', [E.Message]));
-        HomeBitBtn.Click;
-      end;
-    end;
-  end;
-end;
-
-function TMainForm.Restore(FileName: string): longint;
-begin
 
 
-
-
-end;
 
 
 
@@ -317,56 +310,6 @@ begin
 
 end;
 
-procedure TMainForm.RestoreBitBtnClick(Sender: TObject);
-var
-          F : TRestoreForm;
-          I : longint;
-      Start : TTreeNode;
-  StartName : string;
-begin
-  F := TRestoreForm.Create(nil);
-  try
-    // --- FORM STYLE --- //
-    F.Font.Name := 'Droid Sans';
-    F.FolderEdit.Text := GetCurrentDir;
-    F.RevisionComboBox.Clear;
-    for I := 0 to RevisionComboBox.Items.Count - 1 do
-      F.RevisionComboBox.AddItem(RevisionComboBox.Items[I], nil);
-    F.RevisionComboBox.ItemIndex := RevisionComboBox.ItemIndex;
-    F.ModeComboBox    .ItemIndex := 1;
-
-    F.ExcludeMemo.Clear;
-    F.IncludeMemo.Clear;
-    (*
-
-    for I := TreeView.SelectionCount - 1 downto 0 do
-    begin
-      Start     := TreeView.Selections[I];
-      StartName := Start.Text;
-      while Start.Level > 1 do
-      begin
-        Start      := Start.Parent;
-        StartName  := IncludeTrailingPathDelimiter(Start.Text) + StartName;
-      end;
-      F.IncludeMemo.Lines.Add(StartName);
-    end;
-    *)
-
-
-    if F.IncludeMemo.Lines.Count = 0 then
-      F.IncludeMemo.Lines.Add('*');
-
-    if F.ShowModal = mrOk then
-    begin
-
-
-
-    end;
-
-  finally
-    FreeAndNil(F);
-  end;
-end;
 
 procedure TMainForm.FormCreate(Sender: TObject);
 var
@@ -448,6 +391,211 @@ end;
 
 
 
+
+
+
+
+procedure TMainForm.ListViewData(Sender: TObject; Item: TListItem);
+var
+  T : TLiteGulpItem;
+begin
+  T := TLiteGulpItem(AppListAux[Item.Index]);
+
+  if T.FVisible = TRUE then
+  begin;
+    Item.Caption := T.FName;
+    if T.FAttr and faDirectory = 0 then
+    begin
+      Item.ImageIndex := 3;
+      Item.StateIndex := 3;
+      Item.SubItems.Add(SizeToString(T.FSize));
+    end else
+    begin
+
+      Item.ImageIndex := 1;
+      Item.StateIndex := 1;
+      Item.SubItems.Add('-');
+    end;
+
+    Item.SubItems.Add(TimeToString(T.FTime));
+    Item.SubItems.Add(AttrToString(T.FAttr));
+    Item.SubItems.Add(ModeToString(T.FMode));
+    Item.SubItems.Add(PlatToString(T.FPlatform));
+    Item.SubItems.Add(T.FPath);
+  end;
+end;
+
+procedure TMainForm.MenuItem1Click(Sender: TObject);
+var
+  T : TLiteGulpItem;
+begin
+  if ListView.SelCount = 1 then
+  begin
+    T := TLiteGulpItem(AppListAux[ListView.Selected.Index]);
+
+    if T.FAttr and faDirectory <> 0 then
+    begin
+      NameComboBox  .Text := '*';
+      AttributesEdit.Text := '*';
+      ModeEdit      .Text := '*';
+      PathComboBox  .Text := T.FPath + IncludeTrailingPathDelimiter(T.FName);
+
+      ApplyBitBtn.Click;
+    end;
+  end;
+
+end;
+
+
+
+
+
+
+
+
+// Filter panel Routines //
+
+procedure TMainForm.NameComboBoxKeyPress(Sender: TObject; var Key: char);
+begin
+  if Key = #13 then
+    ApplyBitBtn.Click;
+end;
+
+procedure TMainForm.AttributesEditKeyPress(Sender: TObject; var Key: char);
+begin
+  if Key = #13 then
+    ApplyBitBtn.Click;
+end;
+
+procedure TMainForm.ModeEditKeyPress(Sender: TObject; var Key: char);
+begin
+  if Key = #13 then
+    ApplyBitBtn.Click;
+end;
+
+procedure TMainForm.PathComboBoxKeyPress(Sender: TObject; var Key: char);
+begin
+  if Key = #13 then
+    ApplyBitBtn.Click;
+end;
+
+procedure TMainForm.PathComboBoxCloseUp(Sender: TObject);
+begin
+  ApplyBitBtn.Click;
+end;
+
+procedure TMainForm.ResetBitBtnClick(Sender: TObject);
+begin
+  NameComboBox  .Text := '*';
+  AttributesEdit.Text := '*';
+  ModeEdit      .Text := '*';
+  PathComboBox  .Text := '*';
+end;
+
+procedure TMainForm.ApplyBitBtnClick(Sender: TObject);
+var
+  I : longint;
+  T : TLiteGulpItem;
+begin
+  ListView.Items.BeginUpdate;
+  ListView.Items.Clear;
+  AppListAux.Clear;
+  for I := 0 to AppList.Count- 1 do
+  begin
+    T := TLiteGulpItem(AppList[I]);
+    T.FVisible :=
+      FileNameMatch(T.FName, NameComboBox  .Text) and
+      FileNameMatch(T.FPath, PathComboBox  .Text) and
+      FileNameMatch(AttrToString(T.FAttr), AttributesEdit.Text) and
+      FileNameMatch(ModeToString(T.FMode), ModeEdit      .Text);
+
+    if T.FVisible = TRUE then
+      Insert(AppListAux, T);
+  end;
+  ListView.Items.Count := AppListAux.Count;
+  ListView.Items.EndUpdate;
+end;
+
+// Welcome panel routines
+
+procedure TMainForm.NewSpeedButtonClick(Sender: TObject);
+begin
+  if SaveDialog.Execute then
+  begin
+    AppFileName := SaveDialog.FileName;
+    if Sync(AppFileName) = mrOK then
+    begin
+      Open(AppFileName);
+    end;
+  end;
+end;
+
+procedure TMainForm.OpenSpeedButtonClick(Sender: TObject);
+begin
+  if OpenDialog.Execute then
+  begin
+    AppFileName := OpenDialog.FileName;
+    begin
+      Open(AppFileName);
+    end;
+  end;
+end;
+
+// Main panel routines
+
+function TMainForm.Sync(var FileName: string): longint;
+var
+  I : longint;
+  F : TSyncForm;
+begin
+  F := TSyncForm.Create(nil);
+  try
+    // --- COPY FORM STYLE --- //
+    F.Font.Name := Font.Name;
+
+    F.FileNameEdit.Text := FileName;
+    F.UpdateModeComboBox.ItemIndex := 1;
+    F.CompressionModeComboBox.ItemIndex := 0;
+
+    Result := F.ShowModal;
+    if Result = mrOk then
+    begin
+      App.Reset;
+      FileName := F.FileNameEdit.Text;
+      case F.CompressionModeComboBox.ItemIndex of
+        0: App.StorageFlags := [];
+        1: App.StorageFlags := [gsfGZ, gsfFASTEST];
+        2: App.StorageFlags := [gsfGZ, gsfDEFAULT];
+        3: App.StorageFlags := [gsfGZ, gsfMAX];
+      end;
+      case F.UpdateModeComboBox.ItemIndex of
+        0: App.NoDelete := FALSE;
+        1: App.NoDelete := TRUE;
+      end;
+      for I := 0 to F.IncludeMemo.Lines.Count - 1 do
+        App.Include.Add(F.IncludeMemo.Lines[I]);
+      for I := 0 to F.ExcludeMemo.Lines.Count - 1 do
+        App.Exclude.Add(F.ExcludeMemo.Lines[I]);
+    end;
+
+  finally
+    FreeAndNil(F);
+  end;
+
+  if Result = mrOK then
+  begin
+    try
+      App.Sync(FileName);
+    except
+      on E: Exception do
+      begin
+        ShowMessage(Format('An exception was raised: "%s"', [E.Message]));
+        HomeBitBtn.Click;
+      end;
+    end;
+  end;
+end;
+
 procedure TMainForm.SyncBitBtnClick(Sender: TObject);
 var
   F : TSyncForm;
@@ -506,72 +654,62 @@ begin
   end;
 end;
 
-
-
-procedure TMainForm.ListViewData(Sender: TObject; Item: TListItem);
-var
-  T : TLiteGulpItem;
+function TMainForm.Restore(FileName: string): longint;
 begin
-  T := TLiteGulpItem(AppListAux[Item.Index]);
 
-  if T.FVisible = TRUE then
-  begin;
-    Item.Caption := T.FName;
-    if T.FAttr and faDirectory = 0 then
+
+
+
+end;
+
+procedure TMainForm.RestoreBitBtnClick(Sender: TObject);
+var
+          F : TRestoreForm;
+          I : longint;
+      Start : TTreeNode;
+  StartName : string;
+begin
+  F := TRestoreForm.Create(nil);
+  try
+    // --- FORM STYLE --- //
+    F.Font.Name := 'Droid Sans';
+    F.FolderEdit.Text := GetCurrentDir;
+    F.RevisionComboBox.Clear;
+    for I := 0 to RevisionComboBox.Items.Count - 1 do
+      F.RevisionComboBox.AddItem(RevisionComboBox.Items[I], nil);
+    F.RevisionComboBox.ItemIndex := RevisionComboBox.ItemIndex;
+    F.ModeComboBox    .ItemIndex := 1;
+
+    F.ExcludeMemo.Clear;
+    F.IncludeMemo.Clear;
+    (*
+
+    for I := TreeView.SelectionCount - 1 downto 0 do
     begin
-      Item.ImageIndex := 3;
-      Item.StateIndex := 3;
-      Item.SubItems.Add(SizeToString(T.FSize));
-    end else
+      Start     := TreeView.Selections[I];
+      StartName := Start.Text;
+      while Start.Level > 1 do
+      begin
+        Start      := Start.Parent;
+        StartName  := IncludeTrailingPathDelimiter(Start.Text) + StartName;
+      end;
+      F.IncludeMemo.Lines.Add(StartName);
+    end;
+    *)
+
+
+    if F.IncludeMemo.Lines.Count = 0 then
+      F.IncludeMemo.Lines.Add('*');
+
+    if F.ShowModal = mrOk then
     begin
 
-      Item.ImageIndex := 1;
-      Item.StateIndex := 1;
-      Item.SubItems.Add('-');
+
+
     end;
 
-    Item.SubItems.Add(TimeToString(T.FTime));
-    Item.SubItems.Add(AttrToString(T.FAttr));
-    Item.SubItems.Add(ModeToString(T.FMode));
-    Item.SubItems.Add(PlatToString(T.FPlatform));
-    Item.SubItems.Add(T.FPath);
-  end;
-end;
-
-procedure TMainForm.MenuItem1Click(Sender: TObject);
-var
-  T : TLiteGulpItem;
-begin
-  if ListView.SelCount = 1 then
-  begin
-    T := TLiteGulpItem(AppListAux[ListView.Selected.Index]);
-
-    if T.FAttr and faDirectory <> 0 then
-    begin
-      NameComboBox  .Text := '*';
-      AttributesEdit.Text := '*';
-      ModeEdit      .Text := '*';
-      PathComboBox  .Text := T.FPath + IncludeTrailingPathDelimiter(T.FName);
-
-      ApplyBitBtn.Click;
-    end;
-  end;
-
-end;
-
-procedure TMainForm.ModeEditKeyPress(Sender: TObject; var Key: char);
-begin
-  if Key = #13 then
-  begin
-    ApplyBitBtn.Click;
-  end;
-end;
-
-procedure TMainForm.NameComboBoxKeyPress(Sender: TObject; var Key: char);
-begin
-  if Key = #13 then
-  begin
-    ApplyBitBtn.Click;
+  finally
+    FreeAndNil(F);
   end;
 end;
 
@@ -587,61 +725,9 @@ begin
   end;
 end;
 
-procedure TMainForm.ApplyBitBtnClick(Sender: TObject);
-var
-  I : longint;
-  T : TLiteGulpItem;
+procedure TMainForm.RevisionComboBoxChange(Sender: TObject);
 begin
-  ListView.Items.BeginUpdate;
-  ListView.Items.Clear;
-  AppListAux.Clear;
-  for I := 0 to AppList.Count- 1 do
-  begin
-    T := TLiteGulpItem(AppList[I]);
-    T.FVisible :=
-      FileNameMatch(T.FName, NameComboBox  .Text) and
-      FileNameMatch(T.FPath, PathComboBox  .Text) and
-      FileNameMatch(AttrToString(T.FAttr), AttributesEdit.Text) and
-      FileNameMatch(ModeToString(T.FMode), ModeEdit      .Text);
-
-    if T.FVisible = TRUE then
-    begin
-      AppListAux.Add(T);
-    end;
-  end;
-  ListView.Items.Count := AppListAux.Count;
-  ListView.Items.EndUpdate;
-end;
-
-procedure TMainForm.AttributesEditKeyPress(Sender: TObject; var Key: char);
-begin
-  if Key = #13 then
-  begin
-    ApplyBitBtn.Click;
-  end;
-end;
-
-procedure TMainForm.NewSpeedButtonClick(Sender: TObject);
-begin
-  if SaveDialog.Execute then
-  begin
-    AppFileName := SaveDialog.FileName;
-    if Sync(AppFileName) = mrOK then
-    begin
-      Open(AppFileName);
-    end;
-  end;
-end;
-
-procedure TMainForm.OpenSpeedButtonClick(Sender: TObject);
-begin
-  if OpenDialog.Execute then
-  begin
-    AppFileName := OpenDialog.FileName;
-    begin
-      Open(AppFileName);
-    end;
-  end;
+  Open(AppFileName);
 end;
 
 procedure TMainForm.HomeBitBtnClick(Sender: TObject);
@@ -661,32 +747,6 @@ begin
     AppList.Delete(0);
   end;
   WelcomePanel.Visible := TRUE;
-end;
-
-procedure TMainForm.PathComboBoxCloseUp(Sender: TObject);
-begin
-  ApplyBitBtn.Click;
-end;
-
-procedure TMainForm.PathComboBoxKeyPress(Sender: TObject; var Key: char);
-begin
-  if Key = #13 then
-  begin
-    ApplyBitBtn.Click;
-  end;
-end;
-
-procedure TMainForm.ResetBitBtnClick(Sender: TObject);
-begin
-  NameComboBox  .Text := '*';
-  AttributesEdit.Text := '*';
-  ModeEdit      .Text := '*';
-  PathComboBox  .Text := '*';
-end;
-
-procedure TMainForm.RevisionComboBoxChange(Sender: TObject);
-begin
-  Open(AppFileName);
 end;
 
 end.
