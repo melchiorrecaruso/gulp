@@ -484,22 +484,24 @@ begin
   if T.FVisible = TRUE then
   begin;
     Item.Caption := T.FName;
-    Item.SubItems.Add(SizeToString(T.FSize));
+    if T.FAttr and faDirectory = 0 then
+    begin
+      Item.ImageIndex := 3;
+      Item.StateIndex := 3;
+      Item.SubItems.Add(SizeToString(T.FSize));
+    end else
+    begin
+
+      Item.ImageIndex := 1;
+      Item.StateIndex := 1;
+      Item.SubItems.Add('-');
+    end;
+
     Item.SubItems.Add(TimeToString(T.FTime));
     Item.SubItems.Add(AttrToString(T.FAttr));
     Item.SubItems.Add(ModeToString(T.FMode));
     Item.SubItems.Add(PlatToString(T.FPlatform));
     Item.SubItems.Add(T.FPath);
-
-    if T.FAttr and faDirectory = 0 then
-    begin
-      Item.ImageIndex := 3;
-      Item.StateIndex := 3;
-    end else
-    begin
-      Item.ImageIndex := 1;
-      Item.StateIndex := 1;
-    end;
   end;
 end;
 

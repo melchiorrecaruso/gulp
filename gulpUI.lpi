@@ -53,9 +53,8 @@
         <ComponentName Value="MainForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <IsVisibleTab Value="True"/>
-        <TopLine Value="563"/>
-        <CursorPos X="3" Y="572"/>
+        <TopLine Value="475"/>
+        <CursorPos X="35" Y="489"/>
         <FoldState Value=" T3lL0p11221:"/>
         <UsageCount Value="93"/>
         <Loaded Value="True"/>
@@ -77,9 +76,10 @@
         <Filename Value="gulplibrary.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="GulpLibrary"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="1527"/>
-        <CursorPos X="25" Y="1546"/>
+        <TopLine Value="443"/>
+        <CursorPos X="21" Y="457"/>
         <UsageCount Value="50"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>

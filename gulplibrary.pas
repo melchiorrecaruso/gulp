@@ -454,7 +454,7 @@ end;
 
 function AttrToString(const Attr: longint): string;
 begin
-  Result := '.......';
+  Result := '       ';
   if Attr and faReadOnly  <> 0 then Result[1] := 'R';
   if Attr and faHidden    <> 0 then Result[2] := 'H';
   if Attr and faSysFile   <> 0 then Result[3] := 'S';
