@@ -66,7 +66,7 @@ object MainForm: TMainForm
     Enabled = False
     MultiSelect = True
     OwnerData = True
-    PopupMenu = PopupMenu1
+    PopupMenu = PopupMenu
     ReadOnly = True
     RowSelect = True
     ScrollBars = ssAutoBoth
@@ -1609,7 +1609,7 @@ object MainForm: TMainForm
     TabOrder = 7
   end
   object OpenDialog: TOpenDialog
-    left = 88
+    left = 104
     top = 184
   end
   object ImageList: TImageList
@@ -1751,8 +1751,8 @@ object MainForm: TMainForm
     left = 24
     top = 184
   end
-  object PopupMenu1: TPopupMenu
-    left = 88
+  object PopupMenu: TPopupMenu
+    left = 104
     top = 248
     object MenuItem1: TMenuItem
       Caption = 'Open'

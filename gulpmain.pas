@@ -37,7 +37,7 @@ type
     OpenAFileLabel: TLabel;
     NoFileOpenLabel: TLabel;
     FiltersPanel: TPanel;
-    PopupMenu1: TPopupMenu;
+    PopupMenu: TPopupMenu;
     SaveDialog: TSaveDialog;
     TopShape: TShape;
     BottomShape: TShape;
