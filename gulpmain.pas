@@ -171,10 +171,6 @@ begin
     List.Add(Item);
 end;
 
-
-
-
-
 { TMainForm }
 
 procedure TMainForm.Wait(Value: boolean);
