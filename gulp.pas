@@ -27,7 +27,7 @@
 program Gulp;
 
 uses
-  {$IFDEF UNIX} cthreads, BaseUnix,
+  {$IFDEF UNIX} cthreads, BaseUnix, cMem,
   {$ENDIF} {$IFDEF MSWINDOWS} Windows, {$ENDIF}
   Classes, CustApp, GulpLibrary, SysUtils;
 
@@ -87,16 +87,30 @@ end;
 procedure TShellApplication.DoList(const Item: TGulpItem);
 begin
   if gfAdd in Item.Flags then
+  begin
+    if Item.Attributes and faDirectory = faDirectory then
+    begin
+      writeln(Format('%4s %3s %3s %7s %19s %12s %s', [
+         VerTostring(Item.Version),
+        FlagToString(Item.Flags),
+        ModeToString(Item.Mode),
+        AttrToString(Item.Attributes),
+        TimeToString(Item.Time),
+        '',
+        Item.Name]));
+    end else
+    begin
+      writeln(Format('%4s %3s %3s %7s %19s %12s %s', [
+         VerTostring(Item.Version),
+        FlagToString(Item.Flags),
+        ModeToString(Item.Mode),
+        AttrToString(Item.Attributes),
+        TimeToString(Item.Time),
+        SizeToString(Item.Size),
+        ExtractFileName(Item.Name)]));
+    end;
+  end else
     writeln(Format('%4s %3s %3s %7s %19s %12s %s', [
-       VerTostring(Item.Version),
-      FlagToString(Item.Flags),
-      ModeToString(Item.Mode),
-      AttrToString(Item.Attributes),
-      TimeToString(Item.Time),
-      SizeToString(Item.Size),
-      Item.Name]))
-   else
-     writeln(Format('%4s %3s %3s %7s %19s %12s %s', [
        VerTostring(Item.Version),
       FlagToString(Item.Flags),
       '',
@@ -104,6 +118,7 @@ begin
       '',
       '',
       Item.Name]));
+
 end;
 
 procedure TShellApplication.DoRun;

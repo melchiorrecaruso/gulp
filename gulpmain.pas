@@ -97,6 +97,23 @@ type
     { public declarations }
   end;
 
+
+
+  TShowStatusEvent = procedure(Status: string) of object;
+
+  TMyThread = class(TThread)
+  private
+    FStatusText   : string;
+    FOnShowStatus : TShowStatusEvent;
+    procedure ShowStatus;
+  protected
+    procedure Execute; override;
+  public
+    Constructor Create(CreateSuspended : boolean);
+    property OnShowStatus: TShowStatusEvent read FOnShowStatus write FOnShowStatus;
+  end;
+
+
 var
   MainForm: TMainForm;
 
@@ -123,6 +140,41 @@ type
   end;
 
 {$R gulpmain.lfm}
+
+constructor TMyThread.Create(CreateSuspended : boolean);
+begin
+  FreeOnTerminate := TRUE;
+  inherited Create(CreateSuspended);
+end;
+
+procedure TMyThread.ShowStatus;
+begin
+  if Assigned(FOnShowStatus) then
+    FOnShowStatus(fStatusText);
+end;
+
+procedure TMyThread.Execute;
+var
+  NewStatus : string;
+begin
+  FStatusText := 'TMyThread Starting...';
+  Synchronize(ShowStatus);
+  FStatusText := 'TMyThread Running...';
+  while (not Terminated) and (TRUE) do
+  begin
+    if NewStatus <> fStatusText then
+    begin
+      FStatusText := newStatus;
+      Synchronize(Showstatus);
+    end;
+  end;
+
+
+
+end;
+
+
+
 
 function Compare(Item1, Item2: TLiteGulpItem): longint;
 begin
@@ -170,6 +222,14 @@ begin
   end else
     List.Add(Item);
 end;
+
+
+
+
+
+
+
+
 
 { TMainForm }
 
@@ -593,7 +653,9 @@ procedure TMainForm.SyncBitBtnClick(Sender: TObject);
 var
   F : TSyncForm;
   I : longint;
+  IsNeededToRun: boolean;
 begin
+  IsNeededToRun := FALSE;
   F := TSyncForm.Create(nil);
   try
     // --- FORM STYLE --- //
@@ -604,8 +666,8 @@ begin
 
     if F.ShowModal = mrOk then
     begin
+      IsNeededToRun := TRUE;
       Wait(FALSE);
-
 
       App.Reset;
       case F.CompressionModeComboBox.ItemIndex of
@@ -622,29 +684,23 @@ begin
         App.Include.Add(F.IncludeMemo.Lines[I]);
       for I := 0 to F.ExcludeMemo.Lines.Count - 1 do
         App.Exclude.Add(F.ExcludeMemo.Lines[I]);
-
-
-
-      try
-        App.Sync(F.FileNameEdit.Text);
-      except
-        on E: Exception do
-        begin
-          ShowMessage(Format('An exception was raised: "%s"', [E.Message]));
-          HomeBitBtn.Click;
-        end;
-      end;
-
-
-
-
-
-
     end;
 
   finally
     FreeAndNil(F);
   end;
+
+  Application.ProcessMessages;
+  if IsNeededToRun = TRUE then
+    try
+      App.Sync(F.FileNameEdit.Text);
+    except
+      on E: Exception do
+      begin
+        ShowMessage(Format('An exception was raised: "%s"', [E.Message]));
+        HomeBitBtn.Click;
+      end;
+    end;
 end;
 
 function TMainForm.Restore(FileName: string): longint;

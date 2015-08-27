@@ -3,9 +3,11 @@ program gulpUI;
 uses
   {$IFDEF UNIX}{$IFDEF UseCThreads}
   cthreads,
+  cmem,
   {$ENDIF}{$ENDIF}
   Interfaces,
-  Forms, GulpMain;
+  Forms,
+  GulpMain;
 
 {$R *.res}
 
