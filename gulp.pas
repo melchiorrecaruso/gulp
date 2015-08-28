@@ -21,7 +21,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.08.26 by Melchiorre Caruso.
+    v0.0.2 - 2015.08.28 by Melchiorre Caruso.
 }
 
 program Gulp;
@@ -29,7 +29,7 @@ program Gulp;
 uses
   {$IFDEF UNIX} cthreads, BaseUnix, cMem,
   {$ENDIF} {$IFDEF MSWINDOWS} Windows, {$ENDIF}
-  Classes, CustApp, GulpLibrary, SysUtils;
+  Classes, CustApp, GulpLibrary, SysUtils, CRT;
 
 type
   TShellApplication = class(TCustomApplication)
@@ -38,8 +38,8 @@ type
          Switches : TStringList;
     ShortSwitches : string;
   protected
-    procedure DoList(const Item: TGulpItem);
-    procedure DoMessage(const Message: string);
+    procedure ShowItem(const Item: TGulpItem);
+    procedure ShowMessage(const Message: string);
     procedure DoRun; override;
     procedure Abort;
   public
@@ -79,17 +79,17 @@ begin
   inherited Destroy;
 end;
 
-procedure TShellApplication.DoMessage(const Message: string);
+procedure TShellApplication.ShowMessage(const Message: string);
 begin
   write(Message);
 end;
 
-procedure TShellApplication.DoList(const Item: TGulpItem);
+procedure TShellApplication.ShowItem(const Item: TGulpItem);
 begin
   if gfAdd in Item.Flags then
   begin
+
     if Item.Attributes and faDirectory = faDirectory then
-    begin
       writeln(Format('%4s %3s %3s %7s %19s %12s %s', [
          VerTostring(Item.Version),
         FlagToString(Item.Flags),
@@ -97,9 +97,8 @@ begin
         AttrToString(Item.Attributes),
         TimeToString(Item.Time),
         '',
-        Item.Name]));
-    end else
-    begin
+        Item.Name]))
+    else
       writeln(Format('%4s %3s %3s %7s %19s %12s %s', [
          VerTostring(Item.Version),
         FlagToString(Item.Flags),
@@ -107,18 +106,31 @@ begin
         AttrToString(Item.Attributes),
         TimeToString(Item.Time),
         SizeToString(Item.Size),
-        ExtractFileName(Item.Name)]));
-    end;
-  end else
-    writeln(Format('%4s %3s %3s %7s %19s %12s %s', [
-       VerTostring(Item.Version),
-      FlagToString(Item.Flags),
-      '',
-      '',
-      '',
-      '',
-      Item.Name]));
+        Item.Name]));
 
+  end else
+  begin
+
+    if Item.Attributes and faDirectory = faDirectory then
+      writeln(Format('%4s %3s %3s %7s %19s %12s %s', [
+         VerTostring(Item.Version),
+        FlagToString(Item.Flags),
+        '',
+        '',
+        '',
+        '',
+        Item.Name]))
+    else
+      writeln(Format('%4s %3s %3s %7s %19s %12s %s', [
+         VerTostring(Item.Version),
+        FlagToString(Item.Flags),
+        '',
+        '',
+        '',
+        '',
+        Item.Name]));
+
+  end;
 end;
 
 procedure TShellApplication.DoRun;
@@ -143,9 +155,9 @@ begin
   LongSwitches.Add('help');
   LongSwitches.Add('nodelete');
 
-  App           := TGulpApplication.Create;
-  App.OnMessage := DoMessage;
-  App.OnList    := DoList;
+  App := TGulpApplication.Create;
+  App.OnShowMessage := ShowMessage;
+  App.OnShowItem    := ShowItem;
   try
     Error   := CheckOptions(ShortSwitches, LongSwitches, Switches, App.Include);
     if Error = '' then
@@ -357,59 +369,7 @@ end;
 var
   Shell: TShellApplication;
 
-{ Control+c event }
-
-{$IFDEF UNIX}
-  procedure CtrlHandler(sig: cint);
-  begin
-    case sig of
-      SIGINT:  Shell.Abort;
-      SIGQUIT: Shell.Abort;
-      SIGKILL: Shell.Abort;
-      SIGSTOP: Shell.Abort;
-    end;
-  end;
-{$ELSE}
-  {$IFDEF MSWINDOWS}
-    function CtrlHandler(CtrlType: longword): longbool;
-    begin
-      case CtrlType of
-        CTRL_C_EVENT:        App.Abort;
-        CTRL_BREAK_EVENT:    App.Abort;
-        CTRL_CLOSE_EVENT:    App.Abort;
-        CTRL_LOGOFF_EVENT:   App.Abort;
-        CTRL_SHUTDOWN_EVENT: App.Abort;
-      end;
-      Result := TRUE;
-    end;
-  {$ELSE}
-    Unsupported platform...
-  {$ENDIF}
-{$ENDIF}
-
-procedure SetCtrlCHandler(CtrlHandler: pointer);
-{$IFDEF UNIX}
-var
-  oa, na: SigActionRec;
-{$ENDIF}
 begin
-  {$IFDEF UNIX}
-    na.sa_handler  := SigActionHandler(CtrlHandler);
-    FillChar(na.sa_mask, SizeOf(na.sa_mask), #0);
-    na.sa_flags    := SA_ONESHOT;
-    na.sa_restorer := nil;
-    fpSigAction(SIGINT, @na, @oa);
-  {$ELSE}
-    {$IFDEF MSWINDOWS}
-      SetConsoleCtrlHandler(@CtrlHandler, TRUE);
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
-  {$ENDIF}
-end;
-
-begin
-  SetCtrlCHandler(@CtrlHandler);
   Shell := TShellApplication.Create(nil);
   Shell.Run;
   Shell.Destroy;

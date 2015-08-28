@@ -21,7 +21,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.08.26 by Melchiorre Caruso.
+    v0.0.2 - 2015.08.28 by Melchiorre Caruso.
 }
 
 unit GulpLibrary;
@@ -100,21 +100,22 @@ type
   end;
 
   // --- The Gulp Application events ---
-  TGulpOnMessage = procedure(const Message: string) of object;
-  TGulpOnList    = procedure(const Item: TGulpItem) of object;
+  TGulpShowItem    = procedure(const Item: TGulpItem) of object;
+  TGulpShowMessage = procedure(const Message: string) of object;
+  TGulpTerminate   = function : boolean of object;
 
   // --- The Gulp Application class ---
   TGulpApplication = class(TObject)
   private
-    FExclude      : TStringList;
-    FInclude      : TStringList;
-    FNodelete     : boolean;
-    FStorageFlags : TGulpStorageFlags;
-    FUntilVersion : longword;
-    FOnList       : TGulpOnList;
-    FOnMessage    : TGulpOnMessage;
-    procedure DoList(var Item: TGulpItem);
-    procedure DoMessage(const Message: string);
+    FExclude       : TStringList;
+    FInclude       : TStringList;
+    FNodelete      : boolean;
+    FStorageFlags  : TGulpStorageFlags;
+    FUntilVersion  : longword;
+    FOnShowItem    : TGulpShowItem;
+    FOnShowMessage : TGulpShowMessage;
+    procedure ShowItem(const Item: TGulpItem);
+    procedure ShowMessage(const Message: string);
   public
     constructor Create;
     destructor  Destroy; override;
@@ -126,13 +127,13 @@ type
     procedure   Check    (const FileName: string);
     procedure   Reset;
   public
-    property Exclude      : TStringList       read FExclude;
-    property Include      : TStringList       read FInclude;
-    property NoDelete     : boolean           read FNoDelete     write FNoDelete;
-    property StorageFlags : TGulpStorageFlags read FStorageFlags write FStorageFlags;
-    property UntilVersion : longword          read FUntilVersion write FUntilVersion;
-    property OnList       : TGulpOnList       read FOnList       write FOnList;
-    property OnMessage    : TGulpOnMessage    read FOnMessage    write FOnMessage;
+    property Exclude       : TStringList       read FExclude;
+    property Include       : TStringList       read FInclude;
+    property NoDelete      : boolean           read FNoDelete      write FNoDelete;
+    property StorageFlags  : TGulpStorageFlags read FStorageFlags  write FStorageFlags;
+    property UntilVersion  : longword          read FUntilVersion  write FUntilVersion;
+    property OnShowItem    : TGulpShowItem     read FOnShowItem    write FOnShowItem;
+    property OnShowMessage : TGulpShowMessage  read FOnShowMessage write FOnShowMessage;
   end;
 
 // --- Some useful routines ---
@@ -1074,10 +1075,10 @@ end;
 constructor TGulpApplication.Create;
 begin
   inherited Create;
-  FOnList    := nil;
-  FOnMessage := nil;
-  FExclude   := TStringList.Create;
-  FInclude   := TStringList.Create;
+  FOnShowItem    := nil;
+  FOnShowMessage := nil;
+  FExclude       := TStringList.Create;
+  FInclude       := TStringList.Create;
   {$IFDEF UNIX}
     FInclude .CaseSensitive := TRUE;
     FExclude .CaseSensitive := TRUE;
@@ -1114,16 +1115,16 @@ begin
   FUntilVersion := $FFFFFFFF;
 end;
 
-procedure TGulpApplication.DoList(var Item: TGulpItem);
+procedure TGulpApplication.ShowItem(const Item: TGulpItem);
 begin
-  if Assigned(FOnList) then
-    FOnList(Item);
+  if Assigned(FOnShowItem) then
+    FOnShowItem(Item);
 end;
 
-procedure TGulpApplication.DoMessage(const Message: string);
+procedure TGulpApplication.ShowMessage(const Message: string);
 begin
-  if Assigned(FOnMessage) then
-    FOnMessage(Message);
+  if Assigned(FOnShowMessage) then
+    FOnShowMessage(Message);
 end;
 
 procedure TGulpApplication.Sync(const FileName: string);
@@ -1135,9 +1136,9 @@ var
        Size : int64;
      Stream : TStream;
 begin
-  DoMessage(GulpDescription);
-  DoMessage(Format('Sync the content of "%s" %s', [FileName, LineEnding]));
-  DoMessage(Format('%sScanning archive...      ', [#13]));
+  ShowMessage(GulpDescription);
+  ShowMessage(Format('Sync the content of "%s" %s', [FileName, LineEnding]));
+  ShowMessage(Format('%sScanning archive...      ', [#13]));
   if FileExists(FileName) then
     Stream := TFileStream.Create (FileName, fmOpenReadWrite)
   else
@@ -1146,7 +1147,7 @@ begin
   LibReader.Load($FFFFFFFF);
   Size := Stream.Seek(0, soEnd);
 
-  DoMessage(Format('%sScanning filesystem...   ', [#13]));
+  ShowMessage(Format('%sScanning filesystem...   ', [#13]));
   Scan := TSysScanner.Create;
   for I := FInclude.Count - 1 downto 0 do
     if DirectoryExists(FInclude[I]) = TRUE then
@@ -1170,7 +1171,7 @@ begin
     if FileNameMatch(Scan.Items[I], FExclude) = TRUE then
       Scan.Delete(I);
 
-  DoMessage(Format('%sSyncing items...         ', [#13]));
+  ShowMessage(Format('%sSyncing items...         ', [#13]));
   LibWriter := TGulpWriter.Create(Stream);
   if FNoDelete = FALSE then
   begin
@@ -1197,7 +1198,7 @@ begin
   FreeAndNil(Stream);
   FreeandNil(Scan);
 
-  DoMessage(Format('%sFinished (%u added bytes) %s',
+  ShowMessage(Format('%sFinished (%u added bytes) %s',
     [#13, GetSize(FileName) - Size, LineEnding]));
 end;
 
@@ -1210,14 +1211,14 @@ var
        Size : int64 = 0;
      Stream : TStream;
 begin
-  DoMessage(GulpDescription);
-  DoMessage(Format('Restore the content of "%s" %s', [FileName, LineEnding]));
-  DoMessage(Format('%sScanning archive...         ', [#13]));
+  ShowMessage(GulpDescription);
+  ShowMessage(Format('Restore the content of "%s" %s', [FileName, LineEnding]));
+  ShowMessage(Format('%sScanning archive...         ', [#13]));
   Stream := TFileStream.Create(FileName, fmOpenRead);
   LibReader := TGulpReader.Create(Stream);
   LibReader.Load(FUntilVersion);
 
-  DoMessage(Format('%sScanning filesystem...      ', [#13]));
+  ShowMessage(Format('%sScanning filesystem...      ', [#13]));
   Scan := TSysScanner.Create;
   Scan.Add('*');
   for I := FInclude.Count - 1 downto 0 do
@@ -1247,7 +1248,7 @@ begin
     end;
   FExclude.Add(FileName);
 
-  DoMessage(Format('%sRestoring items...          ', [#13]));
+  ShowMessage(Format('%sRestoring items...          ', [#13]));
   if FNoDelete = FALSE then
     for I := Scan.Count - 1 downto 0 do
     begin
@@ -1286,7 +1287,7 @@ begin
   FreeAndNil(Stream);
   FreeAndNil(Scan);
 
-  DoMessage(Format('%s Finished (%u extracted bytes) %s',
+  ShowMessage(Format('%s Finished (%u extracted bytes) %s',
     [#13, Size, LineEnding]));
 end;
 
@@ -1297,14 +1298,14 @@ var
         Nul : TStream;
      Stream : TStream;
 begin
-  DoMessage(GulpDescription);
-  DoMessage(Format('Check the content of "%s" %s', [FileName, LineEnding]));
-  DoMessage(Format('%sScanning archive...       ', [#13]));
+  ShowMessage(GulpDescription);
+  ShowMessage(Format('Check the content of "%s" %s', [FileName, LineEnding]));
+  ShowMessage(Format('%sScanning archive...       ', [#13]));
   Stream := TFileStream.Create(FileName, fmOpenRead);
   LibReader := TGulpReader.Create(Stream);
   LibReader.Load(0);
 
-  DoMessage(Format('%sChecking items...         ', [#13]));
+  ShowMessage(Format('%sChecking items...         ', [#13]));
   Nul   := TNulStream.Create;
   for I := 0 to LibReader.Count - 1 do
   begin
@@ -1314,7 +1315,7 @@ begin
   FreeAndNil(Stream);
   FreeAndNil(Nul);
 
-  DoMessage(Format('%sFinished (%u checked bytes) %s',
+  ShowMessage(Format('%sFinished (%u checked bytes) %s',
     [#13, GetSize(FileName), LineEnding]));
 end;
 
@@ -1326,9 +1327,9 @@ var
        Size : int64 = 0;
      Stream : TStream;
 begin
-  DoMessage(GulpDescription);
-  DoMessage(Format('Fix the content of "%s" %s', [FileName, LineEnding]));
-  DoMessage(Format('%sFixing items...         ', [#13]));
+  ShowMessage(GulpDescription);
+  ShowMessage(Format('Fix the content of "%s" %s', [FileName, LineEnding]));
+  ShowMessage(Format('%sFixing items...         ', [#13]));
   Stream    := TFileStream.Create(FileName, fmOpenReadWrite);
   LibReader := TGulpReader.Create(Stream);
   LibRec    := TGulpItem.Create;
@@ -1362,7 +1363,7 @@ begin
   FreeAndNil(LibRec);
   FreeAndNil(Stream);
 
-  DoMessage(Format('%sFinished (%u removed bytes) %s',
+  ShowMessage(Format('%sFinished (%u removed bytes) %s',
     [#13, OffSet, LineEnding]));
 end;
 
@@ -1377,13 +1378,13 @@ var
         Tmp : TStream;
     TmpName : string;
 begin
-  DoMessage(GulpDescription);
-  DoMessage(Format('Purge the content of "%s" %s', [FileName, LineEnding]));
-  DoMessage(Format('%sScanning archive...       ', [#13]));
+  ShowMessage(GulpDescription);
+  ShowMessage(Format('Purge the content of "%s" %s', [FileName, LineEnding]));
+  ShowMessage(Format('%sScanning archive...       ', [#13]));
   Stream    := TFileStream.Create(FileName, fmOpenRead);
   LibReader := TGulpReader.Create(Stream);
   LibReader.Load($FFFFFFFF);
-  DoMessage(Format('%sMoving items...           ', [#13]));
+  ShowMessage(Format('%sMoving items...           ', [#13]));
   TmpName   := GetTempFileName(ExtractFileDir(FileName), '');
   Tmp       := TFileStream.Create(TmpName, fmCreate);
   LibWriter := TGulpWriter.Create(Tmp);
@@ -1429,7 +1430,7 @@ begin
     if RenameFile(TmpName, FileName)= FALSE then
       raise Exception.CreateFmt('Unable to rename file "%s"', [TmpName]);
 
-  DoMessage(Format('%sFinished (%u removed bytes) %s',
+  ShowMessage(Format('%sFinished (%u removed bytes) %s',
     [#13, Offset, LineEnding]));
 end;
 
@@ -1442,9 +1443,9 @@ var
      Stream : TStream;
     Version : longword = 0;
 begin
-  DoMessage(GulpDescription);
-  DoMessage(Format('List the content of "%s" %s', [FileName, LineEnding]));
-  DoMessage(Format('%sScanning archive...      ', [#13]));
+  ShowMessage(GulpDescription);
+  ShowMessage(Format('List the content of "%s" %s', [FileName, LineEnding]));
+  ShowMessage(Format('%sScanning archive...      ', [#13]));
   Stream    := TFileStream.Create (FileName, fmOpenRead);
   LibReader := TGulpReader.Create(Stream);
   LibReader.Load(FUntilVersion);
@@ -1475,7 +1476,7 @@ begin
           FExclude.Add(IncludeTrailingPathDelimiter(FExclude[I]) + '*')
     end;
 
-  DoMessage(Format('%sListing items...       %s', [#13, LineEnding]));
+  ShowMessage(Format('%sListing items...       %s', [#13, LineEnding]));
   while LibReader.Count <> 0 do
   begin
     LibRec  := LibReader.Items[0];
@@ -1484,7 +1485,7 @@ begin
     if FileNameMatch(LibRec.Name, FInclude) = TRUE then
       if FileNameMatch(LibRec.Name, FExclude) = FALSE then
       begin
-        DoList(LibRec);
+        ShowItem(LibRec);
         Inc(Count);
       end;
 
@@ -1493,8 +1494,8 @@ begin
   FreeAndNil(LibReader);
   FreeAndNil(Stream);
 
-  DoMessage(Format('Finished (%u listed items) %s', [Count, LineEnding]));
-  DoMessage(Format('Lastest version %u %s', [Version, LineEnding]));
+  ShowMessage(Format('Finished (%u listed items) %s', [Count, LineEnding]));
+  ShowMessage(Format('Lastest version %u %s', [Version, LineEnding]));
 end;
 
 end.

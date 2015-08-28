@@ -77,7 +77,7 @@ type
 
   private
     { private declarations }
-    App: TGulpApplication;
+
     AppFileName: string;
     AppList: TList;
     AppListAux: TList;
@@ -91,26 +91,29 @@ type
 
 
 
-    procedure DoList(const Item: TGulpItem);
-    procedure DoMessage(const Message: string);
+
   public
     { public declarations }
   end;
 
-
-
-  TShowStatusEvent = procedure(Status: string) of object;
-
   TMyThread = class(TThread)
   private
-    FStatusText   : string;
-    FOnShowStatus : TShowStatusEvent;
-    procedure ShowStatus;
+    FApp          : TGulpApplication;
+    FMessage   : string;
+    FItem      :
+
+
+
+    FOnMessage : TGulpOnMessage;
+
+    procedure ShowItem;
+    procedure ShowMessage;
+
   protected
     procedure Execute; override;
   public
-    Constructor Create(CreateSuspended : boolean);
-    property OnShowStatus: TShowStatusEvent read FOnShowStatus write FOnShowStatus;
+    constructor Create(CreateSuspended : boolean);
+    property OnMessage: TGulpOnMessage read FOnShowStatus write FOnShowStatus;
   end;
 
 
@@ -143,7 +146,18 @@ type
 
 constructor TMyThread.Create(CreateSuspended : boolean);
 begin
-  FreeOnTerminate := TRUE;
+
+  FApp           := TGulpApplication.Create;
+  FApp.OnMessage := DoMessage;
+  FApp.OnList    := DoList;
+
+
+
+
+  FreeOnTerminate := FALSE;
+
+
+
   inherited Create(CreateSuspended);
 end;
 
@@ -160,17 +174,10 @@ begin
   FStatusText := 'TMyThread Starting...';
   Synchronize(ShowStatus);
   FStatusText := 'TMyThread Running...';
-  while (not Terminated) and (TRUE) do
-  begin
-    if NewStatus <> fStatusText then
-    begin
-      FStatusText := newStatus;
-      Synchronize(Showstatus);
-    end;
-  end;
 
 
 
+  Synchronize(Showstatus);
 end;
 
 
