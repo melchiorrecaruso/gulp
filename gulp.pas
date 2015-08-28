@@ -27,9 +27,9 @@
 program Gulp;
 
 uses
-  {$IFDEF UNIX} cthreads, BaseUnix, cMem,
+  {$IFDEF UNIX} cthreads, BaseUnix,
   {$ENDIF} {$IFDEF MSWINDOWS} Windows, {$ENDIF}
-  Classes, CustApp, GulpLibrary, SysUtils, CRT;
+  Classes, CustApp, GulpLibrary, SysUtils;
 
 type
   TShellApplication = class(TCustomApplication)
