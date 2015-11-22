@@ -27,8 +27,8 @@
 program Gulp;
 
 uses
-  {$IFDEF UNIX} cthreads, BaseUnix,
-  {$ENDIF} {$IFDEF MSWINDOWS} Windows, {$ENDIF}
+  {$IFDEF UNIX} cthreads, BaseUnix, {$ENDIF}
+  {$IFDEF MSWINDOWS} Windows, {$ENDIF}
   Classes, CustApp, GulpLibrary, SysUtils;
 
 type

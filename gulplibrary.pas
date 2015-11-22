@@ -173,7 +173,7 @@ function PlatToString(const P: TGulpPlatform ): string;
 implementation
 
 uses
-  DateUtils, Math, ZStream;
+  DateUtils, Math;
 
 const
   GulpMarker : TGulpMarker = ('G','U','L','P',char(0),char(0),char(2),char(0));
@@ -619,18 +619,15 @@ var
    Digest : TSHA1Digest;
     Flags : TGulpStorageFlags = [];
    Readed : longint;
-  ZStream : TStream;
+  CStream : TStream;
 begin
   FStream.Read(Flags, SizeOf(TGulpStorageFlags));
-  case gsfGZ in Flags of
-    FALSE: ZStream := FStream;
-    TRUE : ZStream := TDecompressionStream.Create(FStream, FALSE);
-  end;
 
+  CStream := FStream;
   SHA1Init(Context);
   while Size > 0 do
   begin
-    Readed := ZStream.Read(Buffer, Min(SizeOf(Buffer), Size));
+    Readed := CStream.Read(Buffer, Min(SizeOf(Buffer), Size));
     if Readed = 0 then
       raise Exception.Create('Unable to read stream (ex0005)');
     SHA1Update  (Context, Buffer, Readed);
@@ -638,10 +635,8 @@ begin
     Dec(Size, Readed);
   end;
   SHA1Final(Context, Digest);
-  case gsfGZ in Flags of
-    FALSE: ZStream := nil;
-    TRUE : FreeAndNil(ZStream);
-  end;
+  CStream := nil;
+
   Result := SHA1Print(Digest);
 end;
 
@@ -963,20 +958,11 @@ var
   Context : TSHA1Context;
    Digest : TSHA1Digest;
    Readed : longint;
-  ZStream : TStream;
+  CStream : TStream;
 begin
   FStream.Write(FStorageFlags, SizeOf(TGulpStorageFlags));
-  case gsfGZ in FStorageFlags of
-    FALSE: ZStream := FStream;
-    TRUE : if gsfMAX in FStorageFlags then
-             ZStream := TCompressionStream.Create(clMAX, FStream, FALSE)
-           else
-             if gsfDEFAULT in FStorageFlags then
-               ZStream := TCompressionStream.Create(clDEFAULT, FStream, FALSE)
-             else
-               ZStream := TCompressionStream.Create(clFASTEST, FStream, FALSE);
-  end;
 
+  CStream := FStream;
   SHA1Init(Context);
   while Size > 0 do
   begin
@@ -984,14 +970,12 @@ begin
     if Readed = 0 then
       raise Exception.Create('Unable to read stream (ex0007)');
     SHA1Update   (Context, Buffer, Readed);
-    ZStream.Write(         Buffer, Readed);
+    CStream.Write(         Buffer, Readed);
     Dec(Size, Readed);
   end;
   SHA1Final(Context, Digest);
-  case gsfGZ in FStorageFlags of
-    FALSE: ZStream := nil;
-    TRUE : FreeAndNil(ZStream);
-  end;
+  CStream := nil;
+
   Result := SHA1Print(Digest);
 end;
 

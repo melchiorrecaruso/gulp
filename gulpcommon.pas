@@ -21,7 +21,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.08.28 by Melchiorre Caruso.
+    v0.0.2 - 2015.11.21 by Melchiorre Caruso.
 }
 
 unit GulpCommon;
@@ -37,17 +37,17 @@ type
   TSysScanner = class(TObject)
   private
     FList: TStringList;
-    function GetCount: integer;
-    function GetItem(Index: longint): string;
+    function  GetCount: integer;
+    function  GetItem(Index: longint): string;
     procedure AddItem(const FileName: string);
     procedure Scan(const FileMask: string; Recursive: boolean);
   public
     constructor Create;
-    destructor Destroy; override;
-    procedure Add(const FileMask: string);
-    procedure Delete(Index: longint);
-    function Find(const FileName: string): longint;
-    procedure Clear;
+    destructor  Destroy; override;
+    procedure   Add(const FileMask: string);
+    function    Find(const FileName: string): longint;
+    procedure   Delete(Index: longint);
+    procedure   Clear;
   public
     property Count: integer read GetCount;
     property Items[Index: longint]: string read GetItem;
@@ -57,13 +57,13 @@ type
 
   TNulStream = class(TStream)
   public
-    function Read(var Buffer; Count: Longint): Longint; override;
-    function Write(const Buffer; Count: Longint): Longint; override;
+    function Read (var   Buffer; Count: Longint): longint; override;
+    function Write(const Buffer; Count: Longint): longint; override;
   end;
 
   { Matching routines }
 
-  function FileNameMatch(const FileName, FileMask: string): boolean; overload;
+  function FileNameMatch(const FileName: string; const FileMask: string): boolean; overload;
   function FileNameMatch(const FileName: string; FileMasks: TStringList): boolean; overload;
 
   { Priority routines }
@@ -186,12 +186,12 @@ end;
 
 { TNulStream class }
 
-function TNulStream.Read(var Buffer; Count: Longint): Longint;
+function TNulStream.Read(var Buffer; Count: longint): longint;
 begin
   Result := Count;
 end;
 
-function TNulStream.Write(const Buffer; Count: Longint): Longint;
+function TNulStream.Write(const Buffer; Count: longint): longint;
 begin
   Result := Count;
 end;
@@ -223,9 +223,9 @@ begin
         end;
 end;
 
-function FileNameMatch(const FileName, FileMask: string): boolean;
+function FileNameMatch(const FileName: string; const FileMask: string): boolean;
 begin
-  Result := MatchPattern(PChar(FileName), PChar(FileMask));
+  Result := MatchPattern(pchar(FileName), pchar(FileMask));
 end;
 
 function FileNameMatch(const FileName: string; FileMasks: TStringList): boolean;

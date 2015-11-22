@@ -42,11 +42,9 @@
         <Filename Value="gulp.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Gulp"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="1"/>
         <WindowIndex Value="1"/>
-        <CursorPos X="35" Y="30"/>
-        <FoldState Value=" T3m1031/"/>
+        <TopLine Value="13"/>
+        <CursorPos X="26" Y="369"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
@@ -55,9 +53,11 @@
         <Filename Value="gulpcommon.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="GulpCommon"/>
+        <EditorIndex Value="2"/>
         <WindowIndex Value="1"/>
-        <CursorPos X="24" Y="24"/>
-        <UsageCount Value="96"/>
+        <TopLine Value="28"/>
+        <CursorPos X="41" Y="199"/>
+        <UsageCount Value="110"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit1>
@@ -65,10 +65,13 @@
         <Filename Value="gulplibrary.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="GulpLibrary"/>
-        <EditorIndex Value="2"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="1"/>
         <WindowIndex Value="1"/>
-        <CursorPos X="96" Y="1483"/>
-        <UsageCount Value="96"/>
+        <TopLine Value="40"/>
+        <CursorPos X="28" Y="54"/>
+        <FoldState Value=" T3mN0S9 pj1kB0AC pibjV0H713C"/>
+        <UsageCount Value="110"/>
         <Loaded Value="True"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit2>
@@ -84,6 +87,7 @@
       <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>
+      <Style Value="1"/>
       <SyntaxOptions>
         <SyntaxMode Value="Delphi"/>
         <CStyleOperator Value="False"/>

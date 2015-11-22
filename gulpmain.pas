@@ -104,7 +104,7 @@ type
 
 
 
-    FOnMessage : TGulpOnMessage;
+    FOnMessage : TGulpShowMessage;
 
     procedure ShowItem;
     procedure ShowMessage;
