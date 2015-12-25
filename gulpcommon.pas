@@ -21,10 +21,12 @@
 
   Modified:
 
-    v0.0.2 - 2015.11.21 by Melchiorre Caruso.
+    v0.0.2 - 2015.12.19 by Melchiorre Caruso.
 }
 
 unit GulpCommon;
+
+{$mode objfpc}
 
 interface
 
@@ -32,25 +34,69 @@ uses
   Classes, SysUtils;
 
 type
+  { TGenericList }
+
+  generic TGenericList<TGenericItem> = class(TObject)
+  public type
+    TGenericCompare = function(Item1, Item2: TGenericItem): longint;
+  private
+    FList       : TList;
+    FCompare    : TGenericCompare;
+    function    GetCount: longint;
+    function    GetItem(Index: longint): TGenericItem;
+    procedure   SetCompare(Value: TGenericCompare);
+  public
+    constructor Create(Compare: TGenericCompare);
+    destructor  Destroy; override;
+    function    Add (Item: TGenericItem): longint;
+    function    Find(Item: TGenericItem): longint;
+    procedure   Delete(Index: longint);
+    procedure   Clear;
+  public
+    property Compare: TGenericCompare write SetCompare;
+    property Items[Index: longint]: TGenericItem read GetItem; default;
+    property Count: longint read GetCount;
+  end;
+
+  { TStrList }
+
+  TPCharList = specialize TGenericList<PChar>;
+
+  TStrList = class(TObject)
+  private
+    FList       : TPCharList;
+    function    GetCount: longint;
+    function    Get(Index: longint): ansistring;
+  public
+    constructor Create;
+    destructor  Destroy; override;
+    procedure   Add (const S: ansistring);
+    function    Find(const S: ansistring): longint;
+    procedure   Delete(Index: longint);
+    procedure   Clear;
+  public
+    property Items[Index: longint]: ansistring read Get; default;
+    property Count: longint read GetCount;
+  end;
+
   { TSysScanner }
 
   TSysScanner = class(TObject)
   private
-    FList: TStringList;
-    function  GetCount: integer;
-    function  GetItem(Index: longint): string;
-    procedure AddItem(const FileName: string);
-    procedure Scan(const FileMask: string; Recursive: boolean);
+    FList       : TStrList;
+    procedure   Scan(const FileMask: ansistring; Recursive: boolean);
+    function    GetCount: integer;
+    function    GetItem(Index: longint): ansistring;
   public
     constructor Create;
     destructor  Destroy; override;
-    procedure   Add(const FileMask: string);
-    function    Find(const FileName: string): longint;
+    procedure   Add(const FileMask: ansistring);
+    function    Find(const FileName: ansistring): longint;
     procedure   Delete(Index: longint);
     procedure   Clear;
   public
     property Count: integer read GetCount;
-    property Items[Index: longint]: string read GetItem;
+    property Items[Index: longint]: ansistring read GetItem; default;
   end;
 
   { TNulStream }
@@ -63,8 +109,14 @@ type
 
   { Matching routines }
 
-  function FileNameMatch(const FileName: string; const FileMask: string): boolean; overload;
-  function FileNameMatch(const FileName: string; FileMasks: TStringList): boolean; overload;
+  function FileNameMatch(const FileName: ansistring; const FileMask: ansistring): boolean; overload;
+  function FileNameMatch(const FileName: ansistring; FileMasks: TStrList): boolean; overload;
+
+  { Check command line }
+
+  function CheckOptions  (const ShortOpts, LongOpts: ansistring;  FileMasks: TStrList): ansistring;
+  function HasOption     (const ShortOpt,  LongOpt:  ansistring): boolean;
+  function GetOptionValue(const ShortOpt,  LongOpt:  ansistring): ansistring;
 
   { Priority routines }
 
@@ -77,23 +129,190 @@ uses
   {$IFDEF UNIX} BaseUnix; {$ENDIF}
   {$IFDEF MSWINDOWS} Windows; {$ENDIF}
 
+{ TGenList class }
+
+constructor TGenericList.Create(Compare: TGenericCompare);
+begin
+  inherited Create;
+  FCompare := Compare;
+  FList    := TList.Create;
+end;
+
+destructor TGenericList.Destroy;
+begin
+  Clear;
+  FList.Destroy;
+  inherited Destroy;
+end;
+
+procedure TGenericList.Delete(Index: longint);
+begin
+  FList.Delete(Index);
+end;
+
+function TGenericList.Add(Item: TGenericItem): longint;
+var
+  L, M, H, I : longint;
+begin
+  Result := -1;
+  if FList.Count > 0 then
+  begin
+    L := 0;
+    H := FList.Count - 1;
+    while H >= L do
+    begin
+      M := (L + H) div 2;
+      I := FCompare(GetItem(M), Item);
+      if I < 0 then
+        L := M + 1
+      else
+        if I > 0 then
+          H := M - 1
+        else
+          H := -2;
+    end;
+
+    if I < 0 then
+    begin
+      Result := M + 1;
+      FList.Insert(Result, Item);
+    end else
+      if I > 0 then
+      begin
+        Result := M;
+        FList.Insert(Result, Item);
+      end;
+
+  end else
+    Result := FList.Add(Item);
+end;
+
+function TGenericList.Find(Item: TGenericItem): longint;
+var
+  L, M, H, I : longint;
+begin
+  Result := -1;
+  if FList.Count > 0 then
+  begin
+    L := 0;
+    H := FList.Count - 1;
+    while H >= L do
+    begin
+      M := (L + H) div 2;
+      I := FCompare(GetItem(M), Item);
+      if I < 0 then
+        L := M + 1
+      else
+        if I > 0 then
+          H := M - 1
+        else
+          H := -2;
+    end;
+
+    if H = -2 then
+      Result := M;
+  end;
+end;
+
+procedure TGenericList.Clear;
+begin
+  while FList.Count > 0 do Delete(0);
+end;
+
+function TGenericList.GetItem(Index: longint): TGenericItem;
+begin
+  Result := TGenericItem(FList[Index]);
+end;
+
+function TGenericList.GetCount: longint;
+begin
+  Result := FList.Count;
+end;
+
+procedure TGenericList.SetCompare(Value: TGenericCompare);
+begin
+  if FList.Count = 0 then
+    FCompare := Value;
+end;
+
+{ TGenericStringList class }
+
+function Compare(Item1, Item2: pchar): longint;
+begin
+  {$IFDEF UNIX}
+    Result := strcomp(Item1, Item2);
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+      Result := stricomp(Item1, Item2);
+    {$ELSE}
+      Unsupported platform...
+    {$ENDIF}
+  {$ENDIF}
+end;
+
+constructor TStrList.Create;
+begin
+  FList := TPCharList.Create(@Compare);
+end;
+
+destructor TStrList.Destroy;
+begin
+  Clear;
+  FList.Destroy;
+  inherited Destroy;
+end;
+
+procedure TStrList.Delete(Index: longint);
+begin
+  StrDispose(FList[Index]);
+  FList.Delete(Index);
+end;
+
+procedure TStrList.Clear;
+begin
+  while FList.Count > 0 do Delete(0);
+end;
+
+procedure TStrList.Add(const S: ansistring);
+var
+  P : PChar;
+begin
+  P := StrAlloc(Length(S) + 1);
+  StrPCopy(P, S);
+  if FList.Add(P) = -1 then
+  begin
+    StrDispose(P);
+  end;
+end;
+
+function TStrList.Find(const S: ansistring): longint;
+var
+  P : PChar;
+begin
+  P := StrAlloc(Length(S) + 1);
+  StrPCopy(P, S);
+  begin
+    Result := FList.Find(P);
+  end;
+  StrDispose(P);
+end;
+
+function TStrList.GetCount: longint;
+begin
+  Result := FList.Count;
+end;
+
+function TStrList.Get(Index: longint): ansistring;
+begin
+  Result := ansistring(FList[Index]);
+end;
+
 { TSysScanner class }
 
 constructor TSysScanner.Create;
 begin
   inherited Create;
-  FList := TStringList.Create;
-  {$IFDEF UNIX}
-    FList.CaseSensitive := TRUE;
-  {$ELSE}
-    {$IFDEF MSWINDOWS}
-      FList.CaseSensitive := FALSE;
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
-  {$ENDIF}
-  FList.Duplicates  := dupIgnore;
-  FList.Sorted      := TRUE;
+  FList := TStrList.Create;
 end;
 
 destructor TSysScanner.Destroy;
@@ -105,23 +324,15 @@ end;
 
 procedure TSysScanner.Clear;
 begin
-  FList.Clear;
+  while GetCount > 0 do Delete(0);
 end;
 
-procedure TSysScanner.AddItem(const FileName: string);
-begin
-  if FList.IndexOf(FileName) = -1 then
-  begin
-    FList.Add(FileName);
-  end;
-end;
-
-procedure TSysScanner.Scan(const FileMask: string; Recursive: boolean);
+procedure TSysScanner.Scan(const FileMask: ansistring; Recursive: boolean);
 var
      Error : longint;
        Rec : TSearchRec;
-  ScanMask : string;
-  ScanPath : string;
+  ScanMask : ansistring;
+  ScanPath : ansistring;
 begin
   ScanPath := ExtractFilePath(FileMask);
   ScanMask := ExtractFileName(FileMask);
@@ -135,28 +346,29 @@ begin
     begin
       if (Rec.Name <> '.') and (Rec.Name <> '..') then
       begin
-        AddItem(ScanPath + Rec.Name);
+        FList.Add(ScanPath + Rec.Name);
         if Recursive then
           if Rec.Attr and faSymLink = 0 then
             Scan(ScanPath + IncludeTrailingPathDelimiter(Rec.Name) + ScanMask, TRUE);
       end;
     end else
       if FileNameMatch(ScanPath + Rec.Name, FileMask) then
-        AddItem(ScanPath + Rec.Name);
+        FList.Add(ScanPath + Rec.Name);
 
     Error := FindNext(Rec);
   end;
   SysUtils.FindClose(Rec);
 end;
 
-procedure TSysScanner.Add(const FileMask: string);
+procedure TSysScanner.Add(const FileMask: ansistring);
 begin
   if FileMask = '' then Exit;
+
   if DirectoryExists(FileMask) then
-    AddItem(FileMask)
+    FList.Add(FileMask)
   else
     if FileExists(FileMask) then
-      AddItem(FileMask)
+      FList.Add(FileMask)
     else
       Scan(FileMask, TRUE);
 end;
@@ -166,15 +378,12 @@ begin
   FList.Delete(Index);
 end;
 
-function TSysScanner.Find(const FileName: string): longint;
+function TSysScanner.Find(const FileName: ansistring): longint;
 begin
-  if FList.Find(FileName, Result) = FALSE then
-  begin
-    Result := -1;
-  end;
+  Result := FList.Find(FileName);
 end;
 
-function TSysScanner.GetItem(Index: longint): string;
+function TSysScanner.GetItem(Index: longint): ansistring;
 begin
   Result := FList[Index];
 end;
@@ -223,12 +432,12 @@ begin
         end;
 end;
 
-function FileNameMatch(const FileName: string; const FileMask: string): boolean;
+function FileNameMatch(const FileName: ansistring; const FileMask: ansistring): boolean;
 begin
-  Result := MatchPattern(pchar(FileName), pchar(FileMask));
+   Result := MatchPattern(pchar(FileName), pchar(FileMask));
 end;
 
-function FileNameMatch(const FileName: string; FileMasks: TStringList): boolean;
+function FileNameMatch(const FileName: ansistring; FileMasks: TStrList): boolean;
 var
   I : longint;
 begin
@@ -239,6 +448,91 @@ begin
       Result := TRUE;
       Break;
     end;
+end;
+
+{ Check command line }
+
+function CheckOptions(const ShortOpts, LongOpts: ansistring; FileMasks: TStrList): ansistring;
+var
+  I : longint = 1;
+  S : ansistring;
+
+  function CheckOption(const Options: string): ansistring;
+  begin
+    Result := '';
+    if Pos(S, Options) <> 0 then
+    begin
+      if Options[Pos(S, Options) + Length(S)] = ':' then
+      begin
+        Inc(I);
+        if (I > ParamCount) then
+          Result := Format('Option at position %d does not allow an argument: "%s"', [I - 1, S])
+        else
+          if (Pos(ParamStr(I), ShortOpts) <> 0) or
+             (Pos(ParamStr(I), LongOpts ) <> 0) then
+            Result := Format('Option at position %d needs an argument : "%s"', [I - 1, S]);
+      end else
+        if Options[Pos(S, Options) + Length(S)] <> ' ' then
+          Result := Format('Invalid option at position %d: "%s"', [I, S]);
+    end else
+      Result := Format('Invalid option at position %d: "%s"', [I, S]);
+  end;
+
+begin
+  Result := '';
+  while (I <= ParamCount) and (Result = '') do
+  begin
+    S := ParamStr(I);
+    if S[1] = '-' then
+    begin
+      if Length(S) <= 2 then
+        Result := CheckOption(ShortOpts)
+      else
+        if S[2] = '-' then
+          Result := CheckOption(LongOpts)
+        else
+          Result := Format('Invalid option at position %d: "%s"', [I, S]);
+    end else
+      if Assigned(FileMasks) then
+        FileMasks.Add(S);
+    Inc(I);
+  end;
+end;
+
+function HasOption(const ShortOpt, LongOpt: ansistring): boolean;
+var
+  I : longint = 1;
+  S : ansistring;
+begin
+  Result := FALSE;
+  while (I <= ParamCount) and (Result = FALSE) do
+  begin
+    S := ParamStr(I);
+    if S = ShortOpt then
+      Result := TRUE
+    else
+      if S = LongOpt then
+        Result := TRUE;
+    Inc(I);
+  end;
+end;
+
+function GetOptionValue(const ShortOpt, LongOpt: ansistring): ansistring;
+var
+  I : longint = 1;
+  S : ansistring;
+begin
+  Result := '';
+  while (I <= ParamCount) and (Result = '') do
+  begin
+    S := ParamStr(I);
+    if S = ShortOpt then
+      Result := ParamStr(I + 1)
+    else
+      if S = LongOpt then
+        Result := ParamStr(I + 1)   ;
+    Inc(I);
+  end;
 end;
 
 { Priority routines }

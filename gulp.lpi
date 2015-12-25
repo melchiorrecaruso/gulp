@@ -42,38 +42,32 @@
         <Filename Value="gulp.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Gulp"/>
-        <WindowIndex Value="1"/>
-        <TopLine Value="13"/>
-        <CursorPos X="26" Y="369"/>
+        <TopLine Value="153"/>
+        <CursorPos X="3" Y="186"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
-        <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit0>
       <Unit1>
         <Filename Value="gulpcommon.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="GulpCommon"/>
-        <EditorIndex Value="2"/>
-        <WindowIndex Value="1"/>
-        <TopLine Value="28"/>
-        <CursorPos X="41" Y="199"/>
-        <UsageCount Value="110"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="141"/>
+        <CursorPos Y="153"/>
+        <UsageCount Value="200"/>
         <Loaded Value="True"/>
-        <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit1>
       <Unit2>
         <Filename Value="gulplibrary.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="GulpLibrary"/>
         <IsVisibleTab Value="True"/>
-        <EditorIndex Value="1"/>
-        <WindowIndex Value="1"/>
-        <TopLine Value="40"/>
-        <CursorPos X="28" Y="54"/>
-        <FoldState Value=" T3mN0S9 pj1kB0AC pibjV0H713C"/>
-        <UsageCount Value="110"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="393"/>
+        <CursorPos Y="393"/>
+        <FoldState Value=" T3le0J8 picjb0AC pj0]9H73739 TMmf02M"/>
+        <UsageCount Value="200"/>
         <Loaded Value="True"/>
-        <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit2>
     </Units>
   </ProjectOptions>
@@ -87,24 +81,22 @@
       <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>
-      <Style Value="1"/>
       <SyntaxOptions>
-        <SyntaxMode Value="Delphi"/>
         <CStyleOperator Value="False"/>
         <AllowLabel Value="False"/>
         <CPPInline Value="False"/>
+        <UseAnsiStrings Value="False"/>
       </SyntaxOptions>
     </Parsing>
     <CodeGeneration>
       <SmartLinkUnit Value="True"/>
       <Optimizations>
-        <OptimizationLevel Value="3"/>
+        <OptimizationLevel Value="4"/>
       </Optimizations>
     </CodeGeneration>
     <Linking>
       <Debugging>
         <GenerateDebugInfo Value="False"/>
-        <UseLineInfoUnit Value="False"/>
       </Debugging>
       <LinkSmart Value="True"/>
     </Linking>

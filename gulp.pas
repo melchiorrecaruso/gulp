@@ -21,65 +21,45 @@
 
   Modified:
 
-    v0.0.2 - 2015.08.28 by Melchiorre Caruso.
+    v0.0.3 - 2015.12.19 by Melchiorre Caruso.
 }
 
 program Gulp;
 
+{$mode objfpc}
+
 uses
   {$IFDEF UNIX} cthreads, BaseUnix, {$ENDIF}
   {$IFDEF MSWINDOWS} Windows, {$ENDIF}
-  Classes, CustApp, GulpLibrary, SysUtils;
+  Classes, CustApp, GulpCommon, GulpLibrary, SysUtils;
 
 type
-  TShellApplication = class(TCustomApplication)
-  private
-     LongSwitches : TStringList; 
-         Switches : TStringList;
-    ShortSwitches : string;
+  TShellApplication = class(TObject)
   protected
-    procedure ShowItem(const Item: TGulpItem);
-    procedure ShowMessage(const Message: string);
-    procedure DoRun; override;
-    procedure Abort;
+    procedure   ShowItem(const Item: TGulpItem);
+    procedure   ShowMessage(const Message: ansistring);
+    procedure   Abort;
   public
-    constructor Create(AOwner: TComponent); override;
+    constructor Create(AOwner: TComponent);
     destructor  Destroy; override;
+    procedure   Run;
     procedure   Help;
   end;
 
 constructor TShellApplication.Create(AOwner: TComponent);
 begin
-  inherited Create(AOwner);
+  inherited Create;
   DefaultFormatSettings. LongDateFormat := 'yyyy-mm-dd';
   DefaultFormatSettings.ShortDateFormat := 'yyyy-mm-dd';
-  LongSwitches := TStringList.Create;
-      Switches := TStringList.Create;
-  {$IFDEF UNIX}
-    CaseSensitiveOptions   := TRUE;
-    Switches.CaseSensitive := TRUE;
-  {$ELSE}
-    {$IFDEF MSWINDOWS}
-      CaseSensitiveOptions   := FALSE;
-      Switches.CaseSensitive := FALSE;
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
-  {$ENDIF}
-  Switches.Duplicates := dupIgnore;
-  Switches.Sorted     := TRUE;
-  StopOnException     := TRUE;
-  ExitCode            := 255;
+  ExitCode := 255;
 end;
 
 destructor TShellApplication.Destroy;
 begin
-  FreeAndNil(LongSwitches);
-  FreeandNil(Switches);
   inherited Destroy;
 end;
 
-procedure TShellApplication.ShowMessage(const Message: string);
+procedure TShellApplication.ShowMessage(const Message: ansistring);
 begin
   write(Message);
 end;
@@ -89,12 +69,12 @@ begin
   if gfAdd in Item.Flags then
   begin
 
-    if Item.Attributes and faDirectory = faDirectory then
+    if Item.Attr and faDirectory = faDirectory then
       writeln(Format('%4s %3s %3s %7s %19s %12s %s', [
          VerTostring(Item.Version),
         FlagToString(Item.Flags),
         ModeToString(Item.Mode),
-        AttrToString(Item.Attributes),
+        AttrToString(Item.Attr),
         TimeToString(Item.Time),
         '',
         Item.Name]))
@@ -103,7 +83,7 @@ begin
          VerTostring(Item.Version),
         FlagToString(Item.Flags),
         ModeToString(Item.Mode),
-        AttrToString(Item.Attributes),
+        AttrToString(Item.Attr),
         TimeToString(Item.Time),
         SizeToString(Item.Size),
         Item.Name]));
@@ -111,7 +91,7 @@ begin
   end else
   begin
 
-    if Item.Attributes and faDirectory = faDirectory then
+    if Item.Attr and faDirectory = faDirectory then
       writeln(Format('%4s %3s %3s %7s %19s %12s %s', [
          VerTostring(Item.Version),
         FlagToString(Item.Flags),
@@ -133,85 +113,72 @@ begin
   end;
 end;
 
-procedure TShellApplication.DoRun;
+procedure TShellApplication.Run;
 var
-        App : TGulpApplication;
-      Error : string;
-          I : longint;
-  StartTime : TDateTime;
+  App   : TGulpApplication;
+  S     : ansistring;
+  Start : TDateTime;
 begin
-  StartTime     := Now;
-  ShortSwitches := 's:r:p:l:c:f:u:m:i:e:h';
-  LongSwitches.Add('synch:');
-  LongSwitches.Add('restore:');
-  LongSwitches.Add('purge:');
-  LongSwitches.Add('list:');
-  LongSwitches.Add('check:');
-  LongSwitches.Add('fix:');
-  LongSwitches.Add('until:');
-  LongSwitches.Add('method:');
-  LongSwitches.Add('include:');
-  LongSwitches.Add('exclude:');
-  LongSwitches.Add('help');
-  LongSwitches.Add('nodelete');
-
-  App := TGulpApplication.Create;
-  App.OnShowMessage := ShowMessage;
-  App.OnShowItem    := ShowItem;
+  Start := Now;
+  App   := TGulpApplication.Create;
+  App.OnShowMessage := @ShowMessage;
+  App.OnShowItem    := @ShowItem;
   try
-    Error   := CheckOptions(ShortSwitches, LongSwitches, Switches, App.Include);
-    if Error = '' then
+    S := CheckOptions(
+      '-s: -r: -p: -l: -c: -f: -u: -m: -i: -e: h ',
+      '--synch:   --restore: --purge: --list:    ' +
+      '--check:   --fix:     --until: --method:  ' +
+      '--include: --exclude: --help   --nodelete ' ,
+      App.Include);
+
+    if S = '' then
     begin
-      for I := 0 to Switches.Count - 1 do
+      if HasOption('-i', '--include') = TRUE then
       begin
-        {$IFDEF UNIX}
-          if (Pos('include=', Switches[I]) = 1) then App.Include.Add(Copy(Switches[I], 9, Length(Switches[I]) - 8)) else
-            if (Pos('exclude=', Switches[I]) = 1) then App.Exclude.Add(Copy(Switches[I], 9, Length(Switches[I]) - 8)) else
-              if (Pos('i=',       Switches[I]) = 1) then App.Include.Add(Copy(Switches[I], 3, Length(Switches[I]) - 2)) else
-                if (Pos('e=',       Switches[I]) = 1) then App.Exclude.Add(Copy(Switches[I], 3, Length(Switches[I]) - 2));
-        {$ELSE}
-          {$IFDEF MSWINDOWS}
-            if (Pos('include=', lowercase(FSwitches[I])) = 1) then Application.Include.Add(Copy(Switches[I], 9, Length(Switches[I]) - 8)) else
-              if (Pos('exclude=', lowercase(FSwitches[I])) = 1) then Application.Exclude.Add(Copy(Switches[I], 9, Length(Switches[I]) - 8)) else
-                if (Pos('i=',       lowercase(FSwitches[I])) = 1) then Application.Include.Add(Copy(Switches[I], 3, Length(Switches[I]) - 2)) else
-                  if (Pos('e=',       lowercase(FSwitches[I])) = 1) then Application.Exclude.Add(Copy(Switches[I], 3, Length(Switches[I]) - 2));
-          {$ELSE}
-            Unsupported platform...
-          {$ENDIF}
-        {$ENDIF}
+        S := GetOptionValue('-i', '--include');
+        if S[Length(S)] = PathDelim then
+          App.Include.Add(S + '*')
+        else
+          App.Include.Add(S);
       end;
-      if GetOptionValue('m', 'method') = 'gzfast' then App.StorageFlags := [gsfGZ, gsfFASTEST];
-      if GetOptionValue('m', 'method') = 'gz'     then App.StorageFlags := [gsfGZ, gsfDEFAULT];
-      if GetOptionValue('m', 'method') = 'gzmax'  then App.StorageFlags := [gsfGZ, gsfMAX    ];
-      if GetOptionValue('u', 'until' ) <> '' then
+
+      if HasOption('-e', '--exclude') = TRUE then
       begin
-        if GetOptionValue('u', 'until') = 'last' then
+        S := GetOptionValue('-e', '--exclude');
+        if S[Length(S)] = PathDelim then
+          App.Exclude.Add(S + '*')
+        else
+          App.Exclude.Add(S);
+      end;
+
+      if HasOption('-u', '--until'  ) = TRUE then
+      begin
+        if GetOptionValue('-u', '--until') = 'last' then
           App.UntilVersion := $FFFFFFFF
         else
-          App.UntilVersion := StrToInt(GetOptionValue('u', 'until'));
+          App.UntilVersion := StrToInt(GetOptionValue('-u', '--until'));
       end;
-      if HasOption('s', 'synch'  ) then App.Sync   (GetOptionValue('s', 'synch'  )) else
-        if HasOption('r', 'restore') then App.Restore(GetOptionValue('r', 'restore')) else
-          if HasOption('p', 'purge'  ) then App.Purge  (GetOptionValue('p', 'purge'  )) else
-            if HasOption('c', 'check'  ) then App.Check  (GetOptionValue('c', 'check'  )) else
-              if HasOption('f', 'fix'    ) then App.Fix    (GetOptionValue('f', 'fix'    )) else
-                if HasOption('l', 'list'   ) then App.List   (GetOptionValue('l', 'list'   )) else
-                  if HasOption('h', 'help'   ) then
+
+      if HasOption('-s', '--synch'  ) then App.Sync   (GetOptionValue('-s', '--synch'  )) else
+        if HasOption('-r', '--restore') then App.Restore(GetOptionValue('-r', '--restore')) else
+          if HasOption('-p', '--purge'  ) then App.Purge  (GetOptionValue('-p', '--purge'  )) else
+            if HasOption('-c', '--check'  ) then App.Check  (GetOptionValue('-c', '--check'  )) else
+              if HasOption('-f', '--fix'    ) then App.Fix    (GetOptionValue('-f', '--fix'    )) else
+                if HasOption('-l', '--list'   ) then App.List   (GetOptionValue('-l', '--list'   )) else
+                  if HasOption('-h', '--help'   ) then
                     Help
                   else
                     Help;
+
       ExitCode := 0;
     end else
-      writeln(#13, #13: 80, Error);
+      writeln(#13, #13: 80, S);
   except
     on E: Exception do
-      writeln(#13, #13: 80,
-        Format('An exception was raised: "%s"', [E.Message]));
+      writeln(#13, #13: 80, Format('An exception was raised: "%s"', [E.Message]));
   end;
   FreeAndNil(App);
-  writeln(#13, #13: 80, 'Elapsed ',
-    Format('%0.2f', [(Now - StartTime) * (24 * 60 * 60)]) , ' sec');
-  Terminate;
+  writeln(#13, #13: 80, 'Elapsed ', Format('%0.2f', [(Now - Start) * (24 * 60 * 60)]) , ' sec');
 end;
 
 procedure TShellApplication.Abort;
