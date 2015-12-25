@@ -728,8 +728,8 @@ begin
         raise Exception.CreateFmt('Unable to set mode for "%s"', [Item.Name]);
   {$ELSE}
     {$IFDEF MSWINDOWS}
-      if FileSetAttr(RecName, Rec.FAttributes) <> 0 then
-        raise Exception.CreateFmt('Unable to set attrbutes for "%s"', [RecName]);
+      if FileSetAttr(Item.Name, Item.Attr) <> 0 then
+        raise Exception.CreateFmt('Unable to set attrbutes for "%s"', [Item.Name]);
     {$ELSE}
       Unsupported platform...
     {$ENDIF}
@@ -859,7 +859,7 @@ begin
                              gfMODE, gfLINK];
       {$ELSE}
         {$IFDEF MSWINDOWS}
-          Item.FPlatform := gpWIN;
+          Item.FPlatform := gpMSWINDOWS;
           Item.FFLags    := [gfNAME, gfTIME, gfSIZE, gfATTR, gfPOS, gfPLAT];
         {$ELSE}
           Unsupported platform...
