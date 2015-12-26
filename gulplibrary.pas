@@ -21,7 +21,7 @@
 
   Modified:
 
-    v0.0.3 - 2015.12.25 by Melchiorre Caruso.
+    v0.0.3 - 2015.12.26 by Melchiorre Caruso.
 }
 
 unit GulpLibrary;
