@@ -50,7 +50,6 @@
         <Filename Value="gulpcommon.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="GulpCommon"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
         <CursorPos X="24" Y="24"/>
         <UsageCount Value="200"/>
@@ -60,6 +59,7 @@
         <Filename Value="gulplibrary.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="GulpLibrary"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="2"/>
         <CursorPos X="24" Y="24"/>
         <FoldState Value=" T3le0J8 picjb0AC pj0]9H73739 TMmf02M"/>
