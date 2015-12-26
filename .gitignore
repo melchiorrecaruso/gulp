@@ -2,4 +2,4 @@
 *.ppu
 *.o
 *.bak
-*.exe
+*.exe/gulp
