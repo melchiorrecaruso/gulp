@@ -1125,7 +1125,7 @@ begin
   FreeAndNil(Stream);
   FreeAndNil(Scan);
 
-  ShowMessage(Format('%s Finished (%u extracted bytes) %s',
+  ShowMessage(Format('%sFinished (%u extracted bytes) %s',
     [#13, Size, LineEnding]));
 end;
 
