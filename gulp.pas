@@ -21,7 +21,7 @@
 
   Modified:
 
-    v0.0.3 - 2015.12.27 by Melchiorre Caruso.
+    v0.0.3 - 2015.12.30 by Melchiorre Caruso.
 }
 
 program Gulp;
@@ -31,7 +31,7 @@ program Gulp;
 uses
   {$IFDEF UNIX} cthreads, BaseUnix, {$ENDIF}
   {$IFDEF MSWINDOWS} Windows, {$ENDIF}
-  Classes, CustApp, GulpCommon, GulpLibrary, SysUtils;
+  Classes, GulpCommon, GulpLibrary, SysUtils;
 
 type
   TShellApplication = class(TObject)
@@ -40,13 +40,13 @@ type
     procedure   ShowMessage(const Message: ansistring);
     procedure   Abort;
   public
-    constructor Create(AOwner: TComponent);
+    constructor Create;
     destructor  Destroy; override;
     procedure   Run;
     procedure   Help;
   end;
 
-constructor TShellApplication.Create(AOwner: TComponent);
+constructor TShellApplication.Create;
 begin
   inherited Create;
   DefaultFormatSettings. LongDateFormat := 'yyyy-mm-dd';
@@ -337,7 +337,7 @@ var
   Shell: TShellApplication;
 
 begin
-  Shell := TShellApplication.Create(nil);
+  Shell := TShellApplication.Create;
   Shell.Run;
   Shell.Destroy;
 end.

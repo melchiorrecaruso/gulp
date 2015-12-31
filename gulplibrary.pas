@@ -618,7 +618,7 @@ begin
 
     if 0 = UntilVersion then
     begin
-      if FList.Add(Item) = - 1 then
+      if FList.Add(Item) = -1 then
         raise Exception.Create('Duplicates non allowed (ex0007)');
       Item := TGulpItem.Create;
     end else
@@ -632,7 +632,10 @@ begin
         begin
           I := FList.Find(Item);
           if I <> -1 then
+          begin
+            FList.Items [I].Destroy;
             FList.Delete(I);
+          end;
         end;
 
         if gfADD in Item.FFlags then
@@ -652,8 +655,8 @@ begin
     if (gfLAST in FList[FList.Count -1].FFLags) = FALSE then
       raise Exception.Create('Archive is broken, try with fix command (ex0011)');
 
-    if FStream.Seek(0, soCurrent) <> FStream.Seek(0, soEnd) then
-      raise Exception.Create('Archive is broken, try with fix command (ex0012)');
+  if FStream.Seek(0, soCurrent) <> Size then
+    raise Exception.Create('Archive is broken, try with fix command (ex0012)');
   FreeAndNil(Item);
 end;
 
@@ -791,8 +794,8 @@ end;
 constructor TGulpWriter.Create(Stream: TStream);
 begin
   inherited Create;
-  FList   := TGulpList.Create(@Compare42);
   FStream := Stream;
+  FList   := TGulpList.Create(@Compare42);
 end;
 
 destructor TGulpWriter.Destroy;

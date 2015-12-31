@@ -4,12 +4,15 @@
     <Version Value="9"/>
     <General>
       <Flags>
+        <SaveClosedFiles Value="False"/>
         <SaveOnlyProjectUnits Value="True"/>
         <MainUnitHasUsesSectionForAllUnits Value="False"/>
         <MainUnitHasCreateFormStatements Value="False"/>
         <MainUnitHasTitleStatement Value="False"/>
         <AlwaysBuild Value="True"/>
         <UseDesignTimePackages Value="True"/>
+        <SaveJumpHistory Value="False"/>
+        <SaveFoldState Value="False"/>
       </Flags>
       <MainUnit Value="0"/>
       <Title Value="Gulp"/>
@@ -42,7 +45,9 @@
         <Filename Value="gulp.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Gulp"/>
-        <CursorPos X="24" Y="24"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="304"/>
+        <CursorPos X="11" Y="313"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit0>
@@ -50,8 +55,8 @@
         <Filename Value="gulpcommon.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="GulpCommon"/>
-        <EditorIndex Value="1"/>
-        <CursorPos X="24" Y="24"/>
+        <TopLine Value="288"/>
+        <CursorPos X="34" Y="312"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit1>
@@ -60,9 +65,9 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="GulpLibrary"/>
         <IsVisibleTab Value="True"/>
-        <EditorIndex Value="2"/>
-        <CursorPos X="24" Y="24"/>
-        <FoldState Value=" T3le0J8 picjb0AC pj0]9H73739 TMmf02M"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="164"/>
+        <CursorPos X="25" Y="183"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit2>
@@ -86,16 +91,15 @@
       </SyntaxOptions>
     </Parsing>
     <CodeGeneration>
-      <SmartLinkUnit Value="True"/>
       <Optimizations>
-        <OptimizationLevel Value="4"/>
+        <OptimizationLevel Value="0"/>
       </Optimizations>
     </CodeGeneration>
     <Linking>
       <Debugging>
         <GenerateDebugInfo Value="False"/>
+        <UseHeaptrc Value="True"/>
       </Debugging>
-      <LinkSmart Value="True"/>
     </Linking>
     <Other>
       <Verbosity>

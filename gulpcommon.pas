@@ -21,7 +21,7 @@
 
   Modified:
 
-    v0.0.2 - 2015.12.27 by Melchiorre Caruso.
+    v0.0.2 - 2015.12.30 by Melchiorre Caruso.
 }
 
 unit GulpCommon;
@@ -235,7 +235,7 @@ begin
     FCompare := Value;
 end;
 
-{ TGenericStringList class }
+{ TStrList class }
 
 function Compare(Item1, Item2: pchar): longint;
 begin
@@ -324,7 +324,7 @@ end;
 
 procedure TSysScanner.Clear;
 begin
-  while GetCount > 0 do Delete(0);
+  FList.Clear;
 end;
 
 procedure TSysScanner.Scan(const FileMask: ansistring; Recursive: boolean);
