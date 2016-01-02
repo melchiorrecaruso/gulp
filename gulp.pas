@@ -336,8 +336,6 @@ end;
 var
   Shell: TShellApplication;
 
-{$R *.res}
-
 begin
   Shell := TShellApplication.Create;
   Shell.Run;
