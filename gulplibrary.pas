@@ -1,5 +1,5 @@
 {
-  Copyright (c) 2014-2015 Melchiorre Caruso.
+  Copyright (c) 2014-2016 Melchiorre Caruso.
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 
   Modified:
 
-    v0.0.3 - 2015.12.27 by Melchiorre Caruso.
+    v0.0.3 - 2016.01.01 by Melchiorre Caruso.
 }
 
 unit GulpLibrary;
@@ -53,7 +53,7 @@ type
     FSize      : int64;         // Size in bytes
     FAttr      : longint;       // Attributes (MSWindows)
     FMode      : longint;       // Mode (Unix)
-    FLinkName  : ansistring;    // Name of link
+    FLink  : ansistring;    // Name of link
     FUserID    : longword;      // User ID
     FUserName  : ansistring;    // User Name
     FGroupID   : longword;      // Group ID
@@ -70,7 +70,7 @@ type
     property Size      : int64         read FSize;
     property Attr      : longint       read FAttr;
     property Mode      : longint       read FMode;
-    property LinkName  : ansistring    read FLinkName;
+    property LinkName  : ansistring    read FLink;
     property UserID    : longword      read FUserID;
     property UserName  : ansistring    read FUserName;
     property GroupID   : longword      read FGroupID;
@@ -117,22 +117,19 @@ type
 
 // --- Some useful routines ---
 
-function GetTime(const Time: TDateTime     ): TDateTime; overload;
-function GetTime(const FileName: ansistring): TDateTime; overload;
-function GetTime(var   SR: TSearchRec      ): TDateTime; overload;
-function GetSize(const FileName: ansistring): int64;     overload;
-function GetSize(var   SR: TSearchRec      ): int64;     overload;
-function GetAttr(const FileName: ansistring): longint;   overload;
-function GetAttr(var   SR: TSearchRec      ): longint;   overload;
+function GetTime(const FileName: ansistring): TDateTime;  overload;
+function GetTime(var   SR: TSearchRec      ): TDateTime;  overload;
+function GetSize(const FileName: ansistring): int64;      overload;
+function GetSize(var   SR: TSearchRec      ): int64;      overload;
+function GetAttr(const FileName: ansistring): longint;    overload;
+function GetAttr(var   SR: TSearchRec      ): longint;    overload;
 
-{$IFDEF UNIX}
-function GetMode(const FileName: ansistring): longint;   overload;
-function GetMode(var   Info: stat          ): longint;   overload;
-function GetUID (const FileName: ansistring): longword;  overload;
-function GetUID (var   Info: stat          ): longword;  overload;
-function GetGID (const FileName: ansistring): longword;  overload;
-function GetGID (var   Info: stat          ): longword;  overload;
-{$ENDIF}
+function GetMode(const FileName: ansistring): longint;
+function GetUID (const FileName: ansistring): longword;
+function GetUNM (const FileName: ansistring): ansistring;
+function GetGID (const FileName: ansistring): longword;
+function GetGNM (const FileName: ansistring): ansistring;
+function GetLink(const FileName: ansistring): ansistring;
 
 function  VerToString(const Version: longword): ansistring;
 function AttrToString(const Attr: longint    ): ansistring;
@@ -159,7 +156,7 @@ const
     123, 25, 91, 110, 159, 243,  53, 246, 80, 215, 248, 114, 172);
 
   GulpDescription =
-      'GULP v0.0.3 journaling archiver, copyright (c) 2014-2015 Melchiorre Caruso.' + LineEnding +
+      'GULP v0.0.3 journaling archiver, copyright (c) 2014-2016 Melchiorre Caruso.' + LineEnding +
       'GULP archiver for user-level incremental backups with rollback capability.'  + LineEnding ;
 
 type
@@ -170,7 +167,7 @@ type
   private
     FList       : TGulpList;
     FStream     : TStream;
-    procedure   Read(Item: TGulpItem);
+    function    Read(Item: TGulpItem): TGulpItem;
     function    GetItem(Index: longint): TGulpItem;
     function    GetCount: longint;
   public
@@ -218,7 +215,7 @@ begin
   Item.FSize      := 0;
   Item.FAttr      := 0;
   Item.FMode      := 0;
-  Item.FLinkName  := '';
+  Item.FLink  := '';
   Item.FUserID    := 0;
   Item.FUserName  := '';
   Item.FGroupID   := 0;
@@ -242,7 +239,7 @@ begin
   if gfSIZE  in Item.FFlags then SHA1Update(Context,         Item.FSize,        SizeOf(Item.FSize     ));
   if gfATTR  in Item.FFlags then SHA1Update(Context,         Item.FAttr,        SizeOf(Item.FAttr     ));
   if gfMODE  in Item.FFlags then SHA1Update(Context,         Item.FMode,        SizeOf(Item.FMode     ));
-  if gfLINK  in Item.FFlags then SHA1Update(Context, Pointer(Item.FLinkName)^,  Length(Item.FLinkName ));
+  if gfLINK  in Item.FFlags then SHA1Update(Context, Pointer(Item.FLink)^,  Length(Item.FLink ));
   if gfUID   in Item.FFlags then SHA1Update(Context,         Item.FUserID,      SizeOf(Item.FUserID   ));
   if gfUNAME in Item.FFlags then SHA1Update(Context, Pointer(Item.FUserName)^,  Length(Item.FUserName ));
   if gfGID   in Item.FFlags then SHA1Update(Context,         Item.FGroupID,     SizeOf(Item.FGroupID  ));
@@ -258,22 +255,9 @@ end;
 // Library routines
 // =============================================================================
 
-function GetTime(const Time: TDateTime): TDateTime;
-var
-  OffSet : longint;
-begin
-  Result := Time;
-  OffSet := GetLocalTimeOffSet;
-  if (OffSet > 0) then
-    Result := Result + EncodeTime(Offset div 60, Offset mod 60, 0, 0)
-  else
-    if (Offset < 0) then
-      Result := Result - EncodeTime(Abs(Offset) div 60, Abs(Offset) mod 60, 0, 0);
-end;
-
 function GetTime(var SR: TSearchRec): TDateTime;
 begin
-  Result := GetTime(FileDateToDateTime(SR.Time));
+  Result := LocalTimeToUniversal(FileDateToDateTime(SR.Time), - GetLocalTimeOffSet);
 end;
 
 function GetTime(const FileName: ansistring): TDateTime;
@@ -332,58 +316,92 @@ begin
   SysUtils.FindClose(SR);
 end;
 
-{$IFDEF UNIX}
-function GetMode(const FileName: ansistring): longint;
-var
-  Info : stat;
+function GetLink(const FileName: ansistring): ansistring;
 begin
-  Result := 0;
-  if fpLstat(FileName, Info) = 0 then
-    Result := GetMode(Info)
-  else
-    if fpstat(FileName, Info) = 0 then
-      Result := GetMode(Info);
+  Result := '';
+  {$IFDEF UNIX}
+  if GetAttr(FileName) and faSymLink = faSymLink then
+    Result := fpReadLink(FileName);
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+    {$ELSE}
+      Unsupported platform...
+    {$ENDIF}
+  {$ENDIF}
 end;
 
-function GetMode(var Info: stat): longint;
+function GetMode(const FileName: ansistring): longint;
+{$IFDEF UNIX}
+var
+  Info : stat;
+{$ENDIF}
 begin
-  Result := Info.st_mode;
+  Result := 0;
+  {$IFDEF UNIX}
+  if fpLstat(FileName, Info) = 0 then
+    Result := Info.st_mode
+  else
+    if fpstat(FileName, Info) = 0 then
+      Result := Info.st_mode;
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+    {$ELSE}
+      Unsupported platform...
+    {$ENDIF}
+  {$ENDIF}
 end;
 
 function GetUID(const FileName: ansistring): longword;
+{$IFDEF UNIX}
 var
   Info : stat;
+{$ENDIF}
 begin
   Result := $FFFFFFFF;
+  {$IFDEF UNIX}
   if fpLstat(FileName, Info) = 0 then
-    Result := GetUID(Info)
+    Result := Info.st_uid
   else
     if fpstat(FileName, Info) = 0 then
-      Result := GetUID(Info);
+      Result := Info.st_uid;
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+    {$ELSE}
+      Unsupported platform...
+    {$ENDIF}
+  {$ENDIF}
 end;
 
-function GetUID(var Info: stat): longword;
+function GetUNM(const FileName: ansistring): ansistring;
 begin
-  Result := Info.st_uid;
+  Result := '';
 end;
 
 function GetGID(const FileName: ansistring): longword;
+{$IFDEF UNIX}
 var
   Info : stat;
+{$ENDIF}
 begin
   Result := $FFFFFFFF;
+  {$IFDEF UNIX}
   if fpLstat(FileName, Info) = 0 then
-    Result := GetGID(Info)
+    Result := Info.st_gid
   else
     if fpstat(FileName, Info) = 0 then
-      Result := GetGID(Info);
+      Result := Info.st_gid;
+  {$ELSE}
+    {$IFDEF MSWINDOWS}
+    {$ELSE}
+      Unsupported platform...
+    {$ENDIF}
+  {$ENDIF}
 end;
 
-function GetGID(var Info: stat): longword;
+function GetGNM(const FileName: ansistring): ansistring;
 begin
-  Result := Info.st_gid;
+  Result := '';
 end;
-{$ENDIF}
 
 function VerToString(const Version: longword): ansistring;
 begin
@@ -462,13 +480,12 @@ var
   I : longint;
 {$ENDIF}
 begin
+  Result := 0;
   {$IFDEF UNIX}
-    Result := 0;
     for I  := 1 to Length(S) do
       Result := Result * 8 + StrToInt(Copy(S, I, 1));
   {$ELSE}
     {$IFDEF MSWINDOWS}
-      Result := 0;
     {$ELSE}
       Unsupported platform...
     {$ENDIF}
@@ -481,7 +498,7 @@ begin
     gpUNIX      : Result := 'UNIX';
     gpMSWINDOWS : Result := 'WIN';
     gpMAC       : Result := 'MAC';
-  else            Result := ''
+  else            Result := '???'
   end;
 end;
 
@@ -550,11 +567,11 @@ begin
   end;
 end;
 
-procedure TGulpReader.Read(Item: TGulpItem);
+function TGulpReader.Read(Item: TGulpItem): TGulpItem;
 var
   Digest : TSHA1Digest;
 begin
-  Item   := GulpLibrary.Clear(Item);
+  Result := GulpLibrary.Clear(Item);
   if FStream.Read(Digest, SizeOf(TSHA1Digest)) <> SizeOf(TSHA1Digest) then
     raise Exception.Create('Archive is damaged, try with the "fix" command (ex0002)');
   if SHA1Match(Digest, GulpMarker) = FALSE then
@@ -566,7 +583,7 @@ begin
   if gfSIZE  in Item.Flags then FStream.Read(Item.FSize,     SizeOf(Item.FSize    ));
   if gfATTR  in Item.Flags then FStream.Read(Item.FAttr,     SizeOf(Item.FAttr    ));
   if gfMODE  in Item.Flags then FStream.Read(Item.FMode,     SizeOf(Item.FMode    ));
-  if gfLINK  in Item.Flags then Item.FLinkName  := FStream.ReadAnsiString;
+  if gfLINK  in Item.Flags then Item.FLink  := FStream.ReadAnsiString;
   if gfUID   in Item.Flags then FStream.Read(Item.FUserID,   SizeOf(Item.FUserID  ));
   if gfUNAME in Item.Flags then Item.FUserName  := FStream.ReadAnsiString;
   if gfGID   in Item.Flags then FStream.Read(Item.FGroupID,  SizeOf(Item.FGroupID ));
@@ -576,14 +593,16 @@ begin
   if gfPOS   in Item.Flags then FStream.Read(Item.FStartPos, SizeOf(Item.FStartPos));
   if gfPOS   in Item.Flags then FStream.Read(Item.FEndPos,   SizeOf(Item.FEndPos  ));
 
-  if ((Item.FEndPos = 0) or (Item.FStartPos = 0)) and (Item.FSize <> 0) then
+  if ((gfDEL in Item.FFlags) = FALSE) and ((gfADD in Item.FFlags) = FALSE) then
     raise Exception.Create('Archive is damaged, try with the "fix" command (ex0004)');
-  if FStream.Read(Digest, SizeOf(TSHA1Digest)) <> SizeOf(TSHA1Digest) then
+  if ((Item.FEndPos = 0) or (Item.FStartPos = 0)) and (Item.FSize <> 0) then
     raise Exception.Create('Archive is damaged, try with the "fix" command (ex0005)');
-  if SHA1Match(Digest, GetDigest(Item)) = FALSE then
+  if FStream.Read(Digest, SizeOf(TSHA1Digest)) <> SizeOf(TSHA1Digest) then
     raise Exception.Create('Archive is damaged, try with the "fix" command (ex0006)');
+  if SHA1Match(Digest, GetDigest(Item)) = FALSE then
+    raise Exception.Create('Archive is damaged, try with the "fix" command (ex0007)');
 
-  DoDirSeparators(Item.FLinkName);
+  DoDirSeparators(Item.FLink);
   DoDirSeparators(Item.FName);
 end;
 
@@ -591,8 +610,8 @@ procedure TGulpReader.Load(UntilVersion: longword);
 var
   I       : longint;
   Item    : TGulpItem;
-  OffSet  : int64 = 0;
-  Size    : int64 = 0;
+  OffSet  : int64    = 0;
+  Size    : int64    = 0;
   Version : longword = 1;
 begin
   Clear;
@@ -602,62 +621,53 @@ begin
     FList.Compare := @Compare41;
 
   Item := TGulpItem.Create;
-  Size := FStream.Seek(0, soEnd);
-          FStream.Seek(0, soBeginning);
-  while   FStream.Seek(0, soCurrent) < Size do
-  begin
-    Read(Item);
-    Item.FVersion := Version;
-    OffSet := Max(OffSet, Item.FEndPos);
-    if gfLAST in Item.FFlags then
+  try
+    while TRUE do
     begin
-      OffSet := Max(OffSet, FStream.Seek(0, soCurrent));
-      FStream.Seek(OffSet, soBeginning);
-      Inc(Version);
-    end;
-
-    if 0 = UntilVersion then
-    begin
-      if FList.Add(Item) = -1 then
-        raise Exception.Create('Duplicates non allowed (ex0007)');
-      Item := TGulpItem.Create;
-    end else
-      if Version <= UntilVersion then
+      Read(Item).FVersion := Version;
+      OffSet := Max(OffSet, Item.FEndPos);
+      if gfLAST in Item.Flags then
       begin
-        if (gfDEL in Item.FFlags) = FALSE then
-          if (gfADD in Item.FFlags) = FALSE then
-            raise Exception.Create('Invalid signature value (ex0008)');
+        OffSet := Max(OffSet, FStream.Seek(0, soCurrent));
+        if FStream.Seek(OffSet, soBeginning) <> OffSet then
+          raise Exception.Create('Stream is not a valid archive (ex0008)');
+        Size := OffSet;
+        Inc(Version);
+      end;
 
-        if gfDEL in Item.FFlags then
+      if 0 = UntilVersion then
+      begin
+        if FList.Add(Item) = -1 then
+          raise Exception.Create('Duplicates non allowed (ex0009)');
+        Item := TGulpItem.Create;
+      end else
+        if Version <= UntilVersion then
         begin
-          I := FList.Find(Item);
-          if I <> -1 then
+          if gfDEL in Item.FFlags then
           begin
-            FList.Items [I].Destroy;
-            FList.Delete(I);
+            I := FList.Find(Item);
+            if I <> -1 then
+            begin
+              FList.Items [I].Destroy;
+              FList.Delete(I);
+            end;
+          end;
+
+          if gfADD in Item.FFlags then
+          begin
+            if FList.Add(Item) = -1 then
+              raise Exception.Create('Duplicates non allowed (ex0010)');
+            Item := TGulpItem.Create;
           end;
         end;
+    end;
 
-        if gfADD in Item.FFlags then
-        begin
-          if FList.Add(Item) = -1 then
-            raise Exception.Create('Duplicates non allowed (ex0009)');
-          Item := TGulpItem.Create;
-        end;
-      end;
+  except
   end;
-
-  if FList.Count = 0 then
-  begin
-    if FStream.Seek(0, soEnd) <> 0 then
-      raise Exception.Create('Invalid signature value (ex0010)');
-  end else
-    if (gfLAST in FList[FList.Count -1].FFLags) = FALSE then
-      raise Exception.Create('Archive is broken, try with fix command (ex0011)');
-
-  if FStream.Seek(0, soCurrent) <> Size then
-    raise Exception.Create('Archive is broken, try with fix command (ex0012)');
   FreeAndNil(Item);
+
+  if Size <> FStream.Seek(0, soEnd) then
+    raise Exception.Create('Archive is broken, try with fix command (ex0011)');
 end;
 
 procedure TGulpReader.Extract(Index: longint; Stream: TStream);
@@ -676,7 +686,7 @@ begin
   begin
     Readed := FStream.Read(Buffer, Min(SizeOf(Buffer), Size));
     if Readed = 0 then
-      raise Exception.Create('Unable to read stream (ex0013)');
+      raise Exception.Create('Unable to read stream (ex0012)');
     SHA1Update  (Context, Buffer, Readed);
     Stream.Write(         Buffer, Readed);
     Dec(Size, Readed);
@@ -684,7 +694,7 @@ begin
   SHA1Final(Context, Digest1);
 
   if FStream.Read(Digest2, SizeOf(TSHA1Digest)) <> SizeOf(TSHA1Digest) then
-    raise Exception.Create('Archive is damaged, try with the "fix" command (ex0014)');
+    raise Exception.Create('Archive is damaged, try with the "fix" command (ex0013)');
 
   if SHA1Match(Digest1, Digest2) = FALSE then
     raise Exception.CreateFmt('Mismatched checksum for "%s"', [Items[Index].Name]);
@@ -696,9 +706,10 @@ var
   Stream : TFileStream;
 begin
   Item := Items[Index];
-  if ForceDirectories(ExtractFileDir(Item.Name)) = FALSE then
-    raise Exception.CreateFmt('Unable to create path "%s"',
-      [ExtractFileDir(Item.Name)]);
+  if ExtractFileDir(Item.Name) <> '' then
+    if ForceDirectories(ExtractFileDir(Item.Name)) = FALSE then
+      raise Exception.CreateFmt('Unable to create path "%s"',
+        [ExtractFileDir(Item.Name)]);
   {$IFDEF UNIX}
     if Item.Attr and faSymLink = faSymLink then
     begin
@@ -713,7 +724,7 @@ begin
       Unsupported platform...
     {$ENDIF}
   {$ENDIF}
-      if Item.Attr and faDirectory = faDirectory then
+      if (Item.Attr and faDirectory) = faDirectory then
       begin
         if DirectoryExists(Item.Name) = FALSE then
           if CreateDir(Item.Name) = FALSE then
@@ -721,10 +732,12 @@ begin
       end else
         if Item.Size > 0 then
         begin
+          DeleteFile(Item.Name);
           Stream := TFileStream.Create(Item.Name, fmCreate);
           Extract(Index, Stream);
           FreeAndNil(Stream);
         end;
+
   {$IFDEF UNIX}
     if Item.Platform = gpUNIX then
       if FpChmod(Item.Name, Item.Mode) <> 0 then
@@ -737,8 +750,9 @@ begin
       Unsupported platform...
     {$ENDIF}
   {$ENDIF}
-  if FileSetDate(Item.Name, DateTimeToFileDate(UniversalTimeToLocal(Item.Time))) <> 0 then
-    raise Exception.CreateFmt('Unable to set date for "%s"', [Item.Name]);
+  if FileSetDate(Item.Name, DateTimeToFileDate(
+    UniversalTimeToLocal(Item.Time, - GetLocalTimeOffSet))) <> 0 then
+      raise Exception.CreateFmt('Unable to set date for "%s"', [Item.Name]);
 end;
 
 function  TGulpReader.Find(const FileName: ansistring): longint;
@@ -846,31 +860,30 @@ begin
     faDirectory or faArchive or faSymLink or faAnyFile, SR) = 0 then
     if GetAttr(SR) and (faSysFile or faVolumeId) = 0 then
     begin
-      Item               := GulpLibrary.Clear(TGulpItem.Create);
-      Item.FName         := FileName;
-      Item.FTime         := GetTime(SR);
-      Item.FSize         := GetSize(SR);
-      Item.FAttr         := GetAttr(SR);
+      Item           := GulpLibrary.Clear(TGulpItem.Create);
+      Item.FName     := FileName;
+      Item.FTime     := GetTime(SR);
+      Item.FSize     := GetSize(SR);
+      Item.FAttr     := GetAttr(SR);
+      Item.FMode     := GetMode(FileName);
+      Item.FLink     := GetLink(FileName);
+      Item.FUserID   := GetUID (FileName);
+      Item.FGroupID  := GetGID (FileName);
       {$IFDEF UNIX}
-        Item.FMode       := GetMode(FileName);
-        if Item.Attr and faSymLink = faSymLink then
-          Item.FLinkName := fpReadLink(FileName);
-        Item.FUserID     := GetUID (FileName);
-        Item.FGroupID    := GetGID (FileName);
-        Item.FPlatform   := gpUNIX;
-        Item.FFLags      := [gfNAME, gfTIME, gfSIZE, gfATTR, gfPOS, gfPLAT,
-                             gfMODE, gfLINK];
+        Item.FPlatform := gpUNIX;
+        Item.FFLags    := [gfNAME, gfTIME, gfSIZE, gfATTR, gfPOS, gfPLAT,
+                           gfMODE, gfLINK];
       {$ELSE}
-        {$IFDEF MSWINDOWS}
-          Item.FPlatform := gpMSWINDOWS;
-          Item.FFLags    := [gfNAME, gfTIME, gfSIZE, gfATTR, gfPOS, gfPLAT];
-        {$ELSE}
-          Unsupported platform...
-        {$ENDIF}
+      {$IFDEF MSWINDOWS}
+        Item.FPlatform := gpMSWINDOWS;
+        Item.FFLags    := [gfNAME, gfTIME, gfSIZE, gfATTR, gfPOS, gfPLAT];
+      {$ELSE}
+        Unsupported platform...
+      {$ENDIF}
       {$ENDIF}
       Include(Item.FFlags, gfADD);
       if FList.Add(Item) = - 1 then
-        raise Exception.Create('Duplicates non allowed (ex0015)');
+        raise Exception.Create('Duplicates non allowed (ex0014)');
     end;
   SysUtils.FindClose(SR);
 end;
@@ -883,7 +896,7 @@ begin
   Item.FFlags := [gfDEL, gfNAME];
   Item.FName  := FileName;
   if FList.Add(Item) = -1 then
-    raise Exception.Create('Duplicates non allowed (ex0016)');
+    raise Exception.Create('Duplicates non allowed (ex0015)');
 end;
 
 procedure TGulpWriter.Write(Stream: TStream; Size: int64);
@@ -898,7 +911,7 @@ begin
   begin
     Readed := Stream.Read(Buffer, Min(SizeOf(Buffer), Size));
     if Readed = 0 then
-      raise Exception.Create('Unable to read stream (ex0017)');
+      raise Exception.Create('Unable to read stream (ex0016)');
     SHA1Update   (Context, Buffer, Readed);
     FStream.Write(         Buffer, Readed);
     Dec(Size, Readed);
@@ -916,7 +929,7 @@ begin
   if gfSIZE  in Item.FFlags then FStream.Write(Item.FSize, SizeOf(Item.FSize));
   if gfATTR  in Item.FFlags then FStream.Write(Item.FAttr, SizeOf(Item.FAttr));
   if gfMODE  in Item.FFlags then FStream.Write(Item.FMode, SizeOf(Item.FMode));
-  if gfLINK  in Item.FFlags then FStream.WriteAnsiString(Item.FLinkName);
+  if gfLINK  in Item.FFlags then FStream.WriteAnsiString(Item.FLink);
   if gfUID   in Item.FFlags then FStream.Write(Item.FUserID, SizeOf(Item.FUserID));
   if gfUNAME in Item.FFlags then FStream.WriteAnsiString(Item.FUserName);
   if gfGID   in Item.FFlags then FStream.Write(Item.FGroupID, SizeOf(Item.FGroupID));
@@ -1182,7 +1195,7 @@ begin
       begin
         OffSet := Max(OffSet, Stream.Seek(0, soCurrent));
         if Stream.Seek(OffSet, soBeginning) <> OffSet then
-          raise Exception.Create('Stream is not a valid archive (ex0018)');
+          raise Exception.Create('Stream is not a valid archive (ex0017)');
         Size := OffSet;
       end;
     end;
@@ -1194,7 +1207,7 @@ begin
   if Size > 0 then
     Stream.Size := Size
   else
-    raise Exception.Create('Stream is not a valid archive (ex0019)');
+    raise Exception.Create('Stream is not a valid archive (ex0018)');
   FreeAndNil(LibReader);
   FreeAndNil(LibRec);
   FreeAndNil(Stream);

@@ -1,5 +1,5 @@
 {
-  Copyright (c) 2014-2015 Melchiorre Caruso.
+  Copyright (c) 2014-2016 Melchiorre Caruso.
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@
 
   Modified:
 
-    v0.0.3 - 2015.12.30 by Melchiorre Caruso.
+    v0.0.3 - 2016.01.01 by Melchiorre Caruso.
 }
 
 program Gulp;
@@ -335,6 +335,8 @@ end;
 
 var
   Shell: TShellApplication;
+
+{$R *.res}
 
 begin
   Shell := TShellApplication.Create;

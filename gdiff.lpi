@@ -5,18 +5,14 @@
     <General>
       <Flags>
         <SaveOnlyProjectUnits Value="True"/>
-        <MainUnitHasUsesSectionForAllUnits Value="False"/>
         <MainUnitHasCreateFormStatements Value="False"/>
         <MainUnitHasTitleStatement Value="False"/>
-        <AlwaysBuild Value="True"/>
-        <UseDesignTimePackages Value="True"/>
         <SaveJumpHistory Value="False"/>
         <SaveFoldState Value="False"/>
       </Flags>
       <MainUnit Value="0"/>
-      <Title Value="Gulp"/>
+      <Title Value="gdiff"/>
       <UseAppBundle Value="False"/>
-      <Icon Value="0"/>
     </General>
     <i18n>
       <EnableI18N LFM="False"/>
@@ -29,50 +25,27 @@
     </BuildModes>
     <PublishOptions>
       <Version Value="2"/>
-      <IgnoreBinaries Value="False"/>
     </PublishOptions>
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="-p pop.g2"/>
-        <WorkingDirectory Value="/home/quacquero/Repositories"/>
-        <Display Use="True"/>
       </local>
     </RunParams>
-    <Units Count="3">
+    <Units Count="1">
       <Unit0>
-        <Filename Value="gulp.pas"/>
+        <Filename Value="gdiff.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="Gulp"/>
         <IsVisibleTab Value="True"/>
-        <EditorIndex Value="2"/>
-        <CursorPos X="6" Y="7"/>
-        <UsageCount Value="200"/>
+        <CursorPos X="19" Y="17"/>
+        <UsageCount Value="26"/>
         <Loaded Value="True"/>
       </Unit0>
-      <Unit1>
-        <Filename Value="gulpcommon.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="GulpCommon"/>
-        <CursorPos X="11" Y="24"/>
-        <UsageCount Value="200"/>
-        <Loaded Value="True"/>
-      </Unit1>
-      <Unit2>
-        <Filename Value="gulplibrary.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="GulpLibrary"/>
-        <EditorIndex Value="1"/>
-        <CursorPos X="60" Y="1210"/>
-        <UsageCount Value="200"/>
-        <Loaded Value="True"/>
-      </Unit2>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
     <Version Value="11"/>
     <Target>
-      <Filename Value="gulp"/>
+      <Filename Value="gdiff"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
@@ -83,35 +56,23 @@
         <CStyleOperator Value="False"/>
         <AllowLabel Value="False"/>
         <CPPInline Value="False"/>
-        <UseAnsiStrings Value="False"/>
       </SyntaxOptions>
     </Parsing>
     <CodeGeneration>
+      <SmartLinkUnit Value="True"/>
       <Optimizations>
-        <OptimizationLevel Value="0"/>
+        <OptimizationLevel Value="4"/>
       </Optimizations>
     </CodeGeneration>
     <Linking>
       <Debugging>
         <GenerateDebugInfo Value="False"/>
+        <UseLineInfoUnit Value="False"/>
       </Debugging>
+      <LinkSmart Value="True"/>
     </Linking>
-    <Other>
-      <Verbosity>
-        <ShoLineNum Value="True"/>
-      </Verbosity>
-      <WriteFPCLogo Value="False"/>
-    </Other>
   </CompilerOptions>
   <Debugging>
-    <BreakPoints Count="1">
-      <Item1>
-        <Kind Value="bpkAddress"/>
-        <Address Value="-1217437728"/>
-        <WatchScope Value="wpsLocal"/>
-        <WatchKind Value="wpkWrite"/>
-      </Item1>
-    </BreakPoints>
     <Exceptions Count="3">
       <Item1>
         <Name Value="EAbort"/>
