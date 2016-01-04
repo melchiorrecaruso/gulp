@@ -37,12 +37,9 @@ uses
 type 
   // --- Gulp flags
   TGulpFlag = (gfADD,  gfDEL, gfLAST,  gfNAME, gfTIME,  gfSIZE, gfATTR, gfMODE,
-               gfLINK, gfUID, gfUNAME, gfGID,  gfGNAME, gfPLAT, gfCOMM, gfPOS);
+               gfLINK, gfUID, gfUNAME, gfGID,  gfGNAME, gfCOMM);
 
   TGulpFlags = set of TGulpFlag;
-
-  // --- Gulp platform ---
-  TGulpPlatform = (gpNONE, gpUNIX, gpMSWINDOWS, gpMAC);
 
   // --- Gulp item ---
   TGulpItem = class(TObject)
@@ -53,13 +50,12 @@ type
     FSize      : int64;         // Size in bytes
     FAttr      : longint;       // Attributes (MSWindows)
     FMode      : longint;       // Mode (Unix)
-    FLink  : ansistring;    // Name of link
+    FLink      : ansistring;    // Name of link
     FUserID    : longword;      // User ID
     FUserName  : ansistring;    // User Name
     FGroupID   : longword;      // Group ID
     FGroupName : ansistring;    // Group Name
     FComment   : ansistring;    // Comment
-    FPlatform  : TGulpPlatform; // Platform
     FStartPos  : int64;         // Stream start position (reserved)
     FEndPos    : int64;         // Stream end position   (reserved)
     FVersion   : longword;      // Version               (reserved)
@@ -70,13 +66,12 @@ type
     property Size      : int64         read FSize;
     property Attr      : longint       read FAttr;
     property Mode      : longint       read FMode;
-    property LinkName  : ansistring    read FLink;
+    property Link      : ansistring    read FLink;
     property UserID    : longword      read FUserID;
     property UserName  : ansistring    read FUserName;
     property GroupID   : longword      read FGroupID;
     property GroupName : ansistring    read FGroupName;
     property Comment   : ansistring    read FComment;
-    property Platform  : TGulpPlatform read FPlatform;
     property Version   : longword      read FVersion;
   end;
 
@@ -139,7 +134,6 @@ function ModeToString(const Mode: longint    ): ansistring;
 
 function StringToAttr(const S: ansistring    ): longint;
 function StringToMode(const S: ansistring    ): longint;
-function PlatToString(const P: TGulpPlatform ): ansistring;
 function FlagToString(const F: TGulpFlags    ): ansistring;
 
 // =============================================================================
@@ -221,7 +215,6 @@ begin
   Item.FGroupID   := 0;
   Item.FGroupName := '';
   Item.FComment   := '';
-  Item.FPlatform  := gpNONE;
   Item.FStartPos  := 0;
   Item.FEndPos    := 0;
   Item.FVersion   := 0;
@@ -245,9 +238,8 @@ begin
   if gfGID   in Item.FFlags then SHA1Update(Context,         Item.FGroupID,     SizeOf(Item.FGroupID  ));
   if gfGNAME in Item.FFlags then SHA1Update(Context, Pointer(Item.FGroupName)^, Length(Item.FGroupName));
   if gfCOMM  in Item.FFlags then SHA1Update(Context, Pointer(Item.FComment)^,   Length(Item.FComment  ));
-  if gfPLAT  in Item.FFlags then SHA1Update(Context,         Item.FPlatform,    SizeOf(Item.FPlatform ));
-  if gfPOS   in Item.FFlags then SHA1Update(Context,         Item.FStartPos,    SizeOf(Item.FStartPos ));
-  if gfPOS   in Item.FFlags then SHA1Update(Context,         Item.FEndPos,      SizeOf(Item.FEndPos   ));
+  if gfSIZE  in Item.FFlags then SHA1Update(Context,         Item.FStartPos,    SizeOf(Item.FStartPos ));
+  if gfSIZE  in Item.FFlags then SHA1Update(Context,         Item.FEndPos,      SizeOf(Item.FEndPos   ));
   SHA1Final(Context, Result);
 end;
 
@@ -492,16 +484,6 @@ begin
   {$ENDIF}
 end;
 
-function PlatToString(const P: TGulpPlatform): ansistring;
-begin
-  case P of
-    gpUNIX      : Result := 'UNIX';
-    gpMSWINDOWS : Result := 'WIN';
-    gpMAC       : Result := 'MAC';
-  else            Result := '???'
-  end;
-end;
-
 // =============================================================================
 // TGulpReader
 // =============================================================================
@@ -589,9 +571,8 @@ begin
   if gfGID   in Item.Flags then FStream.Read(Item.FGroupID,  SizeOf(Item.FGroupID ));
   if gfGNAME in Item.Flags then Item.FGroupName := FStream.ReadAnsiString;
   if gfCOMM  in Item.Flags then Item.FComment   := FStream.ReadAnsiString;
-  if gfPLAT  in Item.Flags then FStream.Read(Item.FPlatform, SizeOf(Item.FPlatform));
-  if gfPOS   in Item.Flags then FStream.Read(Item.FStartPos, SizeOf(Item.FStartPos));
-  if gfPOS   in Item.Flags then FStream.Read(Item.FEndPos,   SizeOf(Item.FEndPos  ));
+  if gfSIZE  in Item.Flags then FStream.Read(Item.FStartPos, SizeOf(Item.FStartPos));
+  if gfSIZE  in Item.Flags then FStream.Read(Item.FEndPos,   SizeOf(Item.FEndPos  ));
 
   if ((gfDEL in Item.FFlags) = FALSE) and ((gfADD in Item.FFlags) = FALSE) then
     raise Exception.Create('Archive is damaged, try with the "fix" command (ex0004)');
@@ -692,67 +673,82 @@ begin
     Dec(Size, Readed);
   end;
   SHA1Final(Context, Digest1);
-
   if FStream.Read(Digest2, SizeOf(TSHA1Digest)) <> SizeOf(TSHA1Digest) then
     raise Exception.Create('Archive is damaged, try with the "fix" command (ex0013)');
-
   if SHA1Match(Digest1, Digest2) = FALSE then
     raise Exception.CreateFmt('Mismatched checksum for "%s"', [Items[Index].Name]);
 end;
 
 procedure TGulpReader.Extract(Index: longint);
 var
-  Item   : TGulpItem;
-  Stream : TFileStream;
+  Check    : boolean;
+  Item     : TGulpItem;
+  ItemPath : ansistring;
+  Stream   : TFileStream;
 begin
   Item := Items[Index];
-  if ExtractFileDir(Item.Name) <> '' then
-    if ForceDirectories(ExtractFileDir(Item.Name)) = FALSE then
-      raise Exception.CreateFmt('Unable to create path "%s"',
-        [ExtractFileDir(Item.Name)]);
-  {$IFDEF UNIX}
-    if Item.Attr and faSymLink = faSymLink then
+  if Item.Attr and (faSysFile or faVolumeId) = 0 then
+  begin
+    ItemPath := ExtractFileDir(Item.Name);
+    if (ItemPath <> '') and (ForceDirectories(ItemPath) = FALSE) then
+      raise Exception.CreateFmt('Unable to create path "%s"', [ItemPath]);
+
+    Check := FALSE;
+    if (Item.Attr and faSymLink) = faSymLink then
     begin
-      //if FpLink(RecLinkName, RecName) <> 0 then
-      //  raise Exception.CreateFmt('Unable to create hardlink %s', [RecName]);
-      if FpSymLink(pchar(Item.LinkName), pchar(Item.Name)) <> 0 then
-        raise Exception.CreateFmt('Unable to create symlink "%s"', [Item.Name]);
+      {$IFDEF UNIX}
+      Check := FpSymLink(pchar(Item.Link), pchar(Item.Name)) = 0;
+      {$ENDIF}
     end else
-  {$ELSE}
-    {$IFDEF MSWINDOWS}
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
-  {$ENDIF}
+
       if (Item.Attr and faDirectory) = faDirectory then
       begin
-        if DirectoryExists(Item.Name) = FALSE then
-          if CreateDir(Item.Name) = FALSE then
-            raise Exception.CreateFmt('Unable to create directory "%s"', [Item.Name]);
+        Check := DirectoryExists(Item.Name);
+        if Check = FALSE then
+          Check := CreateDir(Item.Name);
       end else
-        if Item.Size > 0 then
+
+        if (gfSIZE in Item.Flags) then
         begin
-          DeleteFile(Item.Name);
+          if FileExists(Item.FName) = TRUE then
+            DeleteFile(Item.FName);
           Stream := TFileStream.Create(Item.Name, fmCreate);
           Extract(Index, Stream);
           FreeAndNil(Stream);
+          Check := TRUE;
         end;
 
-  {$IFDEF UNIX}
-    if Item.Platform = gpUNIX then
-      if FpChmod(Item.Name, Item.Mode) <> 0 then
-        raise Exception.CreateFmt('Unable to set mode for "%s"', [Item.Name]);
-  {$ELSE}
+
+
+  if Check = TRUE then
+  begin
+    {$IFDEF UNIX}
+    writeln(Item.FUserID);
+
+    if (gfUID in Item.FFlags) or (gfGID in Item.FFlags) then
+      if FpChown(Item.FName, Item.FUserID, Item.FGroupID) <> 0 then
+        raise Exception.CreateFmt('Unable to set user id for "%s"', [Item.FName]);
+
+    if gfMODE in Item.FFlags then
+      if FpChmod(Item.FName, Item.FMode) <> 0 then
+        raise Exception.CreateFmt('Unable to set mode for "%s"', [Item.FName]);
+    {$ELSE}
     {$IFDEF MSWINDOWS}
-      if FileSetAttr(Item.Name, Item.Attr) <> 0 then
+      if FileSetAttr(Item.FName, Item.FAttr) <> 0 then
         raise Exception.CreateFmt('Unable to set attrbutes for "%s"', [Item.Name]);
     {$ELSE}
       Unsupported platform...
     {$ENDIF}
-  {$ENDIF}
-  if FileSetDate(Item.Name, DateTimeToFileDate(
-    UniversalTimeToLocal(Item.Time, - GetLocalTimeOffSet))) <> 0 then
-      raise Exception.CreateFmt('Unable to set date for "%s"', [Item.Name]);
+    {$ENDIF}
+    if FileSetDate(Item.Name, DateTimeToFileDate(
+      UniversalTimeToLocal(Item.Time, - GetLocalTimeOffSet))) <> 0 then
+        raise Exception.CreateFmt('Unable to set date for "%s"', [Item.Name]);
+  end else
+    writeln('ERROR : ', Item.FName);
+
+
+
+
 end;
 
 function  TGulpReader.Find(const FileName: ansistring): longint;
@@ -824,14 +820,17 @@ begin
     Include(FList[FList.Count - 1].FFlags, gfLAST);
     for I := 0 to FList.Count - 1 do Write(FList[I]);
     for I := 0 to FList.Count - 1 do
-      if FList[I].FSize > 0 then
-      begin
-        Source := TFileStream.Create(FList[I].FName, fmOpenRead or fmShareDenyNone);
-        FList[I].FStartPos := FStream.Seek(0, soCurrent);
-        Write(Source, FList[I].FSize);
-        FList[I].FEndPos   := FStream.Seek(0, soCurrent);
-        FreeAndNil(Source);
-      end;
+    begin
+      FList[I].FStartPos := FStream.Seek(0, soCurrent);
+      if
+
+      Source := TFileStream.Create(FList[I].FName, fmOpenRead or fmShareDenyNone);
+      Write(Source, FList[I].FSize);
+      FreeAndNil(Source);
+
+
+      FList[I].FEndPos   := FStream.Seek(0, soCurrent);
+    end;
     FStream.Seek(Size , soBeginning);
     for I := 0 to FList.Count - 1 do Write(FList[I]);
     FStream.Seek(0 , soEnd);
@@ -860,29 +859,32 @@ begin
     faDirectory or faArchive or faSymLink or faAnyFile, SR) = 0 then
     if GetAttr(SR) and (faSysFile or faVolumeId) = 0 then
     begin
-      Item           := GulpLibrary.Clear(TGulpItem.Create);
-      Item.FName     := FileName;
-      Item.FTime     := GetTime(SR);
-      Item.FSize     := GetSize(SR);
-      Item.FAttr     := GetAttr(SR);
-      Item.FMode     := GetMode(FileName);
-      Item.FLink     := GetLink(FileName);
-      Item.FUserID   := GetUID (FileName);
-      Item.FGroupID  := GetGID (FileName);
+      Item          := GulpLibrary.Clear(TGulpItem.Create);
+      Item.FName    := FileName;
+      Item.FTime    := GetTime(SR);
+      Item.FSize    := GetSize(SR);
+      Item.FAttr    := GetAttr(SR);
+      Include(Item.FFlags, gfNAME);
+      Include(Item.FFlags, gfTIME);
+      Include(Item.FFlags, gfSIZE);
+      Include(Item.FFlags, gfATTR);
       {$IFDEF UNIX}
-        Item.FPlatform := gpUNIX;
-        Item.FFLags    := [gfNAME, gfTIME, gfSIZE, gfATTR, gfPOS, gfPLAT,
-                           gfMODE, gfLINK];
+      Item.FMode    := GetMode(FileName);
+      Item.FLink    := GetLink(FileName);
+      Item.FUserID  := GetUID (FileName);
+      Item.FGroupID := GetGID (FileName);
+      Include(Item.FFLags, gfMODE);
+      Include(Item.FFLags, gfLINK);
+      Include(Item.FFLags, gfUID );
+      Include(Item.FFLags, gfGID );
       {$ELSE}
-      {$IFDEF MSWINDOWS}
-        Item.FPlatform := gpMSWINDOWS;
-        Item.FFLags    := [gfNAME, gfTIME, gfSIZE, gfATTR, gfPOS, gfPLAT];
-      {$ELSE}
-        Unsupported platform...
-      {$ENDIF}
+        {$IFDEF MSWINDOWS}
+        {$ELSE}
+          Unsupported platform...
+        {$ENDIF}
       {$ENDIF}
       Include(Item.FFlags, gfADD);
-      if FList.Add(Item) = - 1 then
+      if FList.Add(Item) = -1 then
         raise Exception.Create('Duplicates non allowed (ex0014)');
     end;
   SysUtils.FindClose(SR);
@@ -906,18 +908,20 @@ var
   Digest  : TSHA1Digest;
   Readed  : longint;
 begin
-  SHA1Init(Context);
-  while Size > 0 do
+  if Size > 0 then
   begin
-    Readed := Stream.Read(Buffer, Min(SizeOf(Buffer), Size));
-    if Readed = 0 then
-      raise Exception.Create('Unable to read stream (ex0016)');
-    SHA1Update   (Context, Buffer, Readed);
-    FStream.Write(         Buffer, Readed);
-    Dec(Size, Readed);
+    SHA1Init(Context);
+    repeat
+      Readed := Stream.Read(Buffer, Min(SizeOf(Buffer), Size));
+      if Readed = 0 then
+        raise Exception.Create('Unable to read stream (ex0016)');
+      SHA1Update   (Context, Buffer, Readed);
+      FStream.Write(         Buffer, Readed);
+      Dec(Size, Readed);
+    until Size > 0;
+    SHA1Final(Context, Digest);
+    FStream.Write(Digest, SizeOf(TSHA1Digest));
   end;
-  SHA1Final(Context, Digest);
-  FStream.Write(Digest, SizeOf(TSHA1Digest));
 end;
 
 procedure TGulpWriter.Write(Item: TGulpItem);
@@ -935,9 +939,8 @@ begin
   if gfGID   in Item.FFlags then FStream.Write(Item.FGroupID, SizeOf(Item.FGroupID));
   if gfGNAME in Item.FFlags then FStream.WriteAnsiString(Item.FGroupName);
   if gfCOMM  in Item.FFlags then FStream.WriteAnsiString(Item.FComment);
-  if gfPLAT  in Item.FFlags then FStream.Write(Item.FPlatform, SizeOf(Item.FPlatform));
-  if gfPOS   in Item.FFlags then FStream.Write(Item.FStartPos, SizeOf(Item.FStartPos));
-  if gfPOS   in Item.FFlags then FStream.Write(Item.FEndPos,   SizeOf(Item.FEndPos));
+  if gfSIZE  in Item.FFlags then FStream.Write(Item.FStartPos, SizeOf(Item.FStartPos));
+  if gfSIZE  in Item.FFlags then FStream.Write(Item.FEndPos,   SizeOf(Item.FEndPos));
   FStream.Write(GetDigest(Item), SizeOf(TSHA1Digest));
 end;
 
