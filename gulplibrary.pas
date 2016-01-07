@@ -21,7 +21,7 @@
 
   Modified:
 
-    v0.0.3 - 2016.01.01 by Melchiorre Caruso.
+    v0.0.3 - 2016.01.07 by Melchiorre Caruso.
 }
 
 unit GulpLibrary;
@@ -146,8 +146,8 @@ uses
   DateUtils, Math;
 
 const
-  GulpMarker : TSHA1Digest = (255, 210, 119, 9, 180, 210, 231,
-    123, 25, 91, 110, 159, 243,  53, 246, 80, 215, 248, 114, 172);
+  GulpMarker003 : TSHA1Digest = (255, 210, 119, 9, 180, 210, 231, 123,
+    25, 91, 110, 159, 243,  53, 246, 80, 215, 248, 114, 172);
 
   GulpDescription =
       'GULP v0.0.3 journaling archiver, copyright (c) 2014-2016 Melchiorre Caruso.' + LineEnding +
@@ -315,10 +315,10 @@ begin
   if GetAttr(FileName) and faSymLink = faSymLink then
     Result := fpReadLink(FileName);
   {$ELSE}
-    {$IFDEF MSWINDOWS}
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
+  {$IFDEF MSWINDOWS}
+  {$ELSE}
+    Unsupported platform...
+  {$ENDIF}
   {$ENDIF}
 end;
 
@@ -336,10 +336,10 @@ begin
     if fpstat(FileName, Info) = 0 then
       Result := Info.st_mode;
   {$ELSE}
-    {$IFDEF MSWINDOWS}
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
+  {$IFDEF MSWINDOWS}
+  {$ELSE}
+    Unsupported platform...
+  {$ENDIF}
   {$ENDIF}
 end;
 
@@ -357,10 +357,10 @@ begin
     if fpstat(FileName, Info) = 0 then
       Result := Info.st_uid;
   {$ELSE}
-    {$IFDEF MSWINDOWS}
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
+  {$IFDEF MSWINDOWS}
+  {$ELSE}
+    Unsupported platform...
+  {$ENDIF}
   {$ENDIF}
 end;
 
@@ -383,10 +383,10 @@ begin
     if fpstat(FileName, Info) = 0 then
       Result := Info.st_gid;
   {$ELSE}
-    {$IFDEF MSWINDOWS}
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
+  {$IFDEF MSWINDOWS}
+  {$ELSE}
+    Unsupported platform...
+  {$ENDIF}
   {$ENDIF}
 end;
 
@@ -458,11 +458,11 @@ begin
   {$IFDEF UNIX}
     Result := OctStr(Mode, 3);
   {$ELSE}
-    {$IFDEF MSWINDOWS}
-      Result := '...';
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
+  {$IFDEF MSWINDOWS}
+    Result := '...';
+  {$ELSE}
+    Unsupported platform...
+  {$ENDIF}
   {$ENDIF}
 end;
 
@@ -477,10 +477,10 @@ begin
     for I  := 1 to Length(S) do
       Result := Result * 8 + StrToInt(Copy(S, I, 1));
   {$ELSE}
-    {$IFDEF MSWINDOWS}
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
+  {$IFDEF MSWINDOWS}
+  {$ELSE}
+    Unsupported platform...
+  {$ENDIF}
   {$ENDIF}
 end;
 
@@ -493,11 +493,11 @@ begin
   {$IFDEF UNIX}
     Result := AnsiCompareStr(Item1.FName, Item2.FName);
   {$ELSE}
-    {$IFDEF MSWINDOWS}
-      Result := AnsiCompareText(Item1.FName, Item2.FName);
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
+  {$IFDEF MSWINDOWS}
+    Result := AnsiCompareText(Item1.FName, Item2.FName);
+  {$ELSE}
+    Unsupported platform...
+  {$ENDIF}
   {$ENDIF}
 end;
 
@@ -556,7 +556,7 @@ begin
   Result := GulpLibrary.Clear(Item);
   if FStream.Read(Digest, SizeOf(TSHA1Digest)) <> SizeOf(TSHA1Digest) then
     raise Exception.Create('Archive is damaged, try with the "fix" command (ex0002)');
-  if SHA1Match(Digest, GulpMarker) = FALSE then
+  if SHA1Match(Digest, GulpMarker003) = FALSE then
     raise Exception.Create('Invalid marker value (ex0003)');
 
   FStream.Read(Item.FFlags, SizeOf(Item.FFlags));
@@ -663,15 +663,14 @@ begin
   FStream.Seek(Items[Index].FStartPos, soBeginning);
   Size := Items[Index].Size;
   SHA1Init(Context);
-  while Size > 0 do
-  begin
+  repeat
     Readed := FStream.Read(Buffer, Min(SizeOf(Buffer), Size));
     if Readed = 0 then
       raise Exception.Create('Unable to read stream (ex0012)');
     SHA1Update  (Context, Buffer, Readed);
     Stream.Write(         Buffer, Readed);
     Dec(Size, Readed);
-  end;
+  until Size > 0;
   SHA1Final(Context, Digest1);
   if FStream.Read(Digest2, SizeOf(TSHA1Digest)) <> SizeOf(TSHA1Digest) then
     raise Exception.Create('Archive is damaged, try with the "fix" command (ex0013)');
@@ -698,6 +697,11 @@ begin
     begin
       {$IFDEF UNIX}
       Check := FpSymLink(pchar(Item.Link), pchar(Item.Name)) = 0;
+      {$ELSE}
+      {$IFDEF MSWINDOWS}
+      {$ELSE}
+        Unsupported platform...
+      {$ENDIF}
       {$ENDIF}
     end else
 
@@ -710,45 +714,40 @@ begin
 
         if (gfSIZE in Item.Flags) then
         begin
-          if FileExists(Item.FName) = TRUE then
-            DeleteFile(Item.FName);
-          Stream := TFileStream.Create(Item.Name, fmCreate);
+          if FileExists(Item.Name) = FALSE then
+            Stream := TFileStream.Create(Item.Name, fmCreate)
+          else
+            Stream := TFileStream.Create(Item.Name, fmOpenWrite);
           Extract(Index, Stream);
           FreeAndNil(Stream);
           Check := TRUE;
         end;
 
+    if Check = TRUE then
+    begin
+      {$IFDEF UNIX}
+      if (gfUID in Item.Flags) or (gfGID in Item.Flags) then
+        if FpChown(Item.Name, Item.UserID, Item.GroupID) <> 0 then
+          raise Exception.CreateFmt('Unable to set user id for "%s"', [Item.Name]);
 
+      if gfMODE in Item.Flags then
+        if FpChmod(Item.Name, Item.Mode) <> 0 then
+          raise Exception.CreateFmt('Unable to set mode for "%s"', [Item.Name]);
+      {$ELSE}
+      {$IFDEF MSWINDOWS}
+        if FileSetAttr(Item.Name, Item.Attr) <> 0 then
+          raise Exception.CreateFmt('Unable to set attrbutes for "%s"', [Item.Name]);
+      {$ELSE}
+        Unsupported platform...
+      {$ENDIF}
+      {$ENDIF}
+      if FileSetDate(Item.Name, DateTimeToFileDate(
+        UniversalTimeToLocal(Item.Time, - GetLocalTimeOffSet))) <> 0 then
+          raise Exception.CreateFmt('Unable to set date for "%s"', [Item.Name]);
+    end else
+      raise Exception.CreateFmt('Unable to restore item "%s"', [Item.Name]);
 
-  if Check = TRUE then
-  begin
-    {$IFDEF UNIX}
-    writeln(Item.FUserID);
-
-    if (gfUID in Item.FFlags) or (gfGID in Item.FFlags) then
-      if FpChown(Item.FName, Item.FUserID, Item.FGroupID) <> 0 then
-        raise Exception.CreateFmt('Unable to set user id for "%s"', [Item.FName]);
-
-    if gfMODE in Item.FFlags then
-      if FpChmod(Item.FName, Item.FMode) <> 0 then
-        raise Exception.CreateFmt('Unable to set mode for "%s"', [Item.FName]);
-    {$ELSE}
-    {$IFDEF MSWINDOWS}
-      if FileSetAttr(Item.FName, Item.FAttr) <> 0 then
-        raise Exception.CreateFmt('Unable to set attrbutes for "%s"', [Item.Name]);
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
-    {$ENDIF}
-    if FileSetDate(Item.Name, DateTimeToFileDate(
-      UniversalTimeToLocal(Item.Time, - GetLocalTimeOffSet))) <> 0 then
-        raise Exception.CreateFmt('Unable to set date for "%s"', [Item.Name]);
-  end else
-    writeln('ERROR : ', Item.FName);
-
-
-
-
+  end;
 end;
 
 function  TGulpReader.Find(const FileName: ansistring): longint;
@@ -820,17 +819,16 @@ begin
     Include(FList[FList.Count - 1].FFlags, gfLAST);
     for I := 0 to FList.Count - 1 do Write(FList[I]);
     for I := 0 to FList.Count - 1 do
-    begin
-      FList[I].FStartPos := FStream.Seek(0, soCurrent);
-      if
-
-      Source := TFileStream.Create(FList[I].FName, fmOpenRead or fmShareDenyNone);
-      Write(Source, FList[I].FSize);
-      FreeAndNil(Source);
-
-
-      FList[I].FEndPos   := FStream.Seek(0, soCurrent);
-    end;
+      if FList[I].Attr and (faSysFile or faVolumeId ) = 0 then
+        if FList[I].Attr and (faSymLink or faDirectory) = 0 then
+          if gfSIZE in FList[I].FFlags then
+          begin
+            FList[I].FStartPos := FStream.Seek(0, soCurrent);
+            Source := TFileStream.Create(FList[I].FName, fmOpenRead or fmShareDenyNone);
+            Write(Source, FList[I].FSize);
+            FreeAndNil(Source);
+            FList[I].FEndPos   := FStream.Seek(0, soCurrent);
+          end;
     FStream.Seek(Size , soBeginning);
     for I := 0 to FList.Count - 1 do Write(FList[I]);
     FStream.Seek(0 , soEnd);
@@ -866,7 +864,9 @@ begin
       Item.FAttr    := GetAttr(SR);
       Include(Item.FFlags, gfNAME);
       Include(Item.FFlags, gfTIME);
-      Include(Item.FFlags, gfSIZE);
+      if Item.Attr and faSymLink = 0 then
+        if Item.Attr and faDirectory = 0 then
+          Include(Item.FFlags, gfSIZE);
       Include(Item.FFlags, gfATTR);
       {$IFDEF UNIX}
       Item.FMode    := GetMode(FileName);
@@ -878,10 +878,10 @@ begin
       Include(Item.FFLags, gfUID );
       Include(Item.FFLags, gfGID );
       {$ELSE}
-        {$IFDEF MSWINDOWS}
-        {$ELSE}
-          Unsupported platform...
-        {$ENDIF}
+      {$IFDEF MSWINDOWS}
+      {$ELSE}
+        Unsupported platform...
+      {$ENDIF}
       {$ENDIF}
       Include(Item.FFlags, gfADD);
       if FList.Add(Item) = -1 then
@@ -908,25 +908,22 @@ var
   Digest  : TSHA1Digest;
   Readed  : longint;
 begin
-  if Size > 0 then
-  begin
-    SHA1Init(Context);
-    repeat
-      Readed := Stream.Read(Buffer, Min(SizeOf(Buffer), Size));
-      if Readed = 0 then
-        raise Exception.Create('Unable to read stream (ex0016)');
-      SHA1Update   (Context, Buffer, Readed);
-      FStream.Write(         Buffer, Readed);
-      Dec(Size, Readed);
-    until Size > 0;
-    SHA1Final(Context, Digest);
-    FStream.Write(Digest, SizeOf(TSHA1Digest));
-  end;
+  SHA1Init(Context);
+  repeat
+    Readed := Stream.Read(Buffer, Min(SizeOf(Buffer), Size));
+    if Readed = 0 then
+      raise Exception.Create('Unable to read stream (ex0016)');
+    SHA1Update   (Context, Buffer, Readed);
+    FStream.Write(         Buffer, Readed);
+    Dec(Size, Readed);
+  until Size > 0;
+  SHA1Final(Context, Digest);
+  FStream.Write(Digest, SizeOf(TSHA1Digest));
 end;
 
 procedure TGulpWriter.Write(Item: TGulpItem);
 begin
-  FStream.Write(GulpMarker,  SizeOf(GulpMarker));
+  FStream.Write(GulpMarker003,  SizeOf(GulpMarker003));
   FStream.Write(Item.FFlags, SizeOf(Item.FFlags));
   if gfNAME  in Item.FFlags then FStream.WriteAnsiString(Item.FName);
   if gfTIME  in Item.FFlags then FStream.Write(Item.FTime, SizeOf(Item.FTime));
@@ -1118,7 +1115,7 @@ begin
       end;
     end;
 
-  for I := LibReader.Count - 1 downto 0 do
+  for I := 0 to LibReader.Count - 1 do
   begin
     LibRec := LibReader[I];
     if FileNameMatch(LibRec.Name, FInclude) = TRUE then

@@ -21,7 +21,7 @@
 
   Modified:
 
-    v0.0.3 - 2016.01.01 by Melchiorre Caruso.
+    v0.0.3 - 2016.01.07 by Melchiorre Caruso.
 }
 
 unit GulpCommon;
@@ -542,11 +542,11 @@ begin
   {$IFDEF UNIX}
     Result := FpNice(5) = 0;
   {$ELSE}
-    {$IFDEF MSWINDOWS}
-      Result := SetPriorityClass(GetCurrentProcess, IDLE_PRIORITY_CLASS);
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
+  {$IFDEF MSWINDOWS}
+    Result := SetPriorityClass(GetCurrentProcess, IDLE_PRIORITY_CLASS);
+  {$ELSE}
+    Unsupported platform...
+  {$ENDIF}
   {$ENDIF}
 end;
 
@@ -555,11 +555,11 @@ begin
   {$IFDEF UNIX}
     Result := FpNice(10) = 0;
   {$ELSE}
-    {$IFDEF MSWINDOWS}
-      Result := SetPriorityClass(GetCurrentProcess, NORMAL_PRIORITY_CLASS);
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
+  {$IFDEF MSWINDOWS}
+    Result := SetPriorityClass(GetCurrentProcess, NORMAL_PRIORITY_CLASS);
+  {$ELSE}
+    Unsupported platform...
+  {$ENDIF}
   {$ENDIF}
 end;
 
