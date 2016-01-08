@@ -31,7 +31,7 @@ unit GulpLibrary;
 interface
 
 uses
-  {$IFDEF UNIX} BaseUnix, {$ENDIF} Classes, GulpCommon,
+  {$IFDEF UNIX} BaseUnix, {$ENDIF} Classes, GulpCommon, GulpFixes,
   {$IFDEF MSWINDOWS} Windows, {$ENDIF} Sha1, SysUtils;
 
 type 
@@ -102,12 +102,12 @@ type
     procedure   Check   (const FileName: ansistring);
     procedure   Reset;
   public
-    property Exclude       : TStrList          read FExclude;
-    property Include       : TStrList          read FInclude;
-    property NoDelete      : boolean           read FNoDelete      write FNoDelete;
-    property UntilVersion  : longword          read FUntilVersion  write FUntilVersion;
-    property OnShowItem    : TGulpShowItem     read FOnShowItem    write FOnShowItem;
-    property OnShowMessage : TGulpShowMessage  read FOnShowMessage write FOnShowMessage;
+    property Exclude       : TStrList         read FExclude;
+    property Include       : TStrList         read FInclude;
+    property NoDelete      : boolean          read FNoDelete      write FNoDelete;
+    property UntilVersion  : longword         read FUntilVersion  write FUntilVersion;
+    property OnShowItem    : TGulpShowItem    read FOnShowItem    write FOnShowItem;
+    property OnShowMessage : TGulpShowMessage read FOnShowMessage write FOnShowMessage;
   end;
 
 // --- Some useful routines ---
@@ -249,7 +249,7 @@ end;
 
 function GetTime(var SR: TSearchRec): TDateTime;
 begin
-  Result := LocalTimeToUniversal(FileDateToDateTime(SR.Time), - GetLocalTimeOffSet);
+  Result := GulpFixes.LocalTime2Universal(FileDateToDateTime(SR.Time));
 end;
 
 function GetTime(const FileName: ansistring): TDateTime;
@@ -663,14 +663,15 @@ begin
   FStream.Seek(Items[Index].FStartPos, soBeginning);
   Size := Items[Index].Size;
   SHA1Init(Context);
-  repeat
+  while Size > 0 do
+  begin
     Readed := FStream.Read(Buffer, Min(SizeOf(Buffer), Size));
     if Readed = 0 then
       raise Exception.Create('Unable to read stream (ex0012)');
     SHA1Update  (Context, Buffer, Readed);
     Stream.Write(         Buffer, Readed);
     Dec(Size, Readed);
-  until Size > 0;
+  end;
   SHA1Final(Context, Digest1);
   if FStream.Read(Digest2, SizeOf(TSHA1Digest)) <> SizeOf(TSHA1Digest) then
     raise Exception.Create('Archive is damaged, try with the "fix" command (ex0013)');
@@ -742,7 +743,7 @@ begin
       {$ENDIF}
       {$ENDIF}
       if FileSetDate(Item.Name, DateTimeToFileDate(
-        UniversalTimeToLocal(Item.Time, - GetLocalTimeOffSet))) <> 0 then
+        GulpFixes.UniversalTime2Local(Item.Time))) <> 0 then
           raise Exception.CreateFmt('Unable to set date for "%s"', [Item.Name]);
     end else
       raise Exception.CreateFmt('Unable to restore item "%s"', [Item.Name]);
@@ -909,14 +910,15 @@ var
   Readed  : longint;
 begin
   SHA1Init(Context);
-  repeat
+  while Size > 0 do
+  begin
     Readed := Stream.Read(Buffer, Min(SizeOf(Buffer), Size));
     if Readed = 0 then
       raise Exception.Create('Unable to read stream (ex0016)');
     SHA1Update   (Context, Buffer, Readed);
     FStream.Write(         Buffer, Readed);
     Dec(Size, Readed);
-  until Size > 0;
+  end;
   SHA1Final(Context, Digest);
   FStream.Write(Digest, SizeOf(TSHA1Digest));
 end;
@@ -1115,7 +1117,7 @@ begin
       end;
     end;
 
-  for I := 0 to LibReader.Count - 1 do
+  for I := LibReader.Count - 1 downto 0 do
   begin
     LibRec := LibReader[I];
     if FileNameMatch(LibRec.Name, FInclude) = TRUE then

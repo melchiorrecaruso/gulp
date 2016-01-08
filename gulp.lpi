@@ -43,8 +43,10 @@
         <Filename Value="gulp.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Gulp"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="2"/>
-        <CursorPos X="20" Y="28"/>
+        <TopLine Value="64"/>
+        <CursorPos X="21" Y="78"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit0>
@@ -52,7 +54,7 @@
         <Filename Value="gulpcommon.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="GulpCommon"/>
-        <CursorPos X="11" Y="22"/>
+        <CursorPos X="15" Y="557"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit1>
@@ -60,10 +62,9 @@
         <Filename Value="gulplibrary.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="GulpLibrary"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="1108"/>
-        <CursorPos X="51" Y="534"/>
+        <TopLine Value="727"/>
+        <CursorPos X="23" Y="746"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit2>

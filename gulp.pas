@@ -31,7 +31,7 @@ program Gulp;
 uses
   {$IFDEF UNIX} cthreads, BaseUnix, {$ENDIF}
   {$IFDEF MSWINDOWS} Windows, {$ENDIF}
-  Classes, GulpCommon, GulpLibrary, SysUtils;
+  Classes, GulpCommon, GulpFixes, GulpLibrary, SysUtils;
 
 type
   TShellApplication = class(TObject)
@@ -75,7 +75,7 @@ begin
         FlagToString(Item.Flags),
         ModeToString(Item.Mode),
         AttrToString(Item.Attr),
-        TimeToString(Item.Time),
+        TimeToString(GulpFixes.UniversalTime2Local(Item.Time)),
         '',
         Item.Name]))
     else
@@ -84,7 +84,7 @@ begin
         FlagToString(Item.Flags),
         ModeToString(Item.Mode),
         AttrToString(Item.Attr),
-        TimeToString(Item.Time),
+        TimeToString(GulpFixes.UniversalTime2Local(Item.Time)),
         SizeToString(Item.Size),
         Item.Name]));
 
@@ -158,6 +158,8 @@ begin
         else
           App.UntilVersion := StrToInt(GetOptionValue('-u', '--until'));
       end;
+
+      App.NoDelete := HasOption('', '--nodelete');
 
       if HasOption('-s', '--synch'  ) then App.Sync   (GetOptionValue('-s', '--synch'  )) else
         if HasOption('-r', '--restore') then App.Restore(GetOptionValue('-r', '--restore')) else

@@ -31,15 +31,27 @@
         <FormatVersion Value="1"/>
       </local>
     </RunParams>
-    <Units Count="1">
+    <Units Count="2">
       <Unit0>
         <Filename Value="gdiff.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="GDiff"/>
         <IsVisibleTab Value="True"/>
-        <CursorPos X="19" Y="17"/>
-        <UsageCount Value="26"/>
+        <TopLine Value="31"/>
+        <CursorPos Y="48"/>
+        <UsageCount Value="31"/>
         <Loaded Value="True"/>
       </Unit0>
+      <Unit1>
+        <Filename Value="gulpfixes.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="GulpFixes"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="25"/>
+        <CursorPos X="23" Y="65"/>
+        <UsageCount Value="21"/>
+        <Loaded Value="True"/>
+      </Unit1>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
