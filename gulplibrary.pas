@@ -729,7 +729,7 @@ begin
       {$IFDEF UNIX}
       if (gfUID in Item.Flags) or (gfGID in Item.Flags) then
         if FpChown(Item.Name, Item.UserID, Item.GroupID) <> 0 then
-          raise Exception.CreateFmt('Unable to set user id for "%s"', [Item.Name]);
+          raise Exception.CreateFmt('Unable to set user/group id for "%s"', [Item.Name]);
 
       if gfMODE in Item.Flags then
         if FpChmod(Item.Name, Item.Mode) <> 0 then
@@ -737,7 +737,7 @@ begin
       {$ELSE}
       {$IFDEF MSWINDOWS}
         if FileSetAttr(Item.Name, Item.Attr) <> 0 then
-          raise Exception.CreateFmt('Unable to set attrbutes for "%s"', [Item.Name]);
+          raise Exception.CreateFmt('Unable to set attributes for "%s"', [Item.Name]);
       {$ELSE}
         Unsupported platform...
       {$ENDIF}

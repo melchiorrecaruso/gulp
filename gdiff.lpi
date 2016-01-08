@@ -31,14 +31,13 @@
         <FormatVersion Value="1"/>
       </local>
     </RunParams>
-    <Units Count="2">
+    <Units Count="4">
       <Unit0>
         <Filename Value="gdiff.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="GDiff"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="1"/>
-        <CursorPos X="24" Y="24"/>
+        <TopLine Value="23"/>
+        <CursorPos X="17" Y="30"/>
         <UsageCount Value="31"/>
         <Loaded Value="True"/>
       </Unit0>
@@ -46,11 +45,30 @@
         <Filename Value="gulpfixes.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="GulpFixes"/>
-        <EditorIndex Value="-1"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="3"/>
         <TopLine Value="28"/>
         <CursorPos X="23" Y="65"/>
         <UsageCount Value="21"/>
+        <Loaded Value="True"/>
       </Unit1>
+      <Unit2>
+        <Filename Value="gulpcommon.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="GulpCommon"/>
+        <EditorIndex Value="1"/>
+        <CursorPos X="25" Y="15"/>
+        <UsageCount Value="20"/>
+        <Loaded Value="True"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="gulplibrary.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="GulpLibrary"/>
+        <EditorIndex Value="2"/>
+        <UsageCount Value="20"/>
+        <Loaded Value="True"/>
+      </Unit3>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

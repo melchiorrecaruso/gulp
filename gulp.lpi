@@ -43,7 +43,6 @@
         <Filename Value="gulp.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Gulp"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="2"/>
         <TopLine Value="64"/>
         <CursorPos X="21" Y="78"/>
@@ -62,9 +61,10 @@
         <Filename Value="gulplibrary.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="GulpLibrary"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="727"/>
-        <CursorPos X="23" Y="746"/>
+        <TopLine Value="725"/>
+        <CursorPos X="57" Y="740"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit2>
