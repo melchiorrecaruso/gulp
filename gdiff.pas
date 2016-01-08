@@ -1,3 +1,29 @@
+{
+  Copyright (c) 2016 Melchiorre Caruso.
+
+  This program is free software; you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation; either version 2 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program; if not, write to the Free Software
+  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+
+  Contains:
+
+    The gulp diff utility.
+
+  Modified:
+
+    v0.0.3 - 2016.01.08 by Melchiorre Caruso.
+}
+
 program GDiff;
 
 {$mode objfpc}
@@ -12,15 +38,15 @@ var
   Scan : array[1..2] of TSysScanner;
 
 begin
-  writeln('GDIFF v0.0.3 - Compare FOLDERS file by file.');
-  if ParamCount <> 2 then
+  writeln('GDIFF v0.0.3 diff utility, copyright (c) 2016 Melchiorre Caruso.');
+  if (ParamCount <> 2) or
+     (DirectoryExists(ParamStr(1)) = FALSE) or
+     (DirectoryExists(ParamStr(2)) = FALSE) then
   begin
-    writeln('Usage: gdiff DIRECTORY-1 DIRECTORY-2');
+    writeln('Usage: gdiff directory1 directory2');
     writeln('Compare two DIRECTORIES file by file.');
   end else
   begin
-    if DirectoryExists(ParamStr(1)) = FALSE then Halt;
-    if DirectoryExists(ParamStr(2)) = FALSE then Halt;
 
     for I := 1 to 2 do
     begin

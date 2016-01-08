@@ -37,8 +37,8 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="GDiff"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="31"/>
-        <CursorPos Y="48"/>
+        <EditorIndex Value="1"/>
+        <CursorPos X="24" Y="24"/>
         <UsageCount Value="31"/>
         <Loaded Value="True"/>
       </Unit0>
@@ -46,11 +46,10 @@
         <Filename Value="gulpfixes.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="GulpFixes"/>
-        <EditorIndex Value="2"/>
-        <TopLine Value="25"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="28"/>
         <CursorPos X="23" Y="65"/>
         <UsageCount Value="21"/>
-        <Loaded Value="True"/>
       </Unit1>
     </Units>
   </ProjectOptions>
