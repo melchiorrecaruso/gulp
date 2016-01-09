@@ -26,18 +26,19 @@
 
 program Gulp;
 
-{$mode objfpc}
+{$codepage utf8}
+{$mode objfpc}{$H+}
 
 uses
   {$IFDEF UNIX} cthreads, BaseUnix, {$ENDIF}
   {$IFDEF MSWINDOWS} Windows, {$ENDIF}
-  Classes, GulpCommon, GulpFixes, GulpLibrary, SysUtils;
+  Classes, GulpCommandLine, GulpCommon, GulpFixes, GulpLibrary, SysUtils;
 
 type
   TShellApplication = class(TObject)
   protected
     procedure   ShowItem(const Item: TGulpItem);
-    procedure   ShowMessage(const Message: ansistring);
+    procedure   ShowMessage(const Message: rawbytestring);
     procedure   Abort;
   public
     constructor Create;
@@ -59,7 +60,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TShellApplication.ShowMessage(const Message: ansistring);
+procedure TShellApplication.ShowMessage(const Message: rawbytestring);
 begin
   write(Message);
 end;
@@ -71,8 +72,8 @@ begin
 
     if Item.Attr and faDirectory = faDirectory then
       writeln(Format('%4s %3s %3s %7s %19s %12s %s', [
-         VerTostring(Item.Version),
-        FlagToString(Item.Flags),
+        VersionTostring(Item.Version),
+        FlagsToString(Item.Flags),
         ModeToString(Item.Mode),
         AttrToString(Item.Attr),
         TimeToString(GulpFixes.UniversalTime2Local(Item.Time)),
@@ -80,8 +81,8 @@ begin
         Item.Name]))
     else
       writeln(Format('%4s %3s %3s %7s %19s %12s %s', [
-         VerTostring(Item.Version),
-        FlagToString(Item.Flags),
+        VersionTostring(Item.Version),
+        FlagsToString(Item.Flags),
         ModeToString(Item.Mode),
         AttrToString(Item.Attr),
         TimeToString(GulpFixes.UniversalTime2Local(Item.Time)),
@@ -93,8 +94,8 @@ begin
 
     if Item.Attr and faDirectory = faDirectory then
       writeln(Format('%4s %3s %3s %7s %19s %12s %s', [
-         VerTostring(Item.Version),
-        FlagToString(Item.Flags),
+        VersionTostring(Item.Version),
+        FlagsToString(Item.Flags),
         '',
         '',
         '',
@@ -102,8 +103,8 @@ begin
         Item.Name]))
     else
       writeln(Format('%4s %3s %3s %7s %19s %12s %s', [
-         VerTostring(Item.Version),
-        FlagToString(Item.Flags),
+        VersionTostring(Item.Version),
+        FlagsToString(Item.Flags),
         '',
         '',
         '',
@@ -116,7 +117,7 @@ end;
 procedure TShellApplication.Run;
 var
   App   : TGulpApplication;
-  S     : ansistring;
+  S     : rawbytestring;
   Start : TDateTime;
 begin
   Start := Now;

@@ -21,12 +21,12 @@
 
   Modified:
 
-    v0.0.3 - 2016.01.08 by Melchiorre Caruso.
+    v0.0.3 - 2016.01.09 by Melchiorre Caruso.
 }
 
 unit GulpFixes;
 
-{$mode objfpc}
+{$mode objfpc}{$H+}
 
 interface
 
@@ -49,7 +49,7 @@ begin
   Result := UniversalTime2Local(UT, -GetLocalTimeOffset);
 end;
 
-function UniversalTime2Local(UT: TDateTime; TZOffset : longint): TDateTime;
+function UniversalTime2Local(UT: TDateTime;  TZOffset : longint): TDateTime;
 begin
   if (TZOffset > 0) then
     Result := UT + EncodeTime(TZOffset div 60, TZOffset mod 60, 0, 0)
@@ -65,7 +65,7 @@ begin
   Result := LocalTime2Universal(LT, -GetLocalTimeOffset);
 end;
 
-function LocalTime2Universal(LT: TDateTime; TZOffset: longint): TDateTime;
+function LocalTime2Universal(LT: TDateTime;  TZOffset:  longint): TDateTime;
 begin
   if (TZOffset > 0) then
     Result := LT - EncodeTime(TZOffset div 60, TZOffset mod 60, 0, 0)

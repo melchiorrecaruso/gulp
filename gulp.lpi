@@ -38,14 +38,13 @@
         <Display Use="True"/>
       </local>
     </RunParams>
-    <Units Count="3">
+    <Units Count="8">
       <Unit0>
         <Filename Value="gulp.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Gulp"/>
-        <EditorIndex Value="2"/>
-        <TopLine Value="64"/>
-        <CursorPos X="21" Y="78"/>
+        <IsVisibleTab Value="True"/>
+        <CursorPos X="24" Y="120"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit0>
@@ -53,7 +52,9 @@
         <Filename Value="gulpcommon.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="GulpCommon"/>
-        <CursorPos X="15" Y="557"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="130"/>
+        <CursorPos X="28" Y="149"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit1>
@@ -61,13 +62,54 @@
         <Filename Value="gulplibrary.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="GulpLibrary"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="1"/>
-        <TopLine Value="725"/>
-        <CursorPos X="57" Y="740"/>
+        <EditorIndex Value="4"/>
+        <TopLine Value="30"/>
+        <CursorPos X="32" Y="48"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit2>
+      <Unit3>
+        <Filename Value="gulpcommandline.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="GulpCommandLine"/>
+        <EditorIndex Value="1"/>
+        <CursorPos X="19" Y="28"/>
+        <UsageCount Value="21"/>
+        <Loaded Value="True"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="gulpfixes.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="GulpFixes"/>
+        <EditorIndex Value="3"/>
+        <UsageCount Value="21"/>
+        <Loaded Value="True"/>
+      </Unit4>
+      <Unit5>
+        <Filename Value="gulplist.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="GulpList"/>
+        <EditorIndex Value="5"/>
+        <CursorPos X="21" Y="140"/>
+        <UsageCount Value="21"/>
+        <Loaded Value="True"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="gulpscanner.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="GulpScanner"/>
+        <EditorIndex Value="6"/>
+        <UsageCount Value="21"/>
+        <Loaded Value="True"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="gulpstream.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="GulpStream"/>
+        <EditorIndex Value="7"/>
+        <UsageCount Value="21"/>
+        <Loaded Value="True"/>
+      </Unit7>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

@@ -31,7 +31,7 @@ unit GulpLibrary;
 interface
 
 uses
-  {$IFDEF UNIX} BaseUnix, {$ENDIF} Classes, GulpCommon, GulpFixes,
+  {$IFDEF UNIX} BaseUnix, {$ENDIF} Classes, GulpCommon, GulpList, GulpFixes,
   {$IFDEF MSWINDOWS} Windows, {$ENDIF} Sha1, SysUtils;
 
 type 
@@ -45,96 +45,82 @@ type
   TGulpItem = class(TObject)
   private
     FFlags     : TGulpFlags;    // Flags
-    FName      : ansistring;    // Path and name
+    FName      : rawbytestring; // Path and name
     FTime      : TDateTime;     // Last modification date and time (UTC)
     FSize      : int64;         // Size in bytes
     FAttr      : longint;       // Attributes (MSWindows)
     FMode      : longint;       // Mode (Unix)
-    FLink      : ansistring;    // Name of link
+    FLink      : rawbytestring; // Name of link
     FUserID    : longword;      // User ID
-    FUserName  : ansistring;    // User Name
+    FUserName  : rawbytestring; // User Name
     FGroupID   : longword;      // Group ID
-    FGroupName : ansistring;    // Group Name
-    FComment   : ansistring;    // Comment
+    FGroupName : rawbytestring; // Group Name
+    FComment   : rawbytestring; // Comment
     FStartPos  : int64;         // Stream start position (reserved)
     FEndPos    : int64;         // Stream end position   (reserved)
     FVersion   : longword;      // Version               (reserved)
   public
     property Flags     : TGulpFlags    read FFlags;
-    property Name      : ansistring    read FName;
+    property Name      : rawbytestring read FName;
     property Time      : TDateTime     read FTime;
     property Size      : int64         read FSize;
     property Attr      : longint       read FAttr;
     property Mode      : longint       read FMode;
-    property Link      : ansistring    read FLink;
+    property Link      : rawbytestring read FLink;
     property UserID    : longword      read FUserID;
-    property UserName  : ansistring    read FUserName;
+    property UserName  : rawbytestring read FUserName;
     property GroupID   : longword      read FGroupID;
-    property GroupName : ansistring    read FGroupName;
-    property Comment   : ansistring    read FComment;
+    property GroupName : rawbytestring read FGroupName;
+    property Comment   : rawbytestring read FComment;
     property Version   : longword      read FVersion;
   end;
 
   // --- The Gulp Application events ---
   TGulpShowItem    = procedure(const Item: TGulpItem) of object;
-  TGulpShowMessage = procedure(const Message: ansistring) of object;
+  TGulpShowMessage = procedure(const Message: rawbytestring) of object;
   TGulpTerminate   = function : boolean of object;
 
   // --- The Gulp Application class ---
   TGulpApplication = class(TObject)
   private
-    FExclude       : TStrList;
-    FInclude       : TStrList;
+    FExclude       : TRawByteStringList;
+    FInclude       : TRawByteStringList;
     FNodelete      : boolean;
     FUntilVersion  : longword;
     FOnShowItem    : TGulpShowItem;
     FOnShowMessage : TGulpShowMessage;
     procedure ShowItem(Item: TGulpItem);
-    procedure ShowMessage(const Message: ansistring);
+    procedure ShowMessage(const Message: rawbytestring);
   public
     constructor Create;
     destructor  Destroy; override;
-    procedure   Sync    (const FileName: ansistring);
-    procedure   Restore (const FileName: ansistring);
-    procedure   Purge   (const FileName: ansistring);
-    procedure   List    (const FileName: ansistring);
-    procedure   Fix     (const FileName: ansistring);
-    procedure   Check   (const FileName: ansistring);
+    procedure   Sync    (const FileName: rawbytestring);
+    procedure   Restore (const FileName: rawbytestring);
+    procedure   Purge   (const FileName: rawbytestring);
+    procedure   List    (const FileName: rawbytestring);
+    procedure   Fix     (const FileName: rawbytestring);
+    procedure   Check   (const FileName: rawbytestring);
     procedure   Reset;
   public
-    property Exclude       : TStrList         read FExclude;
-    property Include       : TStrList         read FInclude;
-    property NoDelete      : boolean          read FNoDelete      write FNoDelete;
-    property UntilVersion  : longword         read FUntilVersion  write FUntilVersion;
-    property OnShowItem    : TGulpShowItem    read FOnShowItem    write FOnShowItem;
-    property OnShowMessage : TGulpShowMessage read FOnShowMessage write FOnShowMessage;
+    property Exclude       : TRawByteStringList read FExclude;
+    property Include       : TRawByteStringList read FInclude;
+    property NoDelete      : boolean            read FNoDelete      write FNoDelete;
+    property UntilVersion  : longword           read FUntilVersion  write FUntilVersion;
+    property OnShowItem    : TGulpShowItem      read FOnShowItem    write FOnShowItem;
+    property OnShowMessage : TGulpShowMessage   read FOnShowMessage write FOnShowMessage;
   end;
 
 // --- Some useful routines ---
 
-function GetTime(const FileName: ansistring): TDateTime;  overload;
-function GetTime(var   SR: TSearchRec      ): TDateTime;  overload;
-function GetSize(const FileName: ansistring): int64;      overload;
-function GetSize(var   SR: TSearchRec      ): int64;      overload;
-function GetAttr(const FileName: ansistring): longint;    overload;
-function GetAttr(var   SR: TSearchRec      ): longint;    overload;
+function VersionToString(const Version: longword ): rawbytestring;
+function AttrToString   (const Attr   : longint  ): rawbytestring;
+function SizeToString   (const Size   : int64    ): rawbytestring;
+function TimeToString   (const T      : TDateTime): rawbytestring;
+function ModeToString   (const Mode   : longint  ): rawbytestring;
 
-function GetMode(const FileName: ansistring): longint;
-function GetUID (const FileName: ansistring): longword;
-function GetUNM (const FileName: ansistring): ansistring;
-function GetGID (const FileName: ansistring): longword;
-function GetGNM (const FileName: ansistring): ansistring;
-function GetLink(const FileName: ansistring): ansistring;
-
-function  VerToString(const Version: longword): ansistring;
-function AttrToString(const Attr: longint    ): ansistring;
-function SizeToString(const Size: int64      ): ansistring;
-function TimeToString(const T: TDateTime     ): ansistring;
-function ModeToString(const Mode: longint    ): ansistring;
-
-function StringToAttr(const S: ansistring    ): longint;
-function StringToMode(const S: ansistring    ): longint;
-function FlagToString(const F: TGulpFlags    ): ansistring;
+function StringToAttr   (const S: rawbytestring): longint;
+function StringToMode   (const S: rawbytestring): longint;
+function FlagsToString  (const F: TGulpFlags   ): rawbytestring;
 
 // =============================================================================
 // IMPLEMENTATION
@@ -143,7 +129,7 @@ function FlagToString(const F: TGulpFlags    ): ansistring;
 implementation
 
 uses
-  DateUtils, Math;
+  DateUtils, GulpScanner, GulpStream, Math;
 
 const
   GulpMarker003 : TSHA1Digest = (255, 210, 119, 9, 180, 210, 231, 123,
@@ -170,11 +156,11 @@ type
     procedure   Load(UntilVersion: longword);
     procedure   Extract(Index: longint; Stream: TStream); overload;
     procedure   Extract(Index: longint); overload;
-    function    Find(const FileName: ansistring): longint;
+    function    Find(const FileName: rawbytestring): longint;
     procedure   Clear;
   public
-    property Items[Index: longint]: TGulpItem read GetItem; default;
-    property Count: longint read GetCount;
+    property    Items[Index: longint]: TGulpItem read GetItem; default;
+    property    Count: longint read GetCount;
   end;
 
   // --- The Gulp Writer class ---
@@ -189,19 +175,19 @@ type
   public
     constructor Create   (Stream: TStream);
     destructor  Destroy; override;
-    procedure   Delete   (const FileName: ansistring);
-    procedure   Add      (const FileName: ansistring);
+    procedure   Delete   (const FileName: rawbytestring);
+    procedure   Add      (const FileName: rawbytestring);
     procedure   Clear;
   public
-    property Items[Index: longint]: TGulpItem read GetItem; default;
-    property Count: longint read GetCount;
+    property    Items[Index: longint]: TGulpItem read GetItem; default;
+    property    Count: longint read GetCount;
   end;
 
 // =============================================================================
 // Internal rutines
 // =============================================================================
 
-function Clear(Item: TGulpItem): TGulpItem; inline;
+function ItemClear(Item: TGulpItem): TGulpItem; inline;
 begin
   Item.FFlags     := [];
   Item.FName      := '';
@@ -221,7 +207,7 @@ begin
   Result := Item;
 end;
 
-function GetDigest(Item: TGulpItem): TSHA1Digest; inline;
+function ItemGetDigest(Item: TGulpItem): TSHA1Digest; inline;
 var
   Context : TSHA1Context;
 begin
@@ -247,160 +233,12 @@ end;
 // Library routines
 // =============================================================================
 
-function GetTime(var SR: TSearchRec): TDateTime;
-begin
-  Result := GulpFixes.LocalTime2Universal(FileDateToDateTime(SR.Time));
-end;
-
-function GetTime(const FileName: ansistring): TDateTime;
-var
-  SR : TSearchRec;
-begin
-  Result := 0.0;
-  if SysUtils.FindFirst(FileName,
-    faReadOnly  or faHidden  or faSysFile or faVolumeId or
-    faDirectory or faArchive or faSymLink or faAnyFile, SR) = 0 then
-  begin
-    Result := GetTime(SR);
-  end;
-  SysUtils.FindClose(SR);
-end;
-
-function GetSize(var SR: TSearchRec): int64;
-begin
-  Result := 0;
-  if SR.Attr and (faDirectory or faVolumeId or faSymLink) = 0 then
-  begin
-    Result := SR.Size;
-  end;
-end;
-
-function GetSize(const FileName: ansistring): int64;
-var
-  SR : TSearchRec;
-begin
-  Result := 0;
-  if SysUtils.FindFirst(FileName,
-    faReadOnly  or faHidden  or faSysFile or faVolumeId or
-    faDirectory or faArchive or faSymLink or faAnyFile, SR) = 0 then
-  begin
-    Result := GetSize(SR);
-  end;
-  SysUtils.FindClose(SR);
-end;
-
-function GetAttr(var SR: TSearchRec): longint;
-begin
-  Result := SR.Attr;
-end;
-
-function GetAttr(const FileName: ansistring): longint;
-var
-  SR : TSearchRec;
-begin
-  Result := 0;
-  if SysUtils.FindFirst(FileName,
-    faReadOnly  or faHidden  or faSysFile or faVolumeId or
-    faDirectory or faArchive or faSymLink or faAnyFile, SR) = 0 then
-  begin
-    Result := GetAttr(SR);
-  end;
-  SysUtils.FindClose(SR);
-end;
-
-function GetLink(const FileName: ansistring): ansistring;
-begin
-  Result := '';
-  {$IFDEF UNIX}
-  if GetAttr(FileName) and faSymLink = faSymLink then
-    Result := fpReadLink(FileName);
-  {$ELSE}
-  {$IFDEF MSWINDOWS}
-  {$ELSE}
-    Unsupported platform...
-  {$ENDIF}
-  {$ENDIF}
-end;
-
-function GetMode(const FileName: ansistring): longint;
-{$IFDEF UNIX}
-var
-  Info : stat;
-{$ENDIF}
-begin
-  Result := 0;
-  {$IFDEF UNIX}
-  if fpLstat(FileName, Info) = 0 then
-    Result := Info.st_mode
-  else
-    if fpstat(FileName, Info) = 0 then
-      Result := Info.st_mode;
-  {$ELSE}
-  {$IFDEF MSWINDOWS}
-  {$ELSE}
-    Unsupported platform...
-  {$ENDIF}
-  {$ENDIF}
-end;
-
-function GetUID(const FileName: ansistring): longword;
-{$IFDEF UNIX}
-var
-  Info : stat;
-{$ENDIF}
-begin
-  Result := $FFFFFFFF;
-  {$IFDEF UNIX}
-  if fpLstat(FileName, Info) = 0 then
-    Result := Info.st_uid
-  else
-    if fpstat(FileName, Info) = 0 then
-      Result := Info.st_uid;
-  {$ELSE}
-  {$IFDEF MSWINDOWS}
-  {$ELSE}
-    Unsupported platform...
-  {$ENDIF}
-  {$ENDIF}
-end;
-
-function GetUNM(const FileName: ansistring): ansistring;
-begin
-  Result := '';
-end;
-
-function GetGID(const FileName: ansistring): longword;
-{$IFDEF UNIX}
-var
-  Info : stat;
-{$ENDIF}
-begin
-  Result := $FFFFFFFF;
-  {$IFDEF UNIX}
-  if fpLstat(FileName, Info) = 0 then
-    Result := Info.st_gid
-  else
-    if fpstat(FileName, Info) = 0 then
-      Result := Info.st_gid;
-  {$ELSE}
-  {$IFDEF MSWINDOWS}
-  {$ELSE}
-    Unsupported platform...
-  {$ENDIF}
-  {$ENDIF}
-end;
-
-function GetGNM(const FileName: ansistring): ansistring;
-begin
-  Result := '';
-end;
-
-function VerToString(const Version: longword): ansistring;
+function VersionToString(const Version: longword): rawbytestring;
 begin
   Result := IntTostr(Version);
 end;
 
-function FlagToString(const F: TGulpFlags): ansistring;
+function FlagsToString(const F: TGulpFlags): rawbytestring;
 begin
   if (gfAdd in F) and (gfDEL in F) then
     Result := 'UPD'
@@ -414,19 +252,19 @@ begin
         raise Exception.Create('Invalid marker value (ex0001)');
 end;
 
-function TimeToString(const T: TDateTime): ansistring;
+function TimeToString(const T: TDateTime): rawbytestring;
 begin
   Result := FormatDateTime(
     DefaultFormatSettings.LongDateFormat + ' ' +
     DefaultFormatSettings.LongTimeFormat, T);
 end;
 
-function SizeToString(const Size: int64): ansistring;
+function SizeToString(const Size: int64): rawbytestring;
 begin
   Result := Format('%u', [Size]);
 end;
 
-function AttrToString(const Attr: longint): ansistring;
+function AttrToString(const Attr: longint): rawbytestring;
 begin
   Result := '       ';
   if Attr and faReadOnly  <> 0 then Result[1] := 'R';
@@ -438,7 +276,7 @@ begin
   if Attr and faSymLink   <> 0 then Result[7] := 'L';
 end;
 
-function StringToAttr(const S: ansistring): longint;
+function StringToAttr(const S: rawbytestring): longint;
 begin
   Result := 0;
   if Length(S) = 7 then
@@ -453,7 +291,7 @@ begin
   end;
 end;
 
-function ModeToString(const Mode: longint): ansistring;
+function ModeToString(const Mode: longint): rawbytestring;
 begin
   {$IFDEF UNIX}
     Result := OctStr(Mode, 3);
@@ -466,7 +304,7 @@ begin
   {$ENDIF}
 end;
 
-function StringToMode(const S: ansistring): longint;
+function StringToMode(const S: rawbytestring): longint;
 {$IFDEF UNIX}
 var
   I : longint;
@@ -553,7 +391,7 @@ function TGulpReader.Read(Item: TGulpItem): TGulpItem;
 var
   Digest : TSHA1Digest;
 begin
-  Result := GulpLibrary.Clear(Item);
+  Result := ItemClear(Item);
   if FStream.Read(Digest, SizeOf(TSHA1Digest)) <> SizeOf(TSHA1Digest) then
     raise Exception.Create('Archive is damaged, try with the "fix" command (ex0002)');
   if SHA1Match(Digest, GulpMarker003) = FALSE then
@@ -580,7 +418,7 @@ begin
     raise Exception.Create('Archive is damaged, try with the "fix" command (ex0005)');
   if FStream.Read(Digest, SizeOf(TSHA1Digest)) <> SizeOf(TSHA1Digest) then
     raise Exception.Create('Archive is damaged, try with the "fix" command (ex0006)');
-  if SHA1Match(Digest, GetDigest(Item)) = FALSE then
+  if SHA1Match(Digest, ItemGetDigest(Item)) = FALSE then
     raise Exception.Create('Archive is damaged, try with the "fix" command (ex0007)');
 
   DoDirSeparators(Item.FLink);
@@ -596,10 +434,11 @@ var
   Version : longword = 1;
 begin
   Clear;
+  FreeAndNil(FList);
   if 0 = UntilVersion then
-    FList.Compare := @Compare40
+    FList := TGulpList.Create(@Compare40)
   else
-    FList.Compare := @Compare41;
+    FList := TGulpList.Create(@Compare41);
 
   Item := TGulpItem.Create;
   try
@@ -683,7 +522,7 @@ procedure TGulpReader.Extract(Index: longint);
 var
   Check    : boolean;
   Item     : TGulpItem;
-  ItemPath : ansistring;
+  ItemPath : rawbytestring;
   Stream   : TFileStream;
 begin
   Item := Items[Index];
@@ -751,11 +590,11 @@ begin
   end;
 end;
 
-function  TGulpReader.Find(const FileName: ansistring): longint;
+function  TGulpReader.Find(const FileName: rawbytestring): longint;
 var
   Item : TGulpItem;
 begin
-  Item := GulpLibrary.Clear(TGulpItem.Create);
+  Item := ItemClear(TGulpItem.Create);
   Item.FFlags := [gfADD, gfNAME];
   Item.FName  := FileName;
   begin
@@ -848,7 +687,7 @@ begin
   end;
 end;
 
-procedure TGulpWriter.Add(const FileName: ansistring);
+procedure TGulpWriter.Add(const FileName: rawbytestring);
 var
   Item : TGulpItem;
   SR   : TSearchRec;
@@ -856,13 +695,13 @@ begin
   if SysUtils.FindFirst(FileName,
     faReadOnly  or faHidden  or faSysFile or faVolumeId or
     faDirectory or faArchive or faSymLink or faAnyFile, SR) = 0 then
-    if GetAttr(SR) and (faSysFile or faVolumeId) = 0 then
+    if GulpCommon.FileGetAttr(SR) and (faSysFile or faVolumeId) = 0 then
     begin
-      Item          := GulpLibrary.Clear(TGulpItem.Create);
+      Item          := ItemClear(TGulpItem.Create);
       Item.FName    := FileName;
-      Item.FTime    := GetTime(SR);
-      Item.FSize    := GetSize(SR);
-      Item.FAttr    := GetAttr(SR);
+      Item.FTime    := FileGetTimeUTC(SR);
+      Item.FSize    := FileGetSize   (SR);
+      Item.FAttr    := GulpCommon.FileGetAttr(SR);
       Include(Item.FFlags, gfNAME);
       Include(Item.FFlags, gfTIME);
       if Item.Attr and faSymLink = 0 then
@@ -870,10 +709,10 @@ begin
           Include(Item.FFlags, gfSIZE);
       Include(Item.FFlags, gfATTR);
       {$IFDEF UNIX}
-      Item.FMode    := GetMode(FileName);
-      Item.FLink    := GetLink(FileName);
-      Item.FUserID  := GetUID (FileName);
-      Item.FGroupID := GetGID (FileName);
+      Item.FMode    := FileGetMode    (FileName);
+      Item.FLink    := FileGetLinkName(FileName);
+      Item.FUserID  := FileGetUserID  (FileName);
+      Item.FGroupID := FileGetGroupID (FileName);
       Include(Item.FFLags, gfMODE);
       Include(Item.FFLags, gfLINK);
       Include(Item.FFLags, gfUID );
@@ -891,11 +730,11 @@ begin
   SysUtils.FindClose(SR);
 end;
 
-procedure TGulpWriter.Delete(const FileName: ansistring);
+procedure TGulpWriter.Delete(const FileName: rawbytestring);
 var
   Item : TGulpItem;
 begin
-  Item        := GulpLibrary.Clear(TGulpItem.Create);
+  Item        := ItemClear(TGulpItem.Create);
   Item.FFlags := [gfDEL, gfNAME];
   Item.FName  := FileName;
   if FList.Add(Item) = -1 then
@@ -940,7 +779,7 @@ begin
   if gfCOMM  in Item.FFlags then FStream.WriteAnsiString(Item.FComment);
   if gfSIZE  in Item.FFlags then FStream.Write(Item.FStartPos, SizeOf(Item.FStartPos));
   if gfSIZE  in Item.FFlags then FStream.Write(Item.FEndPos,   SizeOf(Item.FEndPos));
-  FStream.Write(GetDigest(Item), SizeOf(TSHA1Digest));
+  FStream.Write(ItemGetDigest(Item), SizeOf(TSHA1Digest));
 end;
 
 function TGulpWriter.GetItem(Index: longint): TGulpItem;
@@ -962,8 +801,8 @@ begin
   inherited Create;
   FOnShowItem    := nil;
   FOnShowMessage := nil;
-  FExclude       := TStrList.Create;
-  FInclude       := TStrList.Create;
+  FExclude       := TRawByteStringList.Create;
+  FInclude       := TRawByteStringList.Create;
   FNodelete      := FALSE;
   FUntilVersion  := $FFFFFFFF;
 end;
@@ -989,18 +828,18 @@ begin
     FOnShowItem(Item);
 end;
 
-procedure TGulpApplication.ShowMessage(const Message: ansistring);
+procedure TGulpApplication.ShowMessage(const Message: rawbytestring);
 begin
   if Assigned(FOnShowMessage) then
     FOnShowMessage(Message);
 end;
 
-procedure TGulpApplication.Sync(const FileName: ansistring);
+procedure TGulpApplication.Sync(const FileName: rawbytestring);
 var
   LibReader : TGulpReader;
   LibWriter : TGulpWriter;
        I, J : longint;
-       Scan : TSysScanner;
+       Scan : TScanner;
        Size : int64;
      Stream : TStream;
 begin
@@ -1016,7 +855,7 @@ begin
   Size := Stream.Seek(0, soEnd);
 
   ShowMessage(Format('%sScanning filesystem...   ', [#13]));
-  Scan  := TSysScanner.Create;
+  Scan  := TScanner.Create;
   for I := FInclude.Count - 1 downto 0 do
     if DirectoryExists(FInclude[I]) = TRUE then
       FInclude.Add(IncludeTrailingPathDelimiter(FInclude[I]) + '*');
@@ -1048,7 +887,7 @@ begin
     if J = -1 then
       LibWriter.Add(Scan[I])
     else
-      if GetTime(Scan[I]) <> LibReader[J].Time then
+      if FileGetTimeUTC(Scan[I]) <> LibReader[J].Time then
       begin
         LibWriter.Delete(Scan[I]);
         LibWriter.Add   (Scan[I]);
@@ -1060,15 +899,15 @@ begin
   FreeandNil(Scan);
 
   ShowMessage(Format('%sFinished (%u added bytes) %s',
-    [#13, GetSize(FileName) - Size, LineEnding]));
+    [#13, FileGetSize(FileName) - Size, LineEnding]));
 end;
 
-procedure TGulpApplication.Restore(const FileName: ansistring);
+procedure TGulpApplication.Restore(const FileName: rawbytestring);
 var
   LibReader : TGulpReader;
      LibRec : TGulpItem;
        I, J : longint;
-       Scan : TSysScanner;
+       Scan : TScanner;
        Size : int64 = 0;
      Stream : TStream;
 begin
@@ -1080,7 +919,7 @@ begin
   LibReader.Load(FUntilVersion);
 
   ShowMessage(Format('%sScanning filesystem...      ', [#13]));
-  Scan := TSysScanner.Create;
+  Scan := TScanner.Create;
   Scan.Add('*');
   for I := FInclude.Count - 1 downto 0 do
   begin
@@ -1129,7 +968,7 @@ begin
           LibReader.Extract(I);
           Inc(Size, LibRec.Size);
         end else
-          if GetTime(Scan[J]) <> LibRec.Time then
+          if FileGetTimeUTC(Scan[J]) <> LibRec.Time then
           begin
             LibReader.Extract(I);
             Inc(Size, LibRec.Size);
@@ -1144,7 +983,7 @@ begin
     [#13, Size, LineEnding]));
 end;
 
-procedure TGulpApplication.Check(const FileName: ansistring);
+procedure TGulpApplication.Check(const FileName: rawbytestring);
 var
   LibReader : TGulpReader;
           I : longint;
@@ -1170,10 +1009,10 @@ begin
   FreeAndNil(Nul);
 
   ShowMessage(Format('%sFinished (%u checked bytes) %s',
-    [#13, GetSize(FileName), LineEnding]));
+    [#13, FileGetSize(FileName), LineEnding]));
 end;
 
-procedure TGulpApplication.Fix(const FileName: ansistring);
+procedure TGulpApplication.Fix(const FileName: rawbytestring);
 var
   LibReader : TGulpReader;
      LibRec : TGulpItem;
@@ -1218,7 +1057,7 @@ begin
     [#13, OffSet, LineEnding]));
 end;
 
-procedure TGulpApplication.Purge(const FileName: ansistring);
+procedure TGulpApplication.Purge(const FileName: rawbytestring);
 var
     LibItem : TGulpItem;
   LibReader : TGulpReader;
@@ -1227,7 +1066,7 @@ var
        Size : int64 = 0;
      Stream : TStream;
         Tmp : TStream;
-    TmpName : ansistring;
+    TmpName : rawbytestring;
 begin
   ShowMessage(GulpDescription);
   ShowMessage(Format('Purge the content of "%s" %s', [FileName, LineEnding]));
@@ -1285,7 +1124,7 @@ begin
     [#13, Size, LineEnding]));
 end;
 
-procedure TGulpApplication.List(const FileName: ansistring);
+procedure TGulpApplication.List(const FileName: rawbytestring);
 var
       Count : longint = 0;
   LibReader : TGulpReader;
