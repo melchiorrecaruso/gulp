@@ -1,5 +1,5 @@
 {
-  Copyright (c) 2014-2016 Melchiorre Caruso.
+  Copyright (c) 2016 Melchiorre Caruso.
 
   This program is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -21,12 +21,12 @@
 
   Modified:
 
-    v0.0.3 - 2016.01.08 by Melchiorre Caruso.
+    v0.0.3 - 2016.01.10 by Melchiorre Caruso.
 }
 
 unit GulpStream;
 
-{$mode objfpc}
+{$mode objfpc}{$H+}
 
 interface
 
@@ -37,24 +37,23 @@ type
   { TNulStream class }
 
   TNulStream = class(TStream)
-  public
-    function Read (var   Buffer; Count: Longint): longint; override;
-    function Write(const Buffer; Count: Longint): longint; override;
+  PUBLIC
+    function Read(var Buffer; Count: LongInt): LongInt; OVERRIDE;
+    function Write(const Buffer; Count: LongInt): LongInt; OVERRIDE;
   end;
 
 implementation
 
 { TNulStream class }
 
-function TNulStream.Read(var Buffer; Count: longint): longint;
+function TNulStream.Read(var Buffer; Count: LongInt): LongInt;
 begin
   Result := Count;
 end;
 
-function TNulStream.Write(const Buffer; Count: longint): longint;
+function TNulStream.Write(const Buffer; Count: LongInt): LongInt;
 begin
   Result := Count;
 end;
 
 end.
-

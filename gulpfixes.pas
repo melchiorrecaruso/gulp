@@ -36,9 +36,9 @@ uses
 { Conversion of UTC to local time and vice versa }
 
 function UniversalTime2Local(UT: TDateTime): TDateTime;
-function UniversalTime2Local(UT: TDateTime;  TZOffset : longint): TDateTime;
+function UniversalTime2Local(UT: TDateTime; TZOffset: LongInt): TDateTime;
 function LocalTime2Universal(LT: TDateTime): TDateTime;
-function LocalTime2Universal(LT: TDateTime;  TZOffset:  longint): TDateTime;
+function LocalTime2Universal(LT: TDateTime; TZOffset: LongInt): TDateTime;
 
 implementation
 
@@ -49,15 +49,15 @@ begin
   Result := UniversalTime2Local(UT, -GetLocalTimeOffset);
 end;
 
-function UniversalTime2Local(UT: TDateTime;  TZOffset : longint): TDateTime;
+function UniversalTime2Local(UT: TDateTime; TZOffset: LongInt): TDateTime;
 begin
-  if (TZOffset > 0) then
-    Result := UT + EncodeTime(TZOffset div 60, TZOffset mod 60, 0, 0)
+  if (TZOffset > 0) then Result :=
+      UT + EncodeTime(TZOffset div 60, TZOffset mod 60, 0, 0)
   else
-    if (TZOffset < 0) then
-      Result := UT - EncodeTime(Abs(TZOffset) div 60, Abs(TZOffset) mod 60, 0, 0)
-    else
-      Result := UT;
+  if (TZOffset < 0) then Result :=
+      UT - EncodeTime(Abs(TZOffset) div 60, Abs(TZOffset) mod 60, 0, 0)
+  else
+    Result := UT;
 end;
 
 function LocalTime2Universal(LT: TDateTime): TDateTime;
@@ -65,16 +65,15 @@ begin
   Result := LocalTime2Universal(LT, -GetLocalTimeOffset);
 end;
 
-function LocalTime2Universal(LT: TDateTime;  TZOffset:  longint): TDateTime;
+function LocalTime2Universal(LT: TDateTime; TZOffset: LongInt): TDateTime;
 begin
-  if (TZOffset > 0) then
-    Result := LT - EncodeTime(TZOffset div 60, TZOffset mod 60, 0, 0)
+  if (TZOffset > 0) then Result :=
+      LT - EncodeTime(TZOffset div 60, TZOffset mod 60, 0, 0)
   else
-    if (TZOffset < 0) then
-      Result := LT + EncodeTime(Abs(TZOffset) div 60, Abs(TZOffset) mod 60, 0, 0)
-    else
-      Result := LT;
+  if (TZOffset < 0) then Result :=
+      LT + EncodeTime(Abs(TZOffset) div 60, Abs(TZOffset) mod 60, 0, 0)
+  else
+    Result := LT;
 end;
 
 end.
-

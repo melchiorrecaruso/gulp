@@ -31,14 +31,15 @@ unit GulpCommandLine;
 interface
 
 uses
-  GulpList, SysUtils;
+  GulpList,
+  SysUtils;
 
-  { Command line routines }
+{ Command line routines }
 
-  function CheckOptions  (const ShortOpts, LongOpts: rawbytestring;
-    FileMasks: TRawByteStringList): rawbytestring;
-  function HasOption     (const ShortOpt,  LongOpt:  rawbytestring): boolean;
-  function GetOptionValue(const ShortOpt,  LongOpt:  rawbytestring): rawbytestring;
+function CheckOptions(const ShortOpts, LongOpts: rawbytestring;
+  FileMasks: TRawByteStringList): rawbytestring;
+function HasOption(const ShortOpt, LongOpt: rawbytestring): Boolean;
+function GetOptionValue(const ShortOpt, LongOpt: rawbytestring): rawbytestring;
 
 implementation
 
@@ -47,8 +48,8 @@ implementation
 function CheckOptions(const ShortOpts, LongOpts: rawbytestring;
   FileMasks: TRawByteStringList): rawbytestring;
 var
-  I : longint = 1;
-  S : rawbytestring;
+  I: LongInt = 1;
+  S: rawbytestring;
 
   function CheckOption(const Options: rawbytestring): rawbytestring;
   begin
@@ -58,15 +59,17 @@ var
       if Options[Pos(S, Options) + Length(S)] = ':' then
       begin
         Inc(I);
-        if (I > ParamCount) then
-          Result := Format('Option at position %d does not allow an argument: "%s"', [I - 1, S])
+        if (I > ParamCount) then Result :=
+            Format('Option at position %d does not allow an argument: "%s"',
+            [I - 1, S])
         else
-          if (Pos(ParamStr(I), ShortOpts) <> 0) or
-             (Pos(ParamStr(I), LongOpts ) <> 0) then
-            Result := Format('Option at position %d needs an argument : "%s"', [I - 1, S]);
+        if (Pos(ParamStr(I), ShortOpts) <> 0) or
+          (Pos(ParamStr(I), LongOpts) <> 0) then Result :=
+            Format('Option at position %d needs an argument : "%s"',
+            [I - 1, S]);
       end else
-        if Options[Pos(S, Options) + Length(S)] <> ' ' then
-          Result := Format('Invalid option at position %d: "%s"', [I, S]);
+      if Options[Pos(S, Options) + Length(S)] <> ' ' then Result :=
+          Format('Invalid option at position %d: "%s"', [I, S]);
     end else
       Result := Format('Invalid option at position %d: "%s"', [I, S]);
   end;
@@ -78,55 +81,48 @@ begin
     S := ParamStr(I);
     if S[1] = '-' then
     begin
-      if Length(S) <= 2 then
-        Result := CheckOption(ShortOpts)
+      if Length(S) <= 2 then Result := CheckOption(ShortOpts)
       else
-        if S[2] = '-' then
-          Result := CheckOption(LongOpts)
-        else
-          Result := Format('Invalid option at position %d: "%s"', [I, S]);
+      if S[2] = '-' then Result := CheckOption(LongOpts)
+      else
+        Result :=
+          Format('Invalid option at position %d: "%s"', [I, S]);
     end else
-      if Assigned(FileMasks) then
-        FileMasks.Add(S);
+    if Assigned(FileMasks) then FileMasks.Add(S);
     Inc(I);
   end;
 end;
 
-function HasOption(const ShortOpt, LongOpt: rawbytestring): boolean;
+function HasOption(const ShortOpt, LongOpt: rawbytestring): Boolean;
 var
-  I : longint = 1;
-  S : rawbytestring;
+  I: LongInt = 1;
+  S: rawbytestring;
 begin
-  Result := FALSE;
-  while (I <= ParamCount) and (Result = FALSE) do
+  Result := False;
+  while (I <= ParamCount) and (Result = False) do
   begin
     S := ParamStr(I);
-    if S = ShortOpt then
-      Result := TRUE
+    if S = ShortOpt then Result := True
     else
-      if S = LongOpt then
-        Result := TRUE;
+    if S = LongOpt then Result := True;
     Inc(I);
   end;
 end;
 
 function GetOptionValue(const ShortOpt, LongOpt: rawbytestring): rawbytestring;
 var
-  I : longint = 1;
-  S : rawbytestring;
+  I: LongInt = 1;
+  S: rawbytestring;
 begin
   Result := '';
   while (I <= ParamCount) and (Result = '') do
   begin
     S := ParamStr(I);
-    if S = ShortOpt then
-      Result := ParamStr(I + 1)
+    if S = ShortOpt then Result := ParamStr(I + 1)
     else
-      if S = LongOpt then
-        Result := ParamStr(I + 1)   ;
+    if S = LongOpt then Result := ParamStr(I + 1);
     Inc(I);
   end;
 end;
 
 end.
-

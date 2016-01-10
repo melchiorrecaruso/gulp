@@ -33,33 +33,34 @@ interface
 uses
   SysUtils;
 
-  { File info routines }
+{ File info routines }
 
-  function FileGetTimeUTC  (var SR: TSearchRec): TDateTime; overload;
-  function FileGetSize     (var SR: TSearchRec): int64;     overload;
-  function FileGetAttr     (var SR: TSearchRec): longint;   overload;
+function FileGetTimeUTC(var SR: TSearchRec): TDateTime; overload;
+function FileGetSize(var SR: TSearchRec): int64; overload;
+function FileGetAttr(var SR: TSearchRec): longint; overload;
 
-  function FileGetTimeUTC  (const FileName: rawbytestring): TDateTime; overload;
-  function FileGetSize     (const FileName: rawbytestring): int64;     overload;
-  function FileGetAttr     (const FileName: rawbytestring): longint;   overload;
+function FileGetTimeUTC(const FileName: rawbytestring): TDateTime; overload;
+function FileGetSize(const FileName: rawbytestring): int64; overload;
+function FileGetAttr(const FileName: rawbytestring): longint; overload;
 
-  function FileGetLinkName (const FileName: rawbytestring): rawbytestring;
-  function FileGetMode     (const FileName: rawbytestring): longint;
-  function FileGetUserID   (const FileName: rawbytestring): longword;
-  function FileGetUserName (const FileName: rawbytestring): rawbytestring;
-  function FileGetGroupID  (const FileName: rawbytestring): longword;
-  function FileGetGroupName(const FileName: rawbytestring): rawbytestring;
+function FileGetLinkName(const FileName: rawbytestring): rawbytestring;
+function FileGetMode(const FileName: rawbytestring): longint;
+function FileGetUserID(const FileName: rawbytestring): longword;
+function FileGetUserName(const FileName: rawbytestring): rawbytestring;
+function FileGetGroupID(const FileName: rawbytestring): longword;
+function FileGetGroupName(const FileName: rawbytestring): rawbytestring;
 
-  { Priority routines }
+{ Priority routines }
 
-  function SetPriorityNormal: boolean;
-  function SetPriorityIdle: boolean;
+function SetPriorityNormal: boolean;
+function SetPriorityIdle: boolean;
 
 implementation
 
 uses
   {$IFDEF UNIX} GulpFixes, BaseUnix; {$ENDIF}
-  {$IFDEF MSWINDOWS} GulpFixes, Windows; {$ENDIF}
+  {$IFDEF MSWINDOWS} GulpFixes,
+  Windows; {$ENDIF}
 
 { File info routine }
 
@@ -70,15 +71,12 @@ end;
 
 function FileGetTimeUTC(const FileName: rawbytestring): TDateTime;
 var
-  SR : TSearchRec;
+  SR: TSearchRec;
 begin
   Result := 0.0;
-  if SysUtils. FindFirst(FileName,
-    faReadOnly  or faHidden  or faSysFile or faVolumeId or
-    faDirectory or faArchive or faSymLink or faAnyFile, SR) = 0 then
-  begin
+  if SysUtils.FindFirst(FileName, faReadOnly or faHidden or faSysFile or
+    faVolumeId or faDirectory or faArchive or faSymLink or faAnyFile, SR) = 0 then
     Result := FileGetTimeUTC(SR);
-  end;
   SysUtils.FindClose(SR);
 end;
 
@@ -86,22 +84,17 @@ function FileGetSize(var SR: TSearchRec): int64;
 begin
   Result := 0;
   if SR.Attr and (faDirectory or faVolumeId or faSymLink) = 0 then
-  begin
     Result := SR.Size;
-  end;
 end;
 
 function FileGetSize(const FileName: rawbytestring): int64;
 var
-  SR : TSearchRec;
+  SR: TSearchRec;
 begin
   Result := 0;
-  if SysUtils.FindFirst(FileName,
-    faReadOnly  or faHidden  or faSysFile or faVolumeId or
-    faDirectory or faArchive or faSymLink or faAnyFile, SR) = 0 then
-  begin
+  if SysUtils.FindFirst(FileName, faReadOnly or faHidden or faSysFile or
+    faVolumeId or faDirectory or faArchive or faSymLink or faAnyFile, SR) = 0 then
     Result := FileGetSize(SR);
-  end;
   SysUtils.FindClose(SR);
 end;
 
@@ -112,15 +105,12 @@ end;
 
 function FileGetAttr(const FileName: rawbytestring): longint;
 var
-  SR : TSearchRec;
+  SR: TSearchRec;
 begin
   Result := 0;
-  if SysUtils.FindFirst(FileName,
-    faReadOnly  or faHidden  or faSysFile or faVolumeId or
-    faDirectory or faArchive or faSymLink or faAnyFile, SR) = 0 then
-  begin
+  if SysUtils.FindFirst(FileName, faReadOnly or faHidden or faSysFile or
+    faVolumeId or faDirectory or faArchive or faSymLink or faAnyFile, SR) = 0 then
     Result := GulpCommon.FileGetAttr(SR);
-  end;
   SysUtils.FindClose(SR);
 end;
 
@@ -219,7 +209,7 @@ begin
     Result := FpNice(5) = 0;
   {$ELSE}
   {$IFDEF MSWINDOWS}
-    Result := SetPriorityClass(GetCurrentProcess, IDLE_PRIORITY_CLASS);
+  Result := SetPriorityClass(GetCurrentProcess, IDLE_PRIORITY_CLASS);
   {$ELSE}
     Unsupported platform...
   {$ENDIF}
@@ -232,7 +222,7 @@ begin
     Result := FpNice(10) = 0;
   {$ELSE}
   {$IFDEF MSWINDOWS}
-    Result := SetPriorityClass(GetCurrentProcess, NORMAL_PRIORITY_CLASS);
+  Result := SetPriorityClass(GetCurrentProcess, NORMAL_PRIORITY_CLASS);
   {$ELSE}
     Unsupported platform...
   {$ENDIF}
@@ -240,4 +230,4 @@ begin
 end;
 
 end.
-
+

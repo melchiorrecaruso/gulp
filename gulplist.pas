@@ -31,17 +31,20 @@ unit GulpList;
 interface
 
 uses
-  Classes, SysUtils;
+  Classes,
+  SysUtils;
 
 type
   { TGenericList }
 
   generic TGenericList<TGenericItem> = class(TObject)
-  public type
-    TGenericCompare = function(Item1, Item2: TGenericItem): longint;
+  public
+    type
+    TGenericCompare =
+    function(Item1, Item2: TGenericItem): longint;
   private
-    FList : TList;
-    FCompare : TGenericCompare;
+    FList:    TList;
+    FCompare: TGenericCompare;
     function GetCount: longint;
     function Get(Index: longint): TGenericItem;
     function Search(Item: TGenericItem; var M: longint): longint;
@@ -52,13 +55,14 @@ type
     function Find(Item: TGenericItem): longint;
     procedure Delete(Index: longint);
   public
-    property Items[Index: longint]: TGenericItem read Get; default;
-    property Count: longint read GetCount;
+    property Items[Index: longint]: TGenericItem Read Get; default;
+    property Count: longint Read GetCount;
   end;
 
   { TRawByteStringList }
 
   PRawByteStringItem = ^TRawByteStringItem;
+
   TRawByteStringItem = record
     FString: rawbytestring;
     FObject: TObject;
@@ -68,7 +72,7 @@ type
 
   TRawByteStringList = class(TObject)
   private
-    FList : PRawByteStringList;
+    FList: PRawByteStringList;
     function GetCount: longint;
     function Get(Index: longint): rawbytestring;
   public
@@ -79,9 +83,9 @@ type
     procedure Delete(Index: longint);
     procedure Clear;
   public
-    property Items[Index: longint]: rawbytestring read Get; default;
-    property Count: longint read GetCount;
-end;
+    property Items[Index: longint]: rawbytestring Read Get; default;
+    property Count: longint Read GetCount;
+  end;
 
 implementation
 
@@ -107,7 +111,7 @@ end;
 
 function TGenericList.Search(Item: TGenericItem; var M: longint): longint;
 var
-  L, H, I : longint;
+  L, H, I: longint;
 begin
   I := 1;
   L := 0;
@@ -119,11 +123,10 @@ begin
     I := FCompare(Get(M), Item);
     if I < 0 then
       L := M + 1
+    else if I > 0 then
+      H := M - 1
     else
-      if I > 0 then
-        H := M - 1
-      else
-        Break;
+      Break;
   end;
 
   if I <> 0 then
@@ -131,13 +134,14 @@ begin
     if I < 0 then
       M := M + 1;
     Result := -1;
-  end else
+  end
+  else
     Result := M;
 end;
 
 function TGenericList.Add(Item: TGenericItem): longint;
 var
-  M : longint;
+  M: longint;
 begin
   Result := Search(Item, M);
   if Result = -1 then
@@ -149,7 +153,7 @@ end;
 
 function TGenericList.Find(Item: TGenericItem): longint;
 var
-  M : longint;
+  M: longint;
 begin
   Result := Search(Item, M);
 end;
@@ -172,7 +176,7 @@ begin
     Result := AnsiCompareStr(Item1^.FString, Item2^.FString);
   {$ELSE}
   {$IFDEF MSWINDOWS}
-    Result := AnsiCompareText(Item1^.FString, Item2^.FString);
+  Result := AnsiCompareText(Item1^.FString, Item2^.FString);
   {$ELSE}
     Unsupported platform...
   {$ENDIF}
@@ -199,7 +203,8 @@ end;
 
 procedure TRawByteStringList.Clear;
 begin
-  while GetCount > 0 do Delete(0);
+  while GetCount > 0 do
+    Delete(0);
 end;
 
 procedure TRawByteStringList.Add(const S: rawbytestring);
@@ -215,7 +220,7 @@ end;
 
 function TRawByteStringList.Find(const S: rawbytestring): longint;
 var
-  P : PRawByteStringItem;
+  P: PRawByteStringItem;
 begin
   P := New(PRawByteStringItem);
   P^.FString := S;
@@ -237,4 +242,3 @@ begin
 end;
 
 end.
-
