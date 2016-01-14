@@ -1,192 +1,164 @@
-{
-  Copyright (c) 2016 Melchiorre Caruso.
+unit gulpscanner;
 
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-
-  Contains:
-
-    Filesystem scanner class.
-
-  Modified:
-
-    v0.0.3 - 2016.01.10 by Melchiorre Caruso.
-}
-
-unit GulpScanner;
-
-{$mode objfpc}{$H+}
+{$mode objfpc}
+{$H+}
 
 interface
 
-uses
-  Classes,
-  GulpList,
-  SysUtils;
+uses classes, gulplist, sysutils;
 
 type
-  { TScanner }
-
-  TScanner = class(TObject)
-  PRIVATE
-    FList: TRawByteStringList;
-    function GetCount: Integer;
-    function GetItem(Index: LongInt): rawbytestring;
-    procedure Scan(const FileMask: rawbytestring; Recursive: Boolean);
-  PUBLIC
-    constructor Create;
-    destructor Destroy; OVERRIDE;
-    procedure Add(const FileMask: rawbytestring);
-    function Find(const FileName: rawbytestring): LongInt;
-    procedure Delete(Index: LongInt);
-    procedure Clear;
-  PUBLIC
-    property Count: Integer read GetCount;
-    property Items[Index: LongInt]: rawbytestring read GetItem; DEFAULT;
+  tscanner = class(TObject)
+  private
+    flist: trawbytestringlist;
+    function getcount: integer;
+    function getitem(index: longint): rawbytestring;
+    procedure scan(const filemask: rawbytestring; recursive: boolean);
+  public
+    constructor create;
+    destructor destroy; override;
+    procedure add(const filemask: rawbytestring);
+    function find(const filename: rawbytestring): longint;
+    procedure delete(index: longint);
+    procedure clear;
+  public
+    property count: integer read getcount;
+    property items[index: longint]: rawbytestring read getitem; default;
   end;
 
-{ Matching routines }
-
-function FileNameMatch(const FileName: rawbytestring;
-  const FileMask: rawbytestring): Boolean; OVERLOAD;
-
-function FileNameMatch(const FileName: rawbytestring;
-  FileMasks: TRawByteStringList): Boolean; OVERLOAD;
+function filenamematch(const filename: rawbytestring;
+  const filemask: rawbytestring): boolean;
+  overload;
+function filenamematch(const filename: rawbytestring;
+  filemasks: trawbytestringlist): boolean; overload;
 
 implementation
 
-{ TScanner class }
-
-constructor TScanner.Create;
+constructor tscanner.create;
 begin
-  inherited Create;
-  FList := TRawByteStringList.Create;
+  inherited create;
+  flist := trawbytestringlist.create;
 end;
 
-destructor TScanner.Destroy;
+destructor tscanner.destroy;
 begin
-  FList.Destroy;
-  inherited Destroy;
+  flist.destroy;
+  inherited destroy;
 end;
 
-procedure TScanner.Clear;
+procedure tscanner.clear;
 begin
-  FList.Clear;
+  flist.clear;
 end;
 
-procedure TScanner.Scan(const FileMask: rawbytestring; Recursive: Boolean);
+procedure tscanner.scan(const filemask: rawbytestring; recursive: boolean);
 var
-  E: LongInt;
-  Mask: rawbytestring;
-  Path: rawbytestring;
-  SR: TSearchRec;
+  e:    longint;
+  mask: rawbytestring;
+  path: rawbytestring;
+  sr:   tsearchrec;
 begin
-  Path := ExtractFilePath(FileMask);
-  Mask := ExtractFileName(FileMask);
-
-  E := SysUtils.FindFirst(Path + '*', faReadOnly or faHidden or
-    faSysFile or faVolumeId or faDirectory or faArchive or
-    faSymLink or faAnyFile, SR);
-  while E = 0 do
+  path := extractfilepath(filemask);
+  mask := extractfilename(filemask);
+  e    := sysutils.findfirst(path + '*', fareadonly or fahidden or fasysfile or
+    favolumeid or fadirectory or faarchive or fasymlink or faanyfile, sr);
+  while e = 0 do
   begin
-    if SR.Attr and faDirectory = faDirectory then
+    if sr.attr and fadirectory = fadirectory then
     begin
-      if (SR.Name <> '.') and (SR.Name <> '..') then
+      if (sr.name <> '.') and (sr.name <> '..') then
       begin
-        FList.Add(Path + SR.Name);
-        if Recursive then if SR.Attr and faSymLink = 0 then
-            Scan(Path + IncludeTrailingPathDelimiter(SR.Name) + Mask, True);
+        flist.add(path + sr.name);
+        if recursive then
+          if sr.attr and fasymlink = 0 then
+            scan(path + includetrailingpathdelimiter(sr.name) + mask, true);
       end;
     end else
-    if FileNameMatch(Path + SR.Name, FileMask) then FList.Add(Path + SR.Name);
-    E := FindNext(SR);
+    if filenamematch(path + sr.name, filemask) then
+      flist.add(path + sr.name);
+    e := findnext(sr);
   end;
-  SysUtils.FindClose(SR);
+  sysutils.findclose(sr);
 end;
 
-procedure TScanner.Add(const FileMask: rawbytestring);
+procedure tscanner.add(const filemask: rawbytestring);
 begin
-  if FileMask = '' then Exit;
-  if DirectoryExists(FileMask) then FList.Add(FileMask)
+  if filemask = '' then
+    exit;
+  if directoryexists(filemask) then
+    flist.add(filemask)
   else
-  if FileExists(FileMask) then FList.Add(FileMask)
+  if fileexists(filemask) then
+    flist.add(filemask)
   else
-    Scan(FileMask, True);
+    scan(filemask, true);
 end;
 
-procedure TScanner.Delete(Index: LongInt);
+procedure tscanner.delete(index: longint);
 begin
-  FList.Delete(Index);
+  flist.delete(index);
 end;
 
-function TScanner.Find(const FileName: rawbytestring): LongInt;
+function tscanner.find(const filename: rawbytestring): longint;
 begin
-  Result := FList.Find(FileName);
+  result := flist.find(filename);
 end;
 
-function TScanner.GetItem(Index: LongInt): rawbytestring;
+function tscanner.getitem(index: longint): rawbytestring;
 begin
-  Result := FList[Index];
+  result := flist[
+    index];
 end;
 
-function TScanner.GetCount: LongInt;
+function tscanner.getcount: longint;
 begin
-  Result := FList.Count;
+  result := flist.count;
 end;
 
-{ Matching routines }
-
-function MatchPattern(Element, Pattern: PAnsiChar): Boolean;
+function matchpattern(element, pattern: pansichar): boolean;
 begin
-  if 0 = StrComp(Pattern, '*') then Result := True
+  if 0 = strcomp(pattern, '*') then
+    result := true
   else
-  if (Element^ = Chr(0)) and (Pattern^ <> Chr(0)) then Result := False
+  if (element^ = chr(0)) and (pattern^ <> chr(0)) then
+    result := false
   else
-  if Element^ = Chr(0) then Result := True
+  if element^ = chr(0) then
+    result := true
   else
-    case Pattern^ of
-      '*':
-        if MatchPattern(Element, @Pattern[1]) then Result := True
+    case pattern^ of
+      '*': if matchpattern(element, @pattern[1]) then
+          result := true
         else
-          Result := MatchPattern(@Element[1], Pattern);
-      '?':
-        Result := MatchPattern(@Element[1], @Pattern[1]);
+          result := matchpattern(@element[1], pattern);
+      '?': result := matchpattern(@element[1], @pattern[1]);
+    else
+      if element^ = pattern^ then
+        result := matchpattern(@element[1], @pattern[1])
       else
-        if Element^ = Pattern^ then
-          Result := MatchPattern(@Element[1], @Pattern[1])
-        else
-          Result := False;
+        result := false;
     end;
 end;
 
-function FileNameMatch(const FileName: rawbytestring;
-  const FileMask: rawbytestring): Boolean;
+function filenamematch(const filename: rawbytestring;
+  const filemask: rawbytestring): boolean;
 begin
-  Result := MatchPattern(PAnsiChar(FileName), PAnsiChar(FileMask));
+  result :=
+    matchpattern(pansichar(filename), pansichar(filemask));
 end;
 
-function FileNameMatch(const FileName: rawbytestring;
-  FileMasks: TRawByteStringList): Boolean;
+function filenamematch(const filename: rawbytestring;
+  filemasks: trawbytestringlist): boolean;
 var
-  I: LongInt;
+  i: longint;
 begin
-  Result := False;
-  for I := 0 to FileMasks.Count - 1 do
-    if FileNameMatch(FileName, FileMasks[I]) = True then
+  result := false;
+  for i := 0 to filemasks.count - 1 do
+    if filenamematch(filename, filemasks
+      [i]) = true then
     begin
-      Result := True;
-      Break;
+      result := true;
+      break;
     end;
 end;
 

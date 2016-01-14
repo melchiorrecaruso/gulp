@@ -1,233 +1,207 @@
-{
-  Copyright (c) 2016 Melchiorre Caruso.
+unit gulpcommon;
 
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-
-  Contains:
-
-    Various helper routines.
-
-  Modified:
-
-    v0.0.3 - 2016.01.09 by Melchiorre Caruso.
-}
-
-unit GulpCommon;
-
-{$mode objfpc}{$H+}
+{$mode objfpc}
+{$H+}
 
 interface
 
-uses
-  SysUtils;
+uses sysutils;
 
-{ File info routines }
-
-function FileGetTimeUTC(var SR: TSearchRec): TDateTime; overload;
-function FileGetSize(var SR: TSearchRec): int64; overload;
-function FileGetAttr(var SR: TSearchRec): longint; overload;
-
-function FileGetTimeUTC(const FileName: rawbytestring): TDateTime; overload;
-function FileGetSize(const FileName: rawbytestring): int64; overload;
-function FileGetAttr(const FileName: rawbytestring): longint; overload;
-
-function FileGetLinkName(const FileName: rawbytestring): rawbytestring;
-function FileGetMode(const FileName: rawbytestring): longint;
-function FileGetUserID(const FileName: rawbytestring): longword;
-function FileGetUserName(const FileName: rawbytestring): rawbytestring;
-function FileGetGroupID(const FileName: rawbytestring): longword;
-function FileGetGroupName(const FileName: rawbytestring): rawbytestring;
-
-{ Priority routines }
-
-function SetPriorityNormal: boolean;
-function SetPriorityIdle: boolean;
+function filegettimeutc(var sr: tsearchrec): tdatetime; overload;
+function filegetsize(var sr: tsearchrec): int64; overload;
+function filegetattr(var sr: tsearchrec): longint; overload;
+function filegettimeutc(const filename: rawbytestring): tdatetime; overload;
+function filegetsize(const filename: rawbytestring): int64; overload;
+function filegetattr(const filename: rawbytestring): longint; overload;
+function filegetlinkname(const filename: rawbytestring): rawbytestring;
+function filegetmode(const filename: rawbytestring): longint;
+function filegetuserid(const filename: rawbytestring): longword;
+function filegetusername(const filename: rawbytestring): rawbytestring;
+function filegetgroupid(const filename: rawbytestring): longword;
+function filegetgroupname(const filename: rawbytestring): rawbytestring;
+function setprioritynormal: boolean;
+function setpriorityidle: boolean;
 
 implementation
 
 uses
-  {$IFDEF UNIX} GulpFixes, BaseUnix; {$ENDIF}
-  {$IFDEF MSWINDOWS} GulpFixes,
-  Windows; {$ENDIF}
+{$IFDEF UNIX}
+  baseunix,
+{$ENDIF}
+{$IFDEF MSWINDOWS}
+  windows,
+{$ENDIF}
+  gulpfixes;
 
-{ File info routine }
-
-function FileGetTimeUTC(var SR: TSearchRec): TDateTime;
+function filegettimeutc(var sr: tsearchrec): tdatetime;
 begin
-  Result := GulpFixes.LocalTime2Universal(FileDateToDateTime(SR.Time));
+  result := localtime2universal(filedatetodatetime(sr.
+    time));
 end;
 
-function FileGetTimeUTC(const FileName: rawbytestring): TDateTime;
+function filegettimeutc(const filename: rawbytestring): tdatetime;
 var
-  SR: TSearchRec;
+  sr: tsearchrec;
 begin
-  Result := 0.0;
-  if SysUtils.FindFirst(FileName, faReadOnly or faHidden or faSysFile or
-    faVolumeId or faDirectory or faArchive or faSymLink or faAnyFile, SR) = 0 then
-    Result := FileGetTimeUTC(SR);
-  SysUtils.FindClose(SR);
+  result := 0.0;
+  if sysutils.findfirst(filename, fareadonly or fahidden or fasysfile or
+    favolumeid or fadirectory or faarchive or fasymlink or faanyfile,
+    sr) = 0 then
+    result := filegettimeutc(sr);
+  sysutils.findclose(sr);
 end;
 
-function FileGetSize(var SR: TSearchRec): int64;
+function filegetsize(var sr: tsearchrec): int64;
 begin
-  Result := 0;
-  if SR.Attr and (faDirectory or faVolumeId or faSymLink) = 0 then
-    Result := SR.Size;
+  result := 0;
+  if sr.attr and (fadirectory or favolumeid or fasymlink) = 0 then
+    result := sr.size;
 end;
 
-function FileGetSize(const FileName: rawbytestring): int64;
+function filegetsize(const filename: rawbytestring): int64;
 var
-  SR: TSearchRec;
+  sr: tsearchrec;
 begin
-  Result := 0;
-  if SysUtils.FindFirst(FileName, faReadOnly or faHidden or faSysFile or
-    faVolumeId or faDirectory or faArchive or faSymLink or faAnyFile, SR) = 0 then
-    Result := FileGetSize(SR);
-  SysUtils.FindClose(SR);
+  result := 0;
+  if sysutils.findfirst(filename, fareadonly or fahidden or fasysfile or
+    favolumeid or fadirectory or faarchive or fasymlink or
+    faanyfile, sr) = 0 then
+    result := filegetsize(sr);
+  sysutils.findclose(sr);
 end;
 
-function FileGetAttr(var SR: TSearchRec): longint;
+function filegetattr(var sr: tsearchrec): longint;
 begin
-  Result := SR.Attr;
+  result := sr.attr;
 end;
 
-function FileGetAttr(const FileName: rawbytestring): longint;
+function filegetattr(const filename: rawbytestring): longint;
 var
-  SR: TSearchRec;
+  sr: tsearchrec;
 begin
-  Result := 0;
-  if SysUtils.FindFirst(FileName, faReadOnly or faHidden or faSysFile or
-    faVolumeId or faDirectory or faArchive or faSymLink or faAnyFile, SR) = 0 then
-    Result := GulpCommon.FileGetAttr(SR);
-  SysUtils.FindClose(SR);
+  result := 0;
+  if sysutils.findfirst(filename, fareadonly or fahidden or fasysfile or
+    favolumeid or fadirectory or faarchive or fasymlink or
+    faanyfile, sr) = 0 then
+    result := gulpcommon.filegetattr(
+      sr);
+  sysutils.findclose(sr);
 end;
 
-function FileGetLinkName(const FileName: rawbytestring): rawbytestring;
+function filegetlinkname(const filename: rawbytestring): rawbytestring;
 begin
-  Result := '';
-  {$IFDEF UNIX}
-  if FileGetAttr(FileName) and faSymLink = faSymLink then
-    Result := fpReadLink(FileName);
-  {$ELSE}
-  {$IFDEF MSWINDOWS}
-  {$ELSE}
-    Unsupported platform...
-  {$ENDIF}
-  {$ENDIF}
+  result := '';
+{$IFDEF UNIX}
+  if filegetattr(filename) and fasymlink = fasymlink then
+    result := fpreadlink(filename);
+{$ELSE}
+{$IFDEF MSWINDOWS}
+{$ELSE}
+  raise
+  exception.create('Unsupported platform.');
+{$ENDIF}
+{$ENDIF}
 end;
 
-function FileGetMode(const FileName: rawbytestring): longint;
+function filegetmode(const filename: rawbytestring): longint;
 {$IFDEF UNIX}
 var
-  Info : stat;
+  info: stat;
 {$ENDIF}
 begin
-  Result := 0;
-  {$IFDEF UNIX}
-  if fpLstat(FileName, Info) = 0 then
-    Result := Info.st_mode
+  result := 0;
+{$IFDEF UNIX}
+  if fplstat(filename, info) = 0 then
+    result := info.st_mode
   else
-    if fpstat(FileName, Info) = 0 then
-      Result := Info.st_mode;
-  {$ELSE}
-  {$IFDEF MSWINDOWS}
-  {$ELSE}
-    Unsupported platform...
-  {$ENDIF}
-  {$ENDIF}
+  if fpstat(filename, info) = 0 then
+    result := info.st_mode;
+{$ELSE}
+{$IFDEF MSWINDOWS}
+{$ELSE}
+  raise
+  exception.create('Unsupported platform.');
+{$ENDIF}
+{$ENDIF}
 end;
 
-function FileGetUserID(const FileName: rawbytestring): longword;
+function filegetuserid(const filename: rawbytestring): longword;
 {$IFDEF UNIX}
 var
-  Info : stat;
+  info: stat;
 {$ENDIF}
 begin
-  Result := $FFFFFFFF;
-  {$IFDEF UNIX}
-  if fpLstat(FileName, Info) = 0 then
-    Result := Info.st_uid
+  result := $FFFFFFFF;
+{$IFDEF UNIX}
+  if fplstat(filename, info) = 0 then
+    result := info.st_uid
   else
-    if fpstat(FileName, Info) = 0 then
-      Result := Info.st_uid;
-  {$ELSE}
-  {$IFDEF MSWINDOWS}
-  {$ELSE}
-    Unsupported platform...
-  {$ENDIF}
-  {$ENDIF}
+  if fpstat(filename, info) = 0 then
+    result := info.st_uid;
+{$ELSE}
+{$IFDEF MSWINDOWS}
+{$ELSE}
+  raise exception.create('Unsupported platform.');
+{$ENDIF}
+{$ENDIF}
 end;
 
-function FileGetUserName(const FileName: rawbytestring): rawbytestring;
+function filegetusername(const filename: rawbytestring): rawbytestring;
 begin
-  Result := '';
+  result := '';
 end;
 
-function FileGetGroupID(const FileName: rawbytestring): longword;
+function filegetgroupid(const filename: rawbytestring): longword;
 {$IFDEF UNIX}
 var
-  Info : stat;
+  info: stat;
 {$ENDIF}
 begin
-  Result := $FFFFFFFF;
-  {$IFDEF UNIX}
-  if fpLstat(FileName, Info) = 0 then
-    Result := Info.st_gid
+  result := $FFFFFFFF;
+{$IFDEF UNIX}
+  if fplstat(filename, info) = 0 then
+    result := info.st_gid
   else
-    if fpstat(FileName, Info) = 0 then
-      Result := Info.st_gid;
-  {$ELSE}
-  {$IFDEF MSWINDOWS}
-  {$ELSE}
-    Unsupported platform...
-  {$ENDIF}
-  {$ENDIF}
+  if fpstat(filename, info) = 0 then
+    result := info.st_gid;
+{$ELSE}
+{$IFDEF MSWINDOWS}
+{$ELSE}
+  raise exception.create('Unsupported platform.');
+{$ENDIF}
+{$ENDIF}
 end;
 
-function FileGetGroupName(const FileName: rawbytestring): rawbytestring;
+function filegetgroupname(const filename: rawbytestring): rawbytestring;
 begin
-  Result := '';
+  result := '';
 end;
 
-{ Priority routines }
-
-function SetPriorityIdle: boolean;
+function setpriorityidle: boolean;
 begin
-  {$IFDEF UNIX}
-    Result := FpNice(5) = 0;
-  {$ELSE}
-  {$IFDEF MSWINDOWS}
-  Result := SetPriorityClass(GetCurrentProcess, IDLE_PRIORITY_CLASS);
-  {$ELSE}
-    Unsupported platform...
-  {$ENDIF}
-  {$ENDIF}
+{$IFDEF UNIX}
+  result :=
+    fpnice(5) = 0;
+{$ELSE}
+{$IFDEF MSWINDOWS}
+  result := setpriorityclass(getcurrentprocess, idle_priority_class);
+{$ELSE}
+  raise exception.create('Unsupported platform.');
+{$ENDIF}
+{$ENDIF}
 end;
 
-function SetPriorityNormal: boolean;
+function setprioritynormal: boolean;
 begin
-  {$IFDEF UNIX}
-    Result := FpNice(10) = 0;
-  {$ELSE}
-  {$IFDEF MSWINDOWS}
-  Result := SetPriorityClass(GetCurrentProcess, NORMAL_PRIORITY_CLASS);
-  {$ELSE}
-    Unsupported platform...
-  {$ENDIF}
-  {$ENDIF}
+{$IFDEF UNIX}
+  result := fpnice(10) = 0;
+{$ELSE}
+{$IFDEF MSWINDOWS}
+  result := setpriorityclass(getcurrentprocess, normal_priority_class);
+{$ELSE}
+  raise exception.create('Unsupported platform.');
+{$ENDIF}
+{$ENDIF}
 end;
 
 end.
-

@@ -1,127 +1,103 @@
-{
-  Copyright (c) 2016 Melchiorre Caruso.
+unit gulpcommandline;
 
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-
-  Contains:
-
-    Command line helper routines.
-
-  Modified:
-
-    v0.0.3 - 2016.01.09 by Melchiorre Caruso.
-}
-
-unit GulpCommandLine;
-
-{$mode objfpc}{$H+}
+{$mode objfpc}
+{$H+}
 
 interface
 
-uses
-  GulpList,
-  SysUtils;
+uses gulplist, sysutils;
 
-{ Command line routines }
-
-function CheckOptions(const ShortOpts, LongOpts: rawbytestring;
-  FileMasks: TRawByteStringList): rawbytestring;
-function HasOption(const ShortOpt, LongOpt: rawbytestring): Boolean;
-function GetOptionValue(const ShortOpt, LongOpt: rawbytestring): rawbytestring;
+function checkoptions(const shortopts, longopts: rawbytestring;
+  filemasks: trawbytestringlist): rawbytestring;
+function hasoption(const shortopt, longopt: rawbytestring): boolean;
+function getoptionvalue(const shortopt, longopt: rawbytestring): rawbytestring;
 
 implementation
 
-{ Check command line }
-
-function CheckOptions(const ShortOpts, LongOpts: rawbytestring;
-  FileMasks: TRawByteStringList): rawbytestring;
+function checkoptions(const shortopts, longopts: rawbytestring;
+  filemasks: trawbytestringlist): rawbytestring;
 var
-  I: LongInt = 1;
-  S: rawbytestring;
+  i: longint = 1;
+  s: rawbytestring;
 
-  function CheckOption(const Options: rawbytestring): rawbytestring;
+  function checkoption(const options: rawbytestring): rawbytestring;
   begin
-    Result := '';
-    if Pos(S, Options) <> 0 then
+    result := '';
+    if pos(s, options) <> 0 then
     begin
-      if Options[Pos(S, Options) + Length(S)] = ':' then
+      if options[pos(s, options) + length(s)] = ':' then
       begin
-        Inc(I);
-        if (I > ParamCount) then Result :=
-            Format('Option at position %d does not allow an argument: "%s"',
-            [I - 1, S])
+        inc(i);
+        if (i > paramcount) then
+          result := format(
+            'Option at position %d does not allow an argument: "%s"',
+            [i - 1, s])
         else
-        if (Pos(ParamStr(I), ShortOpts) <> 0) or
-          (Pos(ParamStr(I), LongOpts) <> 0) then Result :=
-            Format('Option at position %d needs an argument : "%s"',
-            [I - 1, S]);
+        if (pos(paramstr(i), shortopts) <> 0) or
+          (pos(paramstr(i), longopts) <> 0) then
+          result := format('Option at position %d needs an argument : "%s"',
+            [i - 1, s]);
       end else
-      if Options[Pos(S, Options) + Length(S)] <> ' ' then Result :=
-          Format('Invalid option at position %d: "%s"', [I, S]);
+      if options[pos(s, options) + length(s)] <> ' ' then
+        result := format('Invalid option at position %d: "%s"', [i, s]);
     end else
-      Result := Format('Invalid option at position %d: "%s"', [I, S]);
+      result := format('Invalid option at position %d: "%s"', [i, s]);
   end;
 
 begin
-  Result := '';
-  while (I <= ParamCount) and (Result = '') do
+  result := '';
+  while (i <= paramcount) and (result = '') do
   begin
-    S := ParamStr(I);
-    if S[1] = '-' then
+    s := paramstr(i);
+    if s[1] = '-' then
     begin
-      if Length(S) <= 2 then Result := CheckOption(ShortOpts)
+      if length(s) <= 2 then
+        result := checkoption(shortopts)
       else
-      if S[2] = '-' then Result := CheckOption(LongOpts)
+      if s[2] = '-' then
+        result := checkoption(longopts)
       else
-        Result :=
-          Format('Invalid option at position %d: "%s"', [I, S]);
+        result := format('Invalid option at position %d: "%s"', [i, s]);
     end else
-    if Assigned(FileMasks) then FileMasks.Add(S);
-    Inc(I);
+    if assigned(filemasks) then
+      filemasks.add(s);
+    inc(i);
   end;
 end;
 
-function HasOption(const ShortOpt, LongOpt: rawbytestring): Boolean;
+function hasoption(const shortopt, longopt: rawbytestring): boolean;
 var
-  I: LongInt = 1;
-  S: rawbytestring;
+  i: longint = 1;
+  s: rawbytestring;
 begin
-  Result := False;
-  while (I <= ParamCount) and (Result = False) do
+  result := false;
+  while (i <= paramcount) and (result = false) do
   begin
-    S := ParamStr(I);
-    if S = ShortOpt then Result := True
+    s := paramstr(i);
+    if s = shortopt then
+      result := true
     else
-    if S = LongOpt then Result := True;
-    Inc(I);
+    if s = longopt then
+      result := true;
+    inc(i);
   end;
 end;
 
-function GetOptionValue(const ShortOpt, LongOpt: rawbytestring): rawbytestring;
+function getoptionvalue(const shortopt, longopt: rawbytestring): rawbytestring;
 var
-  I: LongInt = 1;
-  S: rawbytestring;
+  i: longint = 1;
+  s: rawbytestring;
 begin
-  Result := '';
-  while (I <= ParamCount) and (Result = '') do
+  result := '';
+  while (i <= paramcount) and (result = '') do
   begin
-    S := ParamStr(I);
-    if S = ShortOpt then Result := ParamStr(I + 1)
+    s := paramstr(i);
+    if s = shortopt then
+      result := paramstr(i + 1)
     else
-    if S = LongOpt then Result := ParamStr(I + 1);
-    Inc(I);
+    if s = longopt then
+      result := paramstr(i + 1);
+    inc(i);
   end;
 end;
 

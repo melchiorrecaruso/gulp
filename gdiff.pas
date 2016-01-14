@@ -37,13 +37,13 @@ uses
 
 var
   I, J: longint;
-  S: rawbytestring;
+  S:    rawbytestring;
   Scan: array[1..2] of TScanner;
 
 begin
   writeln('GDIFF v0.0.3 diff utility, copyright (c) 2016 Melchiorre Caruso.');
-  if (ParamCount <> 2) or (DirectoryExists(ParamStr(1)) = False) or
-    (DirectoryExists(ParamStr(2)) = False) then
+  if (ParamCount <> 2) or (DirectoryExists(ParamStr(1)) = false) or
+    (DirectoryExists(ParamStr(2)) = false) then
   begin
     writeln('Usage: gdiff directory1 directory2');
     writeln('Compare two DIRECTORIES file by file.');
@@ -70,87 +70,58 @@ begin
 
         if (FileGetAttr(Scan[1] [I]) and faDirectory = 0) and
           (FileGetAttr(Scan[2] [J]) and faDirectory = 0) then
-        begin
           if SHA1Match(SHA1File(Scan[1] [I], 4096),
-            SHA1File(Scan[2] [J], 4096)) = False then
-          begin
+            SHA1File(Scan[2] [J], 4096)) = false then
             writeln(Format('"%s" "%s" differ',
               [Scan[1] [I], Scan[2] [J]]));
-          end;
-        end;
 
         if FileGetTimeUTC(Scan[1] [I]) <> FileGetTimeUTC(Scan[2] [J]) then
-        begin
           writeln(Format('"%s" and "%s" differ in time',
             [Scan[1] [I], Scan[2] [J]]));
-        end;
 
         if FileGetSize(Scan[1] [I]) <> FileGetSize(Scan[2] [J]) then
-        begin
           writeln(Format('"%s" and "%s" differ in size',
             [Scan[1] [I], Scan[2] [J]]));
-        end;
 
         if FileGetAttr(Scan[1] [I]) <> FileGetAttr(Scan[2] [J]) then
-        begin
           writeln(Format('"%s" and "%s" differ in attr',
             [Scan[1] [I], Scan[2] [J]]));
-        end;
 
         if FileGetMode(Scan[1] [I]) <> FileGetMode(Scan[2] [J]) then
-        begin
           writeln(Format('"%s" and "%s" differ in mode',
             [Scan[1] [I], Scan[2] [J]]));
-        end;
 
         if FileGetLinkName(Scan[1] [I]) <> FileGetLinkName(Scan[2] [J]) then
-        begin
           writeln(Format('"%s" and "%s" differ in link',
             [Scan[1] [I], Scan[2] [J]]));
-        end;
 
-        if FileGetUserID(Scan[1] [I]) <> FileGetUserID(Scan[2] [J])
-        then
-        begin
+        if FileGetUserID(Scan[1] [I]) <> FileGetUserID(Scan[2] [J]) then
           writeln(Format('"%s" and "%s" differ in uid ',
             [Scan[1] [I], Scan[2] [J]]));
-        end;
 
         if FileGetUserName(Scan[1] [I]) <> FileGetUserName(Scan[2] [J]) then
-        begin
           writeln(Format('"%s" and "%s" differ in unm ',
             [Scan[1] [I], Scan[2] [J]]));
-        end;
 
         if FileGetGroupID(Scan[1] [I]) <> FileGetGroupID(Scan[2] [J]) then
-        begin
           writeln(Format('"%s" and "%s" differ in gid ',
             [Scan[1] [I], Scan[2] [J]]));
-        end;
 
         if FileGetGroupName(Scan[1] [I]) <>
           FileGetGroupName(Scan[2] [J]) then
-        begin
           writeln(Format('"%s" and "%s" differ in gnm ',
             [Scan[1] [I], Scan[2] [J]]));
-        end;
 
         Scan[2].Delete(J);
       end else
-      begin
         writeln(Format('"%s" not founded in "%s"',
           [Scan[1] [I], ParamStr(2)]));
-      end;
     end;
 
     for J := 0 to Scan[2].Count - 1 do
-    begin
       writeln(Format('"%s" not founded in "%s"', [Scan[2] [J], ParamStr(1)]));
-    end;
 
     for J := 1 to 2 do
-    begin
       Scan[J].Destroy;
-    end;
   end;
 end.

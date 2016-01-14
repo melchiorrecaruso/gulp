@@ -1,1241 +1,1222 @@
-{
-  Copyright (c) 2014-2016 Melchiorre Caruso.
+{ Description: library main unit.
 
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
+  Copyright (C) 2016 Melchiorre Caruso <melchiorrecaruso@gmail.com>
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
+  This source is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free
+  Software Foundation; either version 2 of the License, or (at your option)
+  any later version.
 
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+  This code is distributed in the hope that it will be useful, but WITHOUT ANY
+  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
 
-  Contains:
-
-    The journaling archiver library.
-
-  Modified:
-
-    v0.0.3 - 2016.01.07 by Melchiorre Caruso.
+  A copy of the GNU General Public License is available on the World Wide Web
+  at <http://www.gnu.org/copyleft/gpl.html>. You can also obtain it by writing
+  to the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
+  MA 02111-1307, USA.
 }
 
-unit GulpLibrary;
+unit gulplibrary;
 
 {$mode objfpc}
+{$H+}
 
 interface
 
 uses
-  {$IFDEF UNIX} BaseUnix, {$ENDIF} Classes,
-  GulpCommon,
-  GulpList,
-  GulpFixes,
-  {$IFDEF MSWINDOWS} Windows, {$ENDIF} Sha1,
-  SysUtils;
+  {$IFDEF UNIX}
+  baseunix,
+  {$ENDIF}
+  classes,
+  gulpcommon,
+  gulpfixes,
+  gulplist,
+  {$IFDEF MSWINDOWS}
+  windows,
+  {$ENDIF}
+  sha1,
+  sysutils;
 
 type
-  // --- Gulp Item Flags
+  { gulp item flags }
 
-  TGulpFlag = (gfAdd, gfDelete, gfClose, gfFullName, gfTimeUTC,
-    gfAttributes, gfMode, gfSize, gfLinkName, gfUserID,
-    gfGroupID, gfUserName, gfGroupName, gfComment);
+  tgulpflag  = (gfadd, gfdelete, gfclose, gffullname, gftimeutc,
+    gfattributes, gfmode, gfsize, gflinkname, gfuserid, gfgroupid,
+    gfusername, gfgroupname, gfcomment);
 
-  TGulpFlags = set of TGulpFlag;
+  tgulpflags = set of tgulpflag;
 
-  // --- Gulp item ---
+  { gulp item }
 
-  PGulpItem = ^TGulpItem;
+  pgulpitem  = ^tgulpitem;
 
-  TGulpItem = record
-    Flags:      TGulpFlags;       // Flags
-    FullName:   rawbytestring;    // Full Filename
-    TimeUTC:    TDateTime;        // Last modification date and time (UTC)
-    Attributes: longint;          // Attributes (MSWindows/Unix)
-    Mode:       longint;          // Mode (Unix)
-    Size:       int64;            // Size in bytes
-    LinkName:   rawbytestring;    // Name of link
-    UserID:     longword;         // User ID
-    GroupID:    longword;         // Group ID
-    UserName:   rawbytestring;    // User Name
-    GroupName:  rawbytestring;    // Group Name
-    Comment:    rawbytestring;    // Comment
-    Beginning:  int64;            // Stream begin position (reserved)
-    Ending:     int64;            // Stream end position   (reserved)
-    Version:    longword;         // Version               (reserved)
+  tgulpitem = record
+    flags:      tgulpflags;
+    fullname:   rawbytestring;
+    timeutc:    tdatetime;
+    attributes: longint;
+    mode:       longint;
+    size:       int64;
+    linkname:   rawbytestring;
+    userid:     longword;
+    groupid:    longword;
+    username:   rawbytestring;
+    groupname:  rawbytestring;
+    comment:    rawbytestring;
+    beginning:  int64;
+    ending:     int64;
+    version:    longword;
   end;
 
-  // --- The Gulp Application events ---
-  TGulpShowItem    = procedure(P: PGulpItem) of object;
-  TGulpShowMessage = procedure(const Message: rawbytestring) of object;
-  TGulpTerminate   = function: boolean of object;
+  { gulp application events }
 
-  // --- The Gulp Application class ---
-  TGulpApplication = class(TObject)
+  tgulpshowitem    = procedure(p: pgulpitem) of object;
+  tgulpshowmessage = procedure(const message: rawbytestring) of object;
+  tgulpterminate   = function: boolean of object;
+
+   { gulp application }
+
+  tgulpapplication = class
   private
-    FExclude:       TRawByteStringList;
-    FInclude:       TRawByteStringList;
-    FNodelete:      boolean;
-    FUntilVersion:  longword;
-    FOnShowItem:    TGulpShowItem;
-    FOnShowMessage: TGulpShowMessage;
-    procedure ShowItem(const Item: PGulpItem);
-    procedure ShowMessage(const Message: rawbytestring);
+    fexclude: trawbytestringlist;
+    finclude: trawbytestringlist;
+    fnodelete: boolean;
+    funtilversion: longword;
+    fonshowitem: tgulpshowitem;
+    fonshowmessage: tgulpshowmessage;
+    procedure showitem(const item: pgulpitem);
+    procedure showmessage(const message: rawbytestring);
   public
-    constructor Create;
-    destructor Destroy; override;
-    procedure Sync(const FileName: rawbytestring);
-    procedure Restore(const FileName: rawbytestring);
-    procedure Purge(const FileName: rawbytestring);
-    procedure List(const FileName: rawbytestring);
-    procedure Fix(const FileName: rawbytestring);
-    procedure Check(const FileName: rawbytestring);
-    procedure Reset;
+    constructor create;
+    destructor destroy; override;
+    procedure sync(const filename: rawbytestring);
+    procedure restore(const filename: rawbytestring);
+    procedure purge(const filename: rawbytestring);
+    procedure list(const filename: rawbytestring);
+    procedure fix(const filename: rawbytestring);
+    procedure check(const filename: rawbytestring);
+    procedure reset;
   public
-    property Exclude: TRawByteStringList Read FExclude;
-    property Include: TRawByteStringList Read FInclude;
-    property NoDelete: boolean Read FNoDelete Write FNoDelete;
-    property UntilVersion: longword Read FUntilVersion Write FUntilVersion;
-    property OnShowItem: TGulpShowItem Read FOnShowItem Write FOnShowItem;
-    property OnShowMessage: TGulpShowMessage Read FOnShowMessage Write FOnShowMessage;
+    property exclude: trawbytestringlist read fexclude;
+    property include: trawbytestringlist read finclude;
+    property nodelete: boolean read fnodelete write fnodelete;
+    property untilversion: longword read funtilversion write funtilversion;
+    property onshowitem: tgulpshowitem read fonshowitem write fonshowitem;
+    property onshowmessage: tgulpshowmessage
+      read fonshowmessage write fonshowmessage;
   end;
 
-// --- Some useful routines ---
+{ some usefull routines }
 
-function VersionToString(const Version: longword): rawbytestring;
-function AttrToString(const Attr: longint): rawbytestring;
-function SizeToString(const Size: int64): rawbytestring;
-function TimeToString(const T: TDateTime): rawbytestring;
-function ModeToString(const Mode: longint): rawbytestring;
-
-function StringToAttr(const S: rawbytestring): longint;
-function StringToMode(const S: rawbytestring): longint;
-function FlagsToString(const F: TGulpFlags): rawbytestring;
-
- // =============================================================================
- // IMPLEMENTATION
- // =============================================================================
+function versiontostring(const version: longword): rawbytestring;
+function attrtostring(const attr: longint): rawbytestring;
+function sizetostring(const size: int64): rawbytestring;
+function timetostring(const t: tdatetime): rawbytestring;
+function modetostring(const mode: longint): rawbytestring;
+function stringtoattr(const s: rawbytestring): longint;
+function stringtomode(const s: rawbytestring): longint;
+function flagstostring(const f: tgulpflags): rawbytestring;
 
 implementation
 
 uses
-  DateUtils,
-  GulpScanner,
-  GulpStream,
-  Math;
+  dateutils,
+  gulpmessages,
+  gulpscanner,
+  gulpstream,
+  math;
 
 const
-  GulpMarker003: TSHA1Digest = (255, 210, 119, 9, 180, 210, 231, 123,
-    25, 91, 110, 159, 243, 53, 246, 80, 215, 248, 114, 172);
+  gulpmarker: tsha1digest =
+    (255, 210, 119,  9, 180, 210, 231, 123,  25,  91,
+     110, 159, 243, 53, 246,  80, 215, 248, 114, 172);
 
-  GulpDescription =
-    'GULP v0.0.3 journaling archiver, copyright (c) 2014-2016 Melchiorre Caruso.' +
-    LineEnding + 'GULP archiver for user-level incremental backups with rollback capability.'
-    + LineEnding;
+  gulpdescription =
+    'GULP v0.0.3 journaling archiver, copyright (c) 2014-2016 Melchiorre Caruso.'
+    + lineending +
+    'GULP archiver for user-level incremental backups with rollback capability.'
+    + lineending;
 
 type
-  TGulpList = specialize TGenericList<PGulpItem>;
+  { gulp item list }
 
-  // --- The Gulp Reader class ---
-  TGulpReader = class(TObject)
+  tgulplist = specialize tgenericlist<pgulpitem>;
+
+  { gulp archive reader }
+
+  tgulpreader = class
   private
-    FList: TGulpList;
-    FStream: TStream;
-    procedure Read(P: PGulpItem);
-    function GetItem(Index: longint): PGulpItem;
-    function GetCount: longint;
+    flist:   tgulplist;
+    fstream: tstream;
+    function read(p: pgulpitem): pgulpitem;
+    function get(index: longint): pgulpitem;
+    function getcount: longint;
   public
-    constructor Create(Stream: TStream);
-    destructor Destroy; override;
-    procedure Load(UntilVersion: longword);
-    procedure Extract(Index: longint; Stream: TStream); overload;
-    procedure Extract(Index: longint); overload;
-    function Find(const FileName: rawbytestring): longint;
-    procedure Clear;
+    constructor create(stream: tstream);
+    destructor destroy; override;
+    procedure load; overload;
+    procedure load(untilversion: longword); overload;
+    procedure extract(index: longint; stream: tstream); overload;
+    procedure extract(index: longint); overload;
+    function find(const filename: rawbytestring): longint;
+    procedure clear;
   public
-    property Items[Index: longint]: PGulpItem Read GetItem; default;
-    property Count: longint Read GetCount;
+    property items[index: longint]: pgulpitem read get; default;
+    property count: longint read getcount;
   end;
 
-  // --- The Gulp Writer class ---
-  TGulpWriter = class(TObject)
+  { gulp archive writer }
+
+  tgulpwriter = class
   private
-    FList: TGulpList;
-    FStream: TStream;
-    procedure Write(P: PGulpItem); overload;
-    procedure Write(Stream: TStream; Size: int64); overload;
-    function GetItem(Index: longint): PGulpItem;
-    function GetCount: longint;
+    flist:   tgulplist;
+    fstream: tstream;
+    procedure write(p: pgulpitem); overload;
+    procedure write(stream: tstream; size: int64); overload;
+    function get(index: longint): pgulpitem;
+    function getcount: longint;
   public
-    constructor Create(Stream: TStream);
-    destructor Destroy; override;
-    procedure Delete(const FileName: rawbytestring);
-    procedure Add(const FileName: rawbytestring);
-    procedure Clear;
+    constructor create(stream: tstream);
+    destructor destroy; override;
+    procedure delete(const filename: rawbytestring);
+    procedure add(const filename: rawbytestring);
+    procedure clear;
   public
-    property Items[Index: longint]: PGulpItem Read GetItem; default;
-    property Count: longint Read GetCount;
+    property items[index: longint]: pgulpitem read get; default;
+    property count: longint read getcount;
   end;
 
- // =============================================================================
- // Internal rutines
- // =============================================================================
 
-procedure ItemClear(P: PGulpItem);
+{ internal routines }
+
+function itemclear(p: pgulpitem): pgulpitem;
 begin
-  with P^ do
-  begin
-    Flags := [];
-    FullName := '';
-    TimeUTC := 0.0;
-    Attributes := 0;
-    Mode  := 0;
-    Size  := 0;
-    LinkName := '';
-    UserID := 0;
-    GroupID := 0;
-    UserName := '';
-    GroupName := '';
-    Comment := '';
-    Beginning := 0;
-    Ending := 0;
-    Version := 0;
-  end;
+  p^.flags      := [];
+  p^.fullname   := '';
+  p^.timeutc    := 0.0;
+  p^.attributes := 0;
+  p^.mode       := 0;
+  p^.size       := 0;
+  p^.linkname   := '';
+  p^.userid     := 0;
+  p^.groupid    := 0;
+  p^.username   := '';
+  p^.groupname  := '';
+  p^.comment    := '';
+  p^.beginning  := 0;
+  p^.ending     := 0;
+  p^.version    := 0;
+  result := p;
 end;
 
-function ItemGetDigest(P: PGulpItem): TSHA1Digest;
+function itemgetdigest(p: pgulpitem): tsha1digest;
 var
-  Context: TSHA1Context;
+  context: tsha1context;
 begin
-  SHA1Init(Context);
-  with P^ do
+  sha1init(context);
+  sha1update(context, p^.flags, sizeof(p^.flags));
+  if gffullname in p^.flags then
+    sha1update(context, pointer(p^.fullname)^, length(p^.fullname));
+  if gftimeutc in p^.flags then
+    sha1update(context, p^.timeutc, sizeof(p^.timeutc));
+  if gfattributes in p^.flags then
+    sha1update(context, p^.attributes, sizeof(p^.attributes));
+  if gfmode in p^.flags then
+    sha1update(context, p^.mode, sizeof(p^.mode));
+  if gfsize in p^.flags then
+    sha1update(context, p^.size, sizeof(p^.size));
+  if gflinkname in p^.flags then
+    sha1update(context, pointer(p^.linkname)^, length(p^.linkname));
+  if gfuserid in p^.flags then
+    sha1update(context, p^.userid, sizeof(p^.userid));
+  if gfgroupid in p^.flags then
+    sha1update(context, p^.groupid, sizeof(p^.groupid));
+  if gfusername in p^.flags then
+    sha1update(context, pointer(p^.username)^, length(p^.username));
+  if gfgroupname in p^.flags then
+    sha1update(context, pointer(p^.groupname)^, length(p^.groupname));
+  if gfcomment in p^.flags then
+    sha1update(context, pointer(p^.comment)^, length(p^.comment));
+  if gfsize in p^.flags then
+    sha1update(context, p^.beginning, sizeof(p^.beginning));
+  if gfsize in p^.flags then
+    sha1update(context, p^.ending, sizeof(p^.ending));
+  sha1final(context, result);
+end;
+
+function itemgetsize(p: pgulpitem): int64;
+begin
+  result := sizeof(tsha1digest);
+  inc(result, sizeof(p^.flags));
+  if gffullname in p^.flags then
   begin
-
-    SHA1Update(Context, Flags, SizeOf(Flags));
-
-    if gfFullName in Flags then
-      SHA1Update(Context, Pointer(FullName)^, Length(FullName));
-    if gfTimeUTC in Flags then
-      SHA1Update(Context, TimeUTC, SizeOf(TimeUTC));
-    if gfAttributes in Flags then
-      SHA1Update(Context, Attributes, SizeOf(Attributes));
-    if gfMode in Flags then
-      SHA1Update(Context, Mode, SizeOf(Mode));
-    if gfSize in Flags then
-      SHA1Update(Context, Size, SizeOf(Size));
-
-
-    if gfLinkName in Flags then
-      SHA1Update(Context, Pointer(LinkName)^, Length(LinkName));
-    if gfUserID in Flags then
-      SHA1Update(Context, UserID, SizeOf(UserID));
-    if gfGroupID in Flags then
-      SHA1Update(Context, GroupID, SizeOf(GroupID));
-
-    if gfUserName in Flags then
-      SHA1Update(Context, Pointer(UserName)^, Length(UserName));
-    if gfGroupName in Flags then
-      SHA1Update(Context, Pointer(GroupName)^, Length(GroupName));
-    if gfComment in Flags then
-      SHA1Update(Context, Pointer(Comment)^, Length(Comment));
-    if gfSize in Flags then
-      SHA1Update(Context, Beginning, SizeOf(Beginning));
-    if gfSize in Flags then
-      SHA1Update(Context, Ending, SizeOf(Ending));
-
+    inc(result, sizeof(longint));
+    inc(result, length(p^.fullname));
   end;
-  SHA1Final(Context, Result);
+  if gftimeutc    in p^.flags then inc(result, sizeof(p^.timeutc));
+  if gfattributes in p^.flags then inc(result, sizeof(p^.attributes));
+  if gfmode       in p^.flags then inc(result, sizeof(p^.mode));
+  if gfsize       in p^.flags then inc(result, sizeof(p^.size));
+
+  if gflinkname in p^.flags then
+  begin
+    inc(result, sizeof(longint));
+    inc(result, length(p^.linkname));
+  end;
+  if gfuserid  in p^.flags then inc(result, sizeof(p^.userid));
+  if gfgroupid in p^.flags then inc(result, sizeof(p^.groupid));
+
+  if gfusername in p^.flags then
+  begin
+    inc(result, sizeof(longint));
+    inc(result, length(p^.username));
+  end;
+  if gfgroupname in p^.flags then
+  begin
+    inc(result, sizeof(longint));
+    inc(result, length(p^.groupname));
+  end;
+  if gfcomment in p^.flags then
+  begin
+    inc(result, sizeof(longint));
+    inc(result, length(p^.comment));
+  end;
+
+  if gfsize in p^.flags then inc(result, sizeof(p^.beginning));
+  if gfsize in p^.flags then inc(result, sizeof(p^.ending));
+  inc(result, sizeof(tsha1digest));
 end;
 
- // =============================================================================
- // Library routines
- // =============================================================================
-
-function VersionToString(const Version: longword): rawbytestring;
+function versiontostring(const version: longword): rawbytestring;
 begin
-  Result := IntToStr(Version);
+  result := inttostr(version);
 end;
 
-function FlagsToString(const F: TGulpFlags): rawbytestring;
+function flagstostring(const f: tgulpflags): rawbytestring;
 begin
-  if (gfAdd in F) and (gfDelete in F) then
-    Result := 'UPD'
-  else if (gfAdd in F) then
-    Result := 'ADD'
-  else if (gfDelete in F) then
-    Result := 'DEL'
+  if (gfadd in f) and (gfdelete in f) then
+    result := 'UPD'
   else
-    raise Exception.Create('Invalid marker value (ex0001)');
+  if (gfadd in f) then
+    result := 'ADD'
+  else
+  if (gfdelete in f) then
+    result := 'DEL'
+  else
+    raise exception.createfmt(gewrongflag, [003099]);
 end;
 
-function TimeToString(const T: TDateTime): rawbytestring;
+function timetostring(const t: tdatetime): rawbytestring;
 begin
-  Result := FormatDateTime(DefaultFormatSettings.LongDateFormat +
-    ' ' + DefaultFormatSettings.LongTimeFormat, T);
+  result := formatdatetime(
+    defaultformatsettings.longdateformat + ' ' +
+    defaultformatsettings.longtimeformat, t);
 end;
 
-function SizeToString(const Size: int64): rawbytestring;
+function sizetostring(const size: int64): rawbytestring;
 begin
-  Result := Format('%u', [Size]);
+  result := format('%u', [size]);
 end;
 
-function AttrToString(const Attr: longint): rawbytestring;
+function attrtostring(const attr: longint): rawbytestring;
 begin
-  Result := '       ';
-  if Attr and faReadOnly <> 0 then
-    Result[1] := 'R';
-  if Attr and faHidden <> 0 then
-    Result[2] := 'H';
-  if Attr and faSysFile <> 0 then
-    Result[3] := 'S';
-  if Attr and faVolumeId <> 0 then
-    Result[4] := 'V';
-  if Attr and faDirectory <> 0 then
-    Result[5] := 'D';
-  if Attr and faArchive <> 0 then
-    Result[6] := 'A';
-  if Attr and faSymLink <> 0 then
-    Result[7] := 'L';
+  result := '       ';
+  if attr and fareadonly  <> 0 then result[1] := 'R';
+  if attr and fahidden    <> 0 then result[2] := 'H';
+  if attr and fasysfile   <> 0 then result[3] := 'S';
+  if attr and favolumeid  <> 0 then result[4] := 'V';
+  if attr and fadirectory <> 0 then result[5] := 'D';
+  if attr and faarchive   <> 0 then result[6] := 'A';
+  if attr and fasymlink   <> 0 then result[7] := 'L';
 end;
 
-function StringToAttr(const S: rawbytestring): longint;
+function stringtoattr(const s: rawbytestring): longint;
 begin
-  Result := 0;
-  if Length(S) = 7 then
+  result := 0;
+  if length(s) = 7 then
   begin
-    if Upcase(S[1]) = 'R' then
-      Result := Result or faReadOnly;
-    if Upcase(S[2]) = 'H' then
-      Result := Result or faHidden;
-    if Upcase(S[3]) = 'S' then
-      Result := Result or faSysFile;
-    if Upcase(S[4]) = 'V' then
-      Result := Result or faVolumeId;
-    if Upcase(S[5]) = 'D' then
-      Result := Result or faDirectory;
-    if Upcase(S[6]) = 'A' then
-      Result := Result or faArchive;
-    if Upcase(S[7]) = 'L' then
-      Result := Result or faSymLink;
+    if upcase(s[1]) = 'R' then result := result or fareadonly;
+    if upcase(s[2]) = 'H' then result := result or fahidden;
+    if upcase(s[3]) = 'S' then result := result or fasysfile;
+    if upcase(s[4]) = 'V' then result := result or favolumeid;
+    if upcase(s[5]) = 'D' then result := result or fadirectory;
+    if upcase(s[6]) = 'A' then result := result or faarchive;
+    if upcase(s[7]) = 'L' then result := result or fasymlink;
   end;
 end;
 
-function ModeToString(const Mode: longint): rawbytestring;
+function modetostring(const mode: longint): rawbytestring;
 begin
   {$IFDEF UNIX}
-    Result := OctStr(Mode, 3);
+  result := octstr(mode, 3);
   {$ELSE}
   {$IFDEF MSWINDOWS}
-  Result := '...';
+  result := '...';
   {$ELSE}
-    Unsupported platform...
   {$ENDIF}
   {$ENDIF}
 end;
 
-function StringToMode(const S: rawbytestring): longint;
+function stringtomode(const s: rawbytestring): longint;
 {$IFDEF UNIX}
 var
-  I : longint;
+  i: longint;
 {$ENDIF}
 begin
-  Result := 0;
+  result := 0;
   {$IFDEF UNIX}
-    for I  := 1 to Length(S) do
-      Result := Result * 8 + StrToInt(Copy(S, I, 1));
+  for i := 1 to length(s) do
+    result := result * 8 + strtoint(copy(s, i, 1));
   {$ELSE}
   {$IFDEF MSWINDOWS}
   {$ELSE}
-    Unsupported platform...
   {$ENDIF}
   {$ENDIF}
 end;
 
- // =============================================================================
- // TGulpReader
- // =============================================================================
+{ compare items routines }
 
-function Compare41(P1, P2: PGulpItem): longint; inline;
+function compare40(p1, p2: pgulpitem): longint; inline;
 begin
   {$IFDEF UNIX}
-    Result := AnsiCompareStr(P1^.FullName, P2^.FullName);
+  result := ansicomparestr(p1^.fullname, p2^.fullname);
   {$ELSE}
   {$IFDEF MSWINDOWS}
-  Result := AnsiCompareText(P1^.FullName, P2^.FullName);
+  result := ansicomparetext(p1^.fullname, p2^.fullname);
   {$ELSE}
-    Unsupported platform...
   {$ENDIF}
   {$ENDIF}
 end;
 
-function Compare40(P1, P2: PGulpItem): longint; inline;
+function compare41(p1, p2: pgulpitem): longint; inline;
 begin
-  Result := Compare41(P1, P2);
+  result := compare40(p1, p2);
 
-  if Result = 0 then
-    if P1^.Version < P2^.Version then
-      Result := -1
-    else if P1^.Version > P2^.Version then
-      Result := 1;
+  if result = 0 then
+    if p1^.version < p2^.version then
+      result := -1
+    else
+    if p1^.version > p2^.version then
+      result := 1;
 
-  if Result = 0 then
-    if (gfDelete in P1^.Flags) and (gfAdd in P2^.Flags) then
-      Result := -1
-    else if (gfDelete in P2^.Flags) and (gfAdd in P1^.Flags) then
-      Result := 1;
+  if result = 0 then
+    if (gfdelete in p1^.flags) and (gfadd in p2^.flags) then
+      result := -1
+    else
+    if (gfdelete in p2^.flags) and (gfadd in p1^.flags) then
+      result := 1;
 end;
 
-constructor TGulpReader.Create(Stream: TStream);
+function compare42(p1, p2: pgulpitem): longint;
 begin
-  inherited Create;
-  FStream := Stream;
-  FList := TGulpList.Create(@Compare41);
+  {$IFDEF UNIX}
+  result := ansicomparestr(p1^.fullname, p2^.fullname);
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
+  result := ansicomparetext(p1^.fullname, p2^.fullname);
+  {$ELSE}
+  {$ENDIF}
+  {$ENDIF}
+
+  if result = 0 then
+    if (gfdelete in p1^.flags) and (gfadd in p2^.flags) then
+      result := -1
+    else
+    if (gfdelete in p2^.flags) and (gfadd in p1^.flags) then
+      result := 1;
 end;
 
-destructor TGulpReader.Destroy;
+{ tgulpreader class }
+
+constructor tgulpreader.create(stream: tstream);
 begin
-  Clear;
-  FList.Destroy;
-  inherited Destroy;
+  inherited create;
+  fstream := stream;
+  flist   := tgulplist.create(@compare40);
 end;
 
-procedure TGulpReader.Clear;
+destructor tgulpreader.destroy;
 begin
-  while FList.Count > 0 do
+  clear;
+  flist.destroy;
+  inherited destroy;
+end;
+
+procedure tgulpreader.clear;
+begin
+  while flist.count > 0 do
   begin
-    Dispose(FList[0]);
-    FList.Delete(0);
+    dispose(flist[0]);
+    flist.delete(0);
   end;
 end;
 
-procedure TGulpReader.Read(P: PGulpItem);
+function tgulpreader.read(p: pgulpitem): pgulpitem;
 var
-  Digest: TSHA1Digest;
+  digest: tsha1digest;
 begin
-  ItemClear(P);
-  if FStream.Read(Digest, SizeOf(TSHA1Digest)) <> SizeOf(TSHA1Digest) then
-    raise Exception.Create('Archive is damaged, try with the "fix" command (ex0002)');
-  if SHA1Match(Digest, GulpMarker003) = False then
-    raise Exception.Create('Invalid marker value (ex0003)');
+  result := itemclear(p);
+  if fstream.read(digest, sizeof(tsha1digest)) <> sizeof(tsha1digest) then
+    raise exception.createfmt(gebrokenarchive, [003001]);
+  if sha1match(digest, gulpmarker) = false then
+    raise exception.createfmt(gewrongmarker, [003002]);
 
-  with P^ do
-  begin
-    FStream.Read(Flags, SizeOf(Flags));
+  fstream.read(p^.flags, sizeof(p^.flags));
+  if gffullname   in p^.flags then p^.fullname := fstream.readansistring;
+  if gftimeutc    in p^.flags then fstream.read(p^.timeutc, sizeof(p^.timeutc));
+  if gfattributes in p^.flags then fstream.read(p^.attributes, sizeof(p^.attributes));
+  if gfmode       in p^.flags then fstream.read(p^.mode, sizeof(p^.mode));
+  if gfsize       in p^.flags then fstream.read(p^.size, sizeof(p^.size));
+  if gflinkname   in p^.flags then p^.linkname := fstream.readansistring;
+  if gfuserid     in p^.flags then fstream.read(p^.userid, sizeof(p^.userid));
+  if gfgroupid    in p^.flags then fstream.read(p^.groupid, sizeof(p^.groupid));
+  if gfusername   in p^.flags then p^.username  := fstream.readansistring;
+  if gfgroupname  in p^.flags then p^.groupname := fstream.readansistring;
+  if gfcomment    in p^.flags then p^.comment   := fstream.readansistring;
 
-    if gfFullName in Flags then
-      FullName := FStream.ReadAnsiString;
-    if gfTimeUTC in Flags then
-      FStream.Read(TimeUTC, SizeOf(TimeUTC));
-    if gfAttributes in Flags then
-      FStream.Read(Attributes, SizeOf(Attributes));
-    if gfMode in Flags then
-      FStream.Read(Mode, SizeOf(Mode));
+  if gfsize in p^.flags then fstream.read(p^.beginning, sizeof(p^.beginning));
+  if gfsize in p^.flags then fstream.read(p^.ending, sizeof(p^.ending));
 
+  if ((gfdelete in p^.flags) = false) and ((gfadd in p^.flags) = false) then
+    raise exception.createfmt(gebrokenarchive, [003003]);
+  if ((p^.ending = 0) or (p^.beginning = 0)) and (p^.size <> 0) then
+    raise exception.createfmt(gebrokenarchive, [003004]);
+  if fstream.read(digest, sizeof(tsha1digest)) <> sizeof(tsha1digest) then
+    raise exception.createfmt(gebrokenarchive, [003005]);
+  if sha1match(digest, itemgetdigest(p)) = false then
+    raise exception.createfmt(gebrokenarchive, [003007]);
 
-    if gfSize in Flags then
-      FStream.Read(Size, SizeOf(Size));
-    if gfLinkName in Flags then
-      LinkName := FStream.ReadAnsiString;
-    if gfUserID in Flags then
-      FStream.Read(UserID, SizeOf(UserID));
-    if gfGroupID in Flags then
-      FStream.Read(GroupID, SizeOf(GroupID));
-
-    if gfUserName in Flags then
-      UserName := FStream.ReadAnsiString;
-    if gfGroupName in Flags then
-      GroupName := FStream.ReadAnsiString;
-
-    if gfComment in Flags then
-      Comment := FStream.ReadAnsiString;
-    if gfSize in Flags then
-      FStream.Read(Beginning, SizeOf(Beginning));
-    if gfSize in Flags then
-      FStream.Read(Ending, SizeOf(Ending));
-
-    if ((gfDelete in Flags) = False) and ((gfADD in Flags) = False) then
-      raise Exception.Create('Archive is damaged, try with the "fix" command (ex0004)');
-    if ((Ending = 0) or (Beginning = 0)) and (Size <> 0) then
-      raise Exception.Create('Archive is damaged, try with the "fix" command (ex0005)');
-    if FStream.Read(Digest, SizeOf(TSHA1Digest)) <> SizeOf(TSHA1Digest) then
-      raise Exception.Create('Archive is damaged, try with the "fix" command (ex0006)');
-    if SHA1Match(Digest, ItemGetDigest(P)) = False then
-      raise Exception.Create('Archive is damaged, try with the "fix" command (ex0007)');
-
-    DoDirSeparators(LinkName);
-
-    DoDirSeparators(FullName);
-  end;
+  dodirseparators(p^.linkname);
+  dodirseparators(p^.fullname);
 end;
 
-procedure TGulpReader.Load(UntilVersion: longword);
+procedure tgulpreader.load;
 var
-  I: longint;
-  Item: PGulpItem;
-  OffSet: int64 = 0;
-  Size: int64 = 0;
-  Version: longword = 1;
+  p:       pgulpitem;
+  offset:  int64    = 0;
+  size:    int64    = 0;
+  version: longword = 1;
 begin
-  Clear;
-  FreeAndNil(FList);
-  if 0 = UntilVersion then
-    FList := TGulpList.Create(@Compare40)
-  else
-    FList := TGulpList.Create(@Compare41);
-
-  Item := New(PGulpItem);
-  try
-    while True do
+  clear;
+  freeandnil(flist);
+  flist := tgulplist.create(@compare41);
+  size  := fstream.seek(0, soend);
+           fstream.seek(0, sobeginning);
+  p     := new(pgulpitem);
+  while offset < size do
+  begin
+    read(p)^.version := version;
+    inc(offset, itemgetsize(p));
+    inc(offset, p^.ending - p^.beginning);
+    if gfclose in p^.flags then
     begin
-      Read(Item);
-      Item^.Version := Version;
-
-      OffSet := Max(OffSet, Item^.Ending);
-      if gfClose in Item^.Flags then
-      begin
-        OffSet := Max(OffSet, FStream.Seek(0, soCurrent));
-        if FStream.Seek(OffSet, soBeginning) <> OffSet then
-          raise Exception.Create('Stream is not a valid archive (ex0008)');
-        Size := OffSet;
-        Inc(Version);
-      end;
-
-      if 0 = UntilVersion then
-      begin
-        if FList.Add(Item) = -1 then
-          raise Exception.Create('Duplicates non allowed (ex0009)');
-        Item := New(PGulpItem);
-      end
-      else if Version <= UntilVersion then
-      begin
-        if gfDelete in Item^.Flags then
-        begin
-          I := FList.Find(Item);
-          if I <> -1 then
-          begin
-            Dispose(FList[I]);
-            FList.Delete(I);
-          end;
-        end;
-
-        if gfAdd in Item^.Flags then
-        begin
-          if FList.Add(Item) = -1 then
-            raise Exception.Create('Duplicates non allowed (ex0010)');
-          Item := New(PGulpItem);
-        end;
-      end;
+      if fstream.seek(offset, sobeginning) <> offset then
+        raise exception.createfmt(genotarchive, [003008]);
+      inc(version);
     end;
 
-  except
+    if flist.add(p) = -1 then
+      raise exception.createfmt(geduplicates, [003009]);
+    p := new(pgulpitem);
   end;
-  Dispose(Item);
-
-  if Size <> FStream.Seek(0, soEnd) then
-    raise Exception.Create('Archive is broken, try with fix command (ex0011)');
+  dispose(p);
+  if offset <> size then
+    raise exception.createfmt(gebrokenarchive, [003011]);
 end;
 
-procedure TGulpReader.Extract(Index: longint; Stream: TStream);
+procedure tgulpreader.load(untilversion: longword);
 var
-  Buffer: array[0..$FFFF] of byte;
-  Context: TSHA1Context;
-  Digest1: TSHA1Digest;
-  Digest2: TSHA1Digest;
-  Readed: longint;
-  Size: int64;
+  i:       longint;
+  p:       pgulpitem;
+  offset:  int64    = 0;
+  size:    int64    = 0;
+  version: longword = 1;
 begin
-  FStream.Seek(Items[Index]^.Beginning, soBeginning);
-  Size := Items[Index]^.Size;
-  SHA1Init(Context);
-  while Size > 0 do
+  clear;
+  freeandnil(flist);
+  flist := tgulplist.create(@compare40);
+  size  := fstream.seek(0, soend);
+           fstream.seek(0, sobeginning);
+  p     := new(pgulpitem);
+  while offset < size do
   begin
-    Readed := FStream.Read(Buffer, Min(SizeOf(Buffer), Size));
-    if Readed = 0 then
-      raise Exception.Create('Unable to read stream (ex0012)');
-    SHA1Update(Context, Buffer, Readed);
-    Stream.Write(Buffer, Readed);
-    Dec(Size, Readed);
+    read(p)^.version := version;
+    inc(offset, itemgetsize(p));
+    inc(offset, p^.ending - p^.beginning);
+    if gfclose in p^.flags then
+    begin
+      if fstream.seek(offset, sobeginning) <> offset then
+        raise exception.createfmt(genotarchive, [003096]);
+      inc(version);
+    end;
+
+    if version <= untilversion then
+    begin
+      if gfdelete in p^.flags then
+      begin
+        i := flist.find(p);
+        if i <> -1 then
+        begin
+          dispose(flist[i]);
+          flist.delete(i);
+        end;
+      end;
+      if gfadd in p^.flags then
+      begin
+        if flist.add(p) = -1 then
+          raise exception.createfmt(geduplicates, [003010]);
+        p := new(pgulpitem);
+      end;
+    end;
   end;
-  SHA1Final(Context, Digest1);
-  if FStream.Read(Digest2, SizeOf(TSHA1Digest)) <> SizeOf(TSHA1Digest) then
-    raise Exception.Create('Archive is damaged, try with the "fix" command (ex0013)');
-  if SHA1Match(Digest1, Digest2) = False then
-    raise Exception.CreateFmt('Mismatched checksum for "%s"', [Items[Index]^.FullName]);
+  dispose(p);
+  if size <> fstream.seek(0, soend) then
+    raise exception.createfmt(gebrokenarchive, [003011]);
 end;
 
-procedure TGulpReader.Extract(Index: longint);
+procedure tgulpreader.extract(index: longint; stream: tstream);
 var
-  Check: boolean;
-  Item:  PGulpItem;
-  ItemPath: rawbytestring;
-  Stream: TFileStream;
+  buffer:  array[0..$FFFF] of byte;
+  context: tsha1context;
+  digest1: tsha1digest;
+  digest2: tsha1digest;
+  readed:  longint;
+  size:    int64;
 begin
-  Item := Items[Index];
-  if Item^.Attributes and (faSysFile or faVolumeId) = 0 then
+  fstream.seek(items[index]^.beginning, sobeginning);
+  size := items[index]^.size;
+  sha1init(context);
+  while size > 0 do
   begin
-    ItemPath := ExtractFileDir(Item^.FullName);
-    if (ItemPath <> '') and (ForceDirectories(ItemPath) = False) then
-      raise Exception.CreateFmt('Unable to create path "%s"', [ItemPath]);
+    readed := fstream.read(buffer, min(sizeof(buffer), size));
+    if readed = 0 then
+      raise exception.createfmt(gereadstream, [003012]);
+    sha1update(context, buffer, readed);
+    stream.write(buffer, readed);
+    dec(size, readed);
+  end;
+  sha1final(context, digest1);
+  if fstream.read(digest2, sizeof(tsha1digest)) <> sizeof(tsha1digest) then
+    raise exception.createfmt(gebrokenarchive, [003013]);
+  if sha1match(digest1, digest2) = false then
+    raise exception.createfmt(gechecksum, [items[index]^.fullname]);
+end;
 
-    Check := False;
-    if (Item^.Attributes and faSymLink) = faSymLink then
-    {$IFDEF UNIX}
-{$ELSE}
-{$IFDEF MSWINDOWS}
-{$ELSE}
-{$ENDIF}
-{$ENDIF}
-    else
-    if (Item^.Attributes and faDirectory) = faDirectory then
+procedure tgulpreader.extract(index: longint);
+var
+  check:  boolean;
+  p:      pgulpitem;
+  path:   rawbytestring;
+  stream: tfilestream;
+begin
+  p := items[index];
+  if p^.attributes and (fasysfile or favolumeid) = 0 then
+  begin
+    path := extractfiledir(p^.fullname);
+    if (path <> '') and (forcedirectories(path) = false) then
+      raise exception.createfmt(gecreatepath, [path]);
+
+    check := false;
+    if (p^.attributes and fasymlink) = fasymlink then
     begin
-      Check := DirectoryExists(Item^.FullName);
-      if Check = False then
-        Check := CreateDir(Item^.FullName);
-    end
-    else
-    if (gfSize in Item^.Flags) then
+      {$IFDEF UNIX}
+      check := fpsymlink(pchar(p^.linkname), pchar(p^.fullname)) = 0;
+      {$ELSE}
+      {$IFDEF MSWINDOWS}
+      {$ELSE}
+      {$ENDIF}
+      {$ENDIF}
+    end else
+    if (p^.attributes and fadirectory) = fadirectory then
     begin
-      if FileExists(Item^.FullName) = False then
-        Stream := TFileStream.Create(Item^.FullName, fmCreate)
+      check := directoryexists(p^.fullname);
+      if check = false then
+        check := createdir(p^.fullname);
+    end else
+    if (gfsize in p^.flags) then
+    begin
+      if fileexists(p^.fullname) = false then
+        stream := tfilestream.create(p^.fullname, fmcreate)
       else
-        Stream := TFileStream.Create(Item^.FullName, fmOpenWrite);
-      Extract(Index, Stream);
-      FreeAndNil(Stream);
-      Check := True;
+        stream := tfilestream.create(p^.fullname, fmopenwrite);
+      extract(index, stream);
+      freeandnil(stream);
+      check := true;
     end;
 
-    if Check = True then
+    if check = true then
     begin
       {$IFDEF UNIX}
-      if (gfUserID in Item^.Flags) or (gfGroupID in Item^.Flags) then
-        if FpChown(Item^.FullName, Item^.UserID, Item^.GroupID) <> 0 then
-          raise Exception.CreateFmt('Unable to set user/group id for "%s"', [Item^.FullName]);
+      if (gfuserid in p^.flags) or (gfgroupid in p^.flags) then
+        if fpchown(p^.fullname, p^.userid, p^.groupid) <> 0 then
+          raise exception.createfmt(gesetid, [p^.fullname]);
 
-      if gfMODE in Item^.Flags then
-        if FpChmod(Item^.FullName, Item^.Mode) <> 0 then
-          raise Exception.CreateFmt('Unable to set mode for "%s"', [Item^.FullName]);
+      if gfmode in p^.flags then
+        if fpchmod(p^.fullname, p^.mode) <> 0 then
+          raise exception.createfmt(gesetmode, [p^.fullname]);
       {$ELSE}
       {$IFDEF MSWINDOWS}
-      if FileSetAttr(Item^.FullName, Item^.Attributes) <> 0 then
-        raise Exception.CreateFmt('Unable to set attributes for "%s"',
-          [Item^.FullName]);
+      if filesetattr(p^.fullname, p^.attributes) <> 0 then
+        raise exception.createfmt(gesetattributes, [p^.fullname]);
       {$ELSE}
-        Unsupported platform...
       {$ENDIF}
       {$ENDIF}
-      if FileSetDate(Item^.FullName, DateTimeToFileDate(
-        GulpFixes.UniversalTime2Local(Item^.TimeUTC))) <> 0 then
-        raise Exception.CreateFmt('Unable to set date for "%s"', [Item^.FullName]);
-    end
-    else
-      raise Exception.CreateFmt('Unable to restore item "%s"', [Item^.FullName]);
-
+      if filesetdate(p^.fullname,
+        datetimetofiledate(universaltime2local(p^.timeutc))) <> 0 then
+        raise exception.createfmt(gesetdatetime, [p^.fullname]);
+    end else
+      raise exception.createfmt(gerestoreitem, [p^.fullname]);
   end;
 end;
 
-function TGulpReader.Find(const FileName: rawbytestring): longint;
+function tgulpreader.find(const filename: rawbytestring): longint;
 var
-  Item: PGulpItem;
+  item: pgulpitem;
 begin
-  Item := New(PGulpItem);
-  ItemClear(Item);
-  Item^.Flags := [gfAdd, gfFullName];
-  Item^.FullName := FileName;
-  begin
-    Result := FList.Find(Item);
-  end;
-  Dispose(Item);
+  item := itemclear(new(pgulpitem));
+  item^.flags    := [gfadd, gffullname];
+  item^.fullname := filename;
+  result := flist.find(item);
+  dispose(item);
 end;
 
-function TGulpReader.GetItem(Index: longint): PGulpItem;
+function tgulpreader.get(index: longint): pgulpitem;
 begin
-  Result := FList.Items[Index];
+  result := flist[index];
 end;
 
-function TGulpReader.GetCount: longint;
+function tgulpreader.getcount: longint;
 begin
-  Result := FList.Count;
+  result := flist.count;
 end;
 
- // =============================================================================
- // TGulpWriter
- // =============================================================================
+{ tgulpwriter class }
 
-function Compare42(Item1, Item2: PGulpItem): longint;
+constructor tgulpwriter.create(stream: tstream);
 begin
-  {$IFDEF UNIX}
-    Result := AnsiCompareStr(Item1^.FullName, Item2^.FullName);
-  {$ELSE}
-    {$IFDEF MSWINDOWS}
-  Result := AnsiCompareText(Item1^.FullName, Item2^.FullName);
-    {$ELSE}
-      Unsupported platform...
-    {$ENDIF}
-  {$ENDIF}
-  if Result = 0 then
-    if (gfDelete in Item1^.Flags) and (gfAdd in Item2^.Flags) then
-      Result := -1
-    else if (gfDelete in Item2^.Flags) and (gfAdd in Item1^.Flags) then
-      Result := 1;
+  inherited create;
+  fstream := stream;
+  flist   := tgulplist.create(@compare42);
 end;
 
-constructor TGulpWriter.Create(Stream: TStream);
-begin
-  inherited Create;
-  FStream := Stream;
-  FList := TGulpList.Create(@Compare42);
-end;
-
-destructor TGulpWriter.Destroy;
+destructor tgulpwriter.destroy;
 var
-  I: longint;
-  Size: int64;
-  Source: TStream;
+  i:      longint;
+  size:   int64;
+  source: tstream;
 begin
-  if FList.Count > 0 then
+  if flist.count > 0 then
   begin
-    Size := FStream.Seek(0, soEnd);
-    Include(FList[FList.Count - 1]^.Flags, gfClose);
-    for I := 0 to FList.Count - 1 do
-      Write(FList[I]);
-    for I := 0 to FList.Count - 1 do
-      if FList[I]^.Attributes and (faSysFile or faVolumeId) = 0 then
-        if FList[I]^.Attributes and (faSymLink or faDirectory) = 0 then
-          if gfSIZE in FList[I]^.Flags then
+    size := fstream.seek(0, soend);
+    include(flist[flist.count - 1]^.flags, gfclose);
+    for i := 0 to flist.count - 1 do
+      write(flist[i]);
+
+    for i := 0 to flist.count - 1 do
+      if flist[i]^.attributes and (fasysfile or favolumeid) = 0 then
+        if flist[i]^.attributes and (fasymlink or fadirectory) = 0 then
+          if gfsize in flist[i]^.flags then
           begin
-            FList[I]^.Beginning := FStream.Seek(0, soCurrent);
-            Source :=
-              TFileStream.Create(FList[I]^.FullName, fmOpenRead or fmShareDenyNone);
-            Write(Source, FList[I]^.Size);
-            FreeAndNil(Source);
-            FList[I]^.Ending := FStream.Seek(0, soCurrent);
+            flist[i]^.beginning := fstream.seek(0, socurrent);
+            source := tfilestream.create(flist[i]^.fullname,
+              fmopenread or fmsharedenynone);
+            write(source, flist[i]^.size);
+            freeandnil(source);
+            flist[i]^.ending := fstream.seek(0, socurrent);
           end;
-    FStream.Seek(Size, soBeginning);
-    for I := 0 to FList.Count - 1 do
-      Write(FList[I]);
-    FStream.Seek(0, soEnd);
-    Clear;
+    fstream.seek(size, sobeginning);
+    for i := 0 to flist.count - 1 do
+      write(flist[i]);
+    fstream.seek(0, soend);
+    clear;
   end;
-  FList.Destroy;
-  inherited Destroy;
+  flist.destroy;
+  inherited destroy;
 end;
 
-procedure TGulpWriter.Clear;
+procedure tgulpwriter.clear;
 begin
-  while FList.Count > 0 do
+  while flist.count > 0 do
   begin
-    Dispose(FList[0]);
-    FList.Delete(0);
+    dispose(flist[0]);
+    flist.delete(0);
   end;
 end;
 
-procedure TGulpWriter.Add(const FileName: rawbytestring);
+procedure tgulpwriter.add(const filename: rawbytestring);
 var
-  Item: PGulpItem;
-  SR: TSearchRec;
+  p:  pgulpitem;
+  sr: tsearchrec;
 begin
-  if SysUtils.FindFirst(FileName, faReadOnly or faHidden or faSysFile or
-    faVolumeId or faDirectory or faArchive or faSymLink or faAnyFile, SR) = 0 then
-    if GulpCommon.FileGetAttr(SR) and (faSysFile or faVolumeId) = 0 then
+  if sysutils.findfirst(filename, fareadonly or fahidden or fasysfile or
+    favolumeid or fadirectory or faarchive or fasymlink or faanyfile, sr) = 0 then
+    if gulpcommon.filegetattr(sr) and (fasysfile or favolumeid) = 0 then
     begin
-      Item := New(PGulpItem);
-      ItemClear(Item);
-
-
-      Item^.FullName := FileName;
-      Item^.TimeUTC := FileGetTimeUTC(SR);
-      Item^.Size := FileGetSize(SR);
-      Item^.Attributes := GulpCommon.FileGetAttr(SR);
-      Include(Item^.Flags, gfFullName);
-      Include(Item^.Flags, gfTimeUTC);
-      if Item^.Attributes and faSymLink = 0 then
-        if Item^.Attributes and faDirectory = 0 then
-          Include(Item^.Flags, gfSize);
-      Include(Item^.Flags, gfAttributes);
+      p := itemclear(new(pgulpitem));
+      p^.fullname   := filename;
+      p^.timeutc    := filegettimeutc(sr);
+      p^.size       := filegetsize(sr);
+      p^.attributes := gulpcommon.filegetattr(sr);
+      include(p^.flags, gffullname);
+      include(p^.flags, gftimeutc);
+      if p^.attributes and fasymlink = 0 then
+        if p^.attributes and fadirectory = 0 then
+          include(p^.flags, gfsize);
+      include(p^.flags, gfattributes);
       {$IFDEF UNIX}
-      Item^.Mode    := FileGetMode    (FileName);
-      Item^.LinkName    := FileGetLinkName(FileName);
-      Item^.UserID  := FileGetUserID  (FileName);
-      Item^.GroupID := FileGetGroupID (FileName);
-      Include(Item^.FLags, gfMode);
-      Include(Item^.FLags, gfLinkName);
-      Include(Item^.FLags, gfUserID );
-      Include(Item^.FLags, gfGroupID );
+      p^.mode     := filegetmode(filename);
+      p^.linkname := filegetlinkname(filename);
+      p^.userid   := filegetuserid(filename);
+      p^.groupid  := filegetgroupid(filename);
+      include(p^.flags, gfmode);
+      include(p^.flags, gflinkname);
+      include(p^.flags, gfuserid);
+      include(p^.flags, gfgroupid);
       {$ELSE}
       {$IFDEF MSWINDOWS}
       {$ELSE}
-        Unsupported platform...
       {$ENDIF}
       {$ENDIF}
-      Include(Item^.Flags, gfAdd);
-      if FList.Add(Item) = -1 then
-        raise Exception.Create('Duplicates non allowed (ex0014)');
+      include(p^.flags, gfadd);
+      if flist.add(p) = -1 then
+        raise exception.createfmt(geduplicates, [003014]);
     end;
-  SysUtils.FindClose(SR);
+  sysutils.findclose(sr);
 end;
 
-procedure TGulpWriter.Delete(const FileName: rawbytestring);
+procedure tgulpwriter.delete(const filename: rawbytestring);
 var
-  Item: PGulpItem;
+  p: pgulpitem;
 begin
-  Item := New(PGulpItem);
-
-  ItemClear(Item);
-  Item^.Flags := [gfDelete, gfFullName];
-  Item^.FullName := FileName;
-  if FList.Add(Item) = -1 then
-    raise Exception.Create('Duplicates non allowed (ex0015)');
+  p := itemclear(new(pgulpitem));
+  p^.flags    := [gfdelete, gffullname];
+  p^.fullname := filename;
+  if flist.add(p) = -1 then
+    raise exception.createfmt(geduplicates, [003098]);
 end;
 
-procedure TGulpWriter.Write(Stream: TStream; Size: int64);
+procedure tgulpwriter.write(stream: tstream; size: int64);
 var
-  Buffer:  array[0..$FFFF] of byte;
-  Context: TSHA1Context;
-  Digest:  TSHA1Digest;
-  Readed:  longint;
+  buffer:  array[0..$FFFF] of byte;
+  context: tsha1context;
+  digest:  tsha1digest;
+  readed:  longint;
 begin
-  SHA1Init(Context);
-  while Size > 0 do
+  sha1init(context);
+  while size > 0 do
   begin
-    Readed := Stream.Read(Buffer, Min(SizeOf(Buffer), Size));
-    if Readed = 0 then
-      raise Exception.Create('Unable to read stream (ex0016)');
-    SHA1Update(Context, Buffer, Readed);
-    FStream.Write(Buffer, Readed);
-    Dec(Size, Readed);
+    readed := stream.read(buffer, min(sizeof(buffer), size));
+    if readed = 0 then
+      raise exception.createfmt(gereadstream, [003097]);
+    sha1update(context, buffer, readed);
+    fstream.write(buffer, readed);
+    dec(size, readed);
   end;
-  SHA1Final(Context, Digest);
-  FStream.Write(Digest, SizeOf(TSHA1Digest));
+  sha1final(context, digest);
+  fstream.write(digest, sizeof(tsha1digest));
 end;
 
-procedure TGulpWriter.Write(P: PGulpItem);
+procedure tgulpwriter.write(p: pgulpitem);
 begin
-  FStream.Write(GulpMarker003, SizeOf(GulpMarker003));
-  with P^ do
-  begin
+  fstream.write(gulpmarker, sizeof(gulpmarker));
+  fstream.write(p^.flags, sizeof(p^.flags));
+  if gffullname   in p^.flags then fstream.writeansistring(p^.fullname);
+  if gftimeutc    in p^.flags then fstream.write(p^.timeutc, sizeof(p^.timeutc));
+  if gfattributes in p^.flags then fstream.write(p^.attributes, sizeof(p^.attributes));
+  if gfmode       in p^.flags then fstream.write(p^.mode, sizeof(p^.mode));
+  if gfsize       in p^.flags then fstream.write(p^.size, sizeof(p^.size));
+  if gflinkname   in p^.flags then fstream.writeansistring(p^.linkname);
+  if gfuserid     in p^.flags then fstream.write(p^.userid, sizeof(p^.userid));
+  if gfgroupid    in p^.flags then fstream.write(p^.groupid, sizeof(p^.groupid));
+  if gfusername   in p^.flags then fstream.writeansistring(p^.username);
+  if gfgroupname  in p^.flags then fstream.writeansistring(p^.groupname);
+  if gfcomment    in p^.flags then fstream.writeansistring(p^.comment);
 
-    FStream.Write(Flags, SizeOf(Flags));
-    if gfFullName in Flags then
-      FStream.WriteAnsiString(FullName);
-    if gfTimeUTC in Flags then
-      FStream.Write(TimeUTC, SizeOf(TimeUTC));
-    if gfAttributes in Flags then
-      FStream.Write(Attributes, SizeOf(Attributes));
-    if gfMode in Flags then
-      FStream.Write(Mode, SizeOf(Mode));
-
-    if gfSize in Flags then
-      FStream.Write(Size, SizeOf(Size));
-    if gfLinkName in Flags then
-      FStream.WriteAnsiString(LinkName);
-    if gfUserID in Flags then
-      FStream.Write(UserID, SizeOf(UserID));
-    if gfGroupID in Flags then
-      FStream.Write(GroupID, SizeOf(GroupID));
-
-    if gfUserName in Flags then
-      FStream.WriteAnsiString(UserName);
-    if gfGroupName in Flags then
-      FStream.WriteAnsiString(GroupName);
-    if gfComment in Flags then
-      FStream.WriteAnsiString(Comment);
-    if gfSIZE in Flags then
-      FStream.Write(Beginning, SizeOf(Beginning));
-    if gfSIZE in Flags then
-      FStream.Write(Ending, SizeOf(Ending));
-
-  end;
-  FStream.Write(ItemGetDigest(P), SizeOf(TSHA1Digest));
+  if gfsize in p^.flags then fstream.write(p^.beginning, sizeof(p^.beginning));
+  if gfsize in p^.flags then fstream.write(p^.ending, sizeof(p^.ending));
+  fstream.write(itemgetdigest(p), sizeof(tsha1digest));
 end;
 
-function TGulpWriter.GetItem(Index: longint): PGulpItem;
+function tgulpwriter.get(index: longint): pgulpitem;
 begin
-  Result := FList.Items[Index];
+  result := flist[index];
 end;
 
-function TGulpWriter.GetCount: longint;
+function tgulpwriter.getcount: longint;
 begin
-  Result := FList.Count;
+  result := flist.count;
 end;
 
- // =============================================================================
- // TGulpApplication
- // =============================================================================
+{ tgulpapplication class }
 
-constructor TGulpApplication.Create;
+constructor tgulpapplication.create;
 begin
-  inherited Create;
-  FOnShowItem := nil;
-  FOnShowMessage := nil;
-  FExclude  := TRawByteStringList.Create;
-  FInclude  := TRawByteStringList.Create;
-  FNodelete := False;
-  FUntilVersion := $FFFFFFFF;
+  inherited create;
+  fonshowitem    := nil;
+  fonshowmessage := nil;
+  fexclude       := trawbytestringlist.create;
+  finclude       := trawbytestringlist.create;
+  fnodelete      := false;
+  funtilversion  := $FFFFFFFF;
 end;
 
-destructor TGulpApplication.Destroy;
+destructor tgulpapplication.destroy;
 begin
-  FreeAndNil(FExclude);
-  FreeAndNil(FInclude);
-  inherited Destroy;
+  fexclude.destroy;
+  finclude.destroy;
+  inherited destroy;
 end;
 
-procedure TGulpApplication.Reset;
+procedure tgulpapplication.reset;
 begin
-  FExclude.Clear;
-  FInclude.Clear;
-  FNodelete := False;
-  FUntilVersion := $FFFFFFFF;
+  fexclude.clear;
+  finclude.clear;
+  fnodelete     := false;
+  funtilversion := $FFFFFFFF;
 end;
 
-procedure TGulpApplication.ShowItem(const Item: PGulpItem);
+procedure tgulpapplication.showitem(const item: pgulpitem);
 begin
-  if Assigned(FOnShowItem) then
-    FOnShowItem(Item);
+  if assigned(fonshowitem) then
+    fonshowitem(item);
 end;
 
-procedure TGulpApplication.ShowMessage(const Message: rawbytestring);
+procedure tgulpapplication.showmessage(const message: rawbytestring);
 begin
-  if Assigned(FOnShowMessage) then
-    FOnShowMessage(Message);
+  if assigned(fonshowmessage) then
+    fonshowmessage(message);
 end;
 
-procedure TGulpApplication.Sync(const FileName: rawbytestring);
+procedure tgulpapplication.sync(const filename: rawbytestring);
 var
-  LibReader: TGulpReader;
-  LibWriter: TGulpWriter;
-  I, J: longint;
-  Scan: TScanner;
-  Size: int64;
-  Stream: TStream;
+  i, j:   longint;
+  size:   int64;
+  scan:   tscanner;
+  stream: tstream;
+  reader: tgulpreader;
+  writer: tgulpwriter;
 begin
-  ShowMessage(GulpDescription);
-  ShowMessage(Format('Sync the content of "%s" %s', [FileName, LineEnding]));
-  ShowMessage(Format('%sScanning archive...      ', [#13]));
-  if FileExists(FileName) then
-    Stream := TFileStream.Create(FileName, fmOpenReadWrite)
+  showmessage(gulpdescription);
+  showmessage(format(gmsync, [filename, lineending]));
+  showmessage(format(gmscanningarchive, [#13]));
+  if fileexists(filename) then
+    stream := tfilestream.create(filename, fmopenreadwrite)
   else
-    Stream := TFileStream.Create(FileName, fmCreate);
-  LibReader := TGulpReader.Create(Stream);
-  LibReader.Load($FFFFFFFF);
-  Size := Stream.Seek(0, soEnd);
+    stream := tfilestream.create(filename, fmcreate);
+  reader := tgulpreader.create(stream);
+  reader.load($FFFFFFFF);
+  size := stream.seek(0, soend);
 
-  ShowMessage(Format('%sScanning filesystem...   ', [#13]));
-  Scan := TScanner.Create;
-  for I := FInclude.Count - 1 downto 0 do
-    if DirectoryExists(FInclude[I]) = True then
-      FInclude.Add(IncludeTrailingPathDelimiter(FInclude[I]) + '*');
+  showmessage(format(gmscanningfs, [#13]));
+  scan := tscanner.create;
+  for i := finclude.count - 1 downto 0 do
+    if directoryexists(finclude[i]) = true then
+      finclude.add(includetrailingpathdelimiter(finclude[i]) + '*');
+  if finclude.count = 0 then
+    finclude.add('*');
+  for i := finclude.count - 1 downto 0 do
+    scan.add(finclude[i]);
 
-  if FInclude.Count = 0 then
-    FInclude.Add('*');
-  for I := FInclude.Count - 1 downto 0 do
-    Scan.Add(FInclude[I]);
+  for i := fexclude.count - 1 downto 0 do
+    if directoryexists(fexclude[i]) = true then
+      fexclude.add(includetrailingpathdelimiter(fexclude[i]) + '*');
+  fexclude.add(filename);
+  for i := scan.count - 1 downto 0 do
+    if filenamematch(scan[i], fexclude) = true then
+      scan.delete(i);
 
-  for I := FExclude.Count - 1 downto 0 do
-    if DirectoryExists(FExclude[I]) = True then
-      FExclude.Add(IncludeTrailingPathDelimiter(FExclude[I]) + '*');
+  showmessage(format(gmsyncitems, [#13]));
+  writer := tgulpwriter.create(stream);
+  if fnodelete = false then
+    for i := 0 to reader.count - 1 do
+      if scan.find(reader[i]^.fullname) = -1 then
+        writer.delete(reader[i]^.fullname);
 
-  FExclude.Add(FileName);
-  for I := Scan.Count - 1 downto 0 do
-    if FileNameMatch(Scan[I], FExclude) = True then
-      Scan.Delete(I);
-
-  ShowMessage(Format('%sSyncing items...         ', [#13]));
-  LibWriter := TGulpWriter.Create(Stream);
-  if FNoDelete = False then
-    for I := 0 to LibReader.Count - 1 do
-      if Scan.Find(LibReader[I]^.FullName) = -1 then
-        LibWriter.Delete(LibReader[I]^.FullName);
-
-  for I := 0 to Scan.Count - 1 do
+  for i := 0 to scan.count - 1 do
   begin
-    J := LibReader.Find(Scan[I]);
-    if J = -1 then
-      LibWriter.Add(Scan[I])
-    else if FileGetTimeUTC(Scan[I]) <> LibReader[J]^.TimeUTC then
+    j := reader.find(scan[i]);
+    if j = -1 then
+      writer.add(scan[i])
+    else
+    if filegettimeutc(scan[i]) <> reader[j]^.timeutc then
     begin
-      LibWriter.Delete(Scan[I]);
-      LibWriter.Add(Scan[I]);
+      writer.delete(scan[i]);
+      writer.add(scan[i]);
     end;
   end;
-  FreeAndNil(LibWriter);
-  FreeAndNil(LibReader);
-  FreeAndNil(Stream);
-  FreeAndNil(Scan);
-
-  ShowMessage(Format('%sFinished (%u added bytes) %s',
-    [#13, FileGetSize(FileName) - Size, LineEnding]));
+  freeandnil(writer);
+  freeandnil(reader);
+  freeandnil(stream);
+  freeandnil(scan);
+  showmessage(format(gmsyncfinish, [#13,
+    filegetsize(filename) - size, lineending]));
 end;
 
-procedure TGulpApplication.Restore(const FileName: rawbytestring);
+procedure tgulpapplication.restore(const filename: rawbytestring);
 var
-  LibReader: TGulpReader;
-  LibRec: PGulpItem;
-  I, J: longint;
-  Scan: TScanner;
-  Size: int64 = 0;
-  Stream: TStream;
+  i, j:   longint;
+  p:      pgulpitem;
+  size:   int64 = 0;
+  scan:   tscanner;
+  stream: tstream;
+  reader: tgulpreader;
 begin
-  ShowMessage(GulpDescription);
-  ShowMessage(Format('Restore the content of "%s" %s', [FileName, LineEnding]));
-  ShowMessage(Format('%sScanning archive...         ', [#13]));
-  Stream := TFileStream.Create(FileName, fmOpenRead);
-  LibReader := TGulpReader.Create(Stream);
-  LibReader.Load(FUntilVersion);
+  showmessage(gulpdescription);
+  showmessage(format(gmrestore, [filename, lineending]));
+  showmessage(format(gmscanningarchive, [#13]));
+  stream    := tfilestream.create(filename, fmopenread);
+  reader := tgulpreader.create(stream);
+  reader.load(funtilversion);
 
-  ShowMessage(Format('%sScanning filesystem...      ', [#13]));
-  Scan := TScanner.Create;
-  Scan.Add('*');
-  for I := FInclude.Count - 1 downto 0 do
+  showmessage(format(gmscanningfs, [#13]));
+  scan := tscanner.create;
+  scan.add('*');
+  for i := finclude.count - 1 downto 0 do
   begin
-    J := LibReader.Find(FInclude[I]);
-    if J <> -1 then
-      if LibReader[J]^.Attributes and faDirectory = faDirectory then
-        FInclude.Add(IncludeTrailingPathDelimiter(FInclude[I]) + '*');
+    j := reader.find(finclude[i]);
+    if j <> -1 then
+      if reader[j]^.attributes and fadirectory = fadirectory then
+        finclude.add(includetrailingpathdelimiter(finclude[i]) + '*');
   end;
-  if FInclude.Count = 0 then
-    FInclude.Add('*');
+  if finclude.count = 0 then
+    finclude.add('*');
 
-  for I := FExclude.Count - 1 downto 0 do
+  for i := fexclude.count - 1 downto 0 do
   begin
-    J := LibReader.Find(FExclude[I]);
-    if J <> -1 then
-      if LibReader[J]^.Attributes and faDirectory = faDirectory then
-        FExclude.Add(IncludeTrailingPathDelimiter(FExclude[I]) + '*');
+    j := reader.find(fexclude[i]);
+    if j <> -1 then
+      if reader[j]^.attributes and fadirectory = fadirectory then
+        fexclude.add(includetrailingpathdelimiter(fexclude[i]) + '*');
   end;
-  FExclude.Add(FileName);
+  fexclude.add(filename);
 
-  ShowMessage(Format('%sRestoring items...          ', [#13]));
-  if FNoDelete = False then
-    for I := Scan.Count - 1 downto 0 do
+  showmessage(format(gmrestoreitems, [#13]));
+  if fnodelete = false then
+    for i := scan.count - 1 downto 0 do
     begin
-      J := LibReader.Find(Scan[I]);
-      if (J = -1) or (FileNameMatch(LibReader[J]^.FullName, FInclude) = False) or
-        (FileNameMatch(LibReader[J]^.FullName, FExclude) = True) then
-        if DirectoryExists(Scan[I]) = True then
-          RemoveDir(Scan[I])
+      j := reader.find(scan[i]);
+      if (j = -1) or
+         (filenamematch(reader[j]^.fullname, finclude) = false) or
+         (filenamematch(reader[j]^.fullname, fexclude) = true) then
+        if directoryexists(scan[i]) = true then
+          removedir(scan[i])
         else
-          DeleteFile(Scan[I]);
+          deletefile(scan[i]);
     end;
 
-  for I := LibReader.Count - 1 downto 0 do
+  for i := reader.count - 1 downto 0 do
   begin
-    LibRec := LibReader[I];
-    if FileNameMatch(LibRec^.FullName, FInclude) = True then
-      if FileNameMatch(LibRec^.FullName, FExclude) = False then
+    p := reader[i];
+    if filenamematch(p^.fullname, finclude) = true then
+      if filenamematch(p^.fullname, fexclude) = false then
       begin
-        J := Scan.Find(LibRec^.FullName);
-        if J = -1 then
+        j := scan.find(p^.fullname);
+        if j = -1 then
         begin
-          LibReader.Extract(I);
-          Inc(Size, LibRec^.Size);
-        end
-        else if FileGetTimeUTC(Scan[J]) <> LibRec^.TimeUTC then
+          reader.extract(i);
+          inc(size, p^.size);
+        end else
+        if filegettimeutc(scan[j]) <> p^.timeutc then
         begin
-          LibReader.Extract(I);
-          Inc(Size, LibRec^.Size);
+          reader.extract(i);
+          inc(size, p^.size);
         end;
       end;
   end;
-  FreeAndNil(LibReader);
-  FreeAndNil(Stream);
-  FreeAndNil(Scan);
-
-  ShowMessage(Format('%sFinished (%u extracted bytes) %s', [#13, Size, LineEnding]));
+  freeandnil(reader);
+  freeandnil(stream);
+  freeandnil(scan);
+  showmessage(format(gmrestorefinish, [#13, size, lineending]));
 end;
 
-procedure TGulpApplication.Check(const FileName: rawbytestring);
+procedure tgulpapplication.check(const filename: rawbytestring);
 var
-  LibReader: TGulpReader;
-  I: longint;
-  Nul: TStream;
-  Stream: TStream;
+  i:      longint;
+  nul:    tstream;
+  stream: tstream;
+  reader: tgulpreader;
 begin
-  ShowMessage(GulpDescription);
-  ShowMessage(Format('Check the content of "%s" %s', [FileName, LineEnding]));
-  ShowMessage(Format('%sScanning archive...       ', [#13]));
-  Stream := TFileStream.Create(FileName, fmOpenRead);
-  LibReader := TGulpReader.Create(Stream);
-  LibReader.Load(0);
+  showmessage(gulpdescription);
+  showmessage(format(gmcheck, [filename, lineending]));
+  showmessage(format(gmscanningarchive, [#13]));
+  stream    := tfilestream.create(filename, fmopenread);
+  reader := tgulpreader.create(stream);
+  reader.load;
 
-  ShowMessage(Format('%sChecking items...         ', [#13]));
-  Nul := TNulStream.Create;
-  for I := 0 to LibReader.Count - 1 do
-    if LibReader[I]^.Size > 0 then
-      LibReader.Extract(I, Nul);
-  FreeAndNil(LibReader);
-  FreeAndNil(Stream);
-  FreeAndNil(Nul);
+  showmessage(format(gmcheckitems, [#13]));
+  nul := tnulstream.create;
+  for i := 0 to reader.count - 1 do
+    if gfsize in reader[i]^.flags then
+      reader.extract(i, nul);
 
-  ShowMessage(Format('%sFinished (%u checked bytes) %s',
-    [#13, FileGetSize(FileName), LineEnding]));
+  freeandnil(reader);
+  freeandnil(stream);
+  freeandnil(nul);
+  showmessage(format(gmcheckfinish, [#13, filegetsize(filename), lineending]));
 end;
 
-procedure TGulpApplication.Fix(const FileName: rawbytestring);
+procedure tgulpapplication.fix(const filename: rawbytestring);
 var
-  LibReader: TGulpReader;
-  LibRec: PGulpItem;
-  OffSet: int64 = 0;
-  Size: int64 = 0;
-  Stream: TStream;
+  p:      pgulpitem;
+  offset: int64 = 0;
+  size:   int64 = 0;
+  stream: tstream;
+  reader: tgulpreader;
 begin
-  ShowMessage(GulpDescription);
-  ShowMessage(Format('Fix the content of "%s" %s', [FileName, LineEnding]));
-  ShowMessage(Format('%sFixing items...         ', [#13]));
-  Stream := TFileStream.Create(FileName, fmOpenReadWrite);
-  LibReader := TGulpReader.Create(Stream);
-  LibRec := New(PGulpItem);
+  showmessage(gulpdescription);
+  showmessage(format(gmfix, [filename, lineending]));
+  showmessage(format(gmfixitems, [#13]));
+  stream := tfilestream.create(filename, fmopenreadwrite);
+  reader := tgulpreader.create(stream);
 
+  p := new(pgulpitem);
   try
-    while True do
+    while true do
     begin
-      LibReader.Read(LibRec);
-      OffSet := Max(OffSet, LibRec^.Ending);
-      if gfClose in LibRec^.Flags then
+      reader.read(p);
+      offset := max(offset, p^.ending);
+      if gfclose in p^.flags then
       begin
-        OffSet := Max(OffSet, Stream.Seek(0, soCurrent));
-        if Stream.Seek(OffSet, soBeginning) <> OffSet then
-          raise Exception.Create('Stream is not a valid archive (ex0017)');
-        Size := OffSet;
+        offset := max(offset, stream.seek(0, socurrent));
+        if stream.seek(offset, sobeginning) <> offset then
+          raise exception.createfmt(genotarchive, [003095]);
+        size := offset;
       end;
     end;
   except
-    // nothing to do
   end;
+  dispose(p);
 
-  OffSet := Stream.Size - Size;
-  if Size > 0 then
-    Stream.Size := Size
+  offset := stream.size - size;
+  if size > 0 then
+    stream.size := size
   else
-    raise Exception.Create('Stream is not a valid archive (ex0018)');
-  FreeAndNil(LibReader);
-  Dispose(LibRec);
-  FreeAndNil(Stream);
-
-  ShowMessage(Format('%sFinished (%u removed bytes) %s', [#13, OffSet, LineEnding]));
+    raise exception.createfmt(genotarchive, [003094]);
+  freeandnil(reader);
+  freeandnil(stream);
+  showmessage(format(gmfixfinish, [#13, offset, lineending]));
 end;
 
-procedure TGulpApplication.Purge(const FileName: rawbytestring);
+procedure tgulpapplication.purge(const filename: rawbytestring);
 var
-  LibItem: PGulpItem;
-  LibReader: TGulpReader;
-  LibWriter: TGulpWriter;
-  I: longint;
-  Size: int64 = 0;
-  Stream: TStream;
-  Tmp: TStream;
-  TmpName: rawbytestring;
+  i:       longint;
+  p:       pgulpitem;
+  size:    int64 = 0;
+  stream:  tstream;
+  tmp:     tstream;
+  tmpname: rawbytestring;
+  reader:  tgulpreader;
+  writer:  tgulpwriter;
 begin
-  ShowMessage(GulpDescription);
-  ShowMessage(Format('Purge the content of "%s" %s', [FileName, LineEnding]));
-  ShowMessage(Format('%sScanning archive...       ', [#13]));
-  Stream := TFileStream.Create(FileName, fmOpenRead);
-  LibReader := TGulpReader.Create(Stream);
-  LibReader.Load($FFFFFFFF);
-  ShowMessage(Format('%sMoving items...           ', [#13]));
-  TmpName := GetTempFileName(ExtractFileDir(FileName), '');
-  Tmp := TFileStream.Create(TmpName, fmCreate);
-  LibWriter := TGulpWriter.Create(Tmp);
+  showmessage(gulpdescription);
+  showmessage(format(gmpurge, [filename, lineending]));
+  showmessage(format(gmscanningarchive, [#13]));
+  stream := tfilestream.create(filename, fmopenread);
+  reader := tgulpreader.create(stream);
+  reader.load($FFFFFFFF);
 
-  if LibReader.Count > 0 then
+  showmessage(format(gmmoveitems, [#13]));
+  tmpname := gettempfilename(extractfiledir(filename), '');
+  tmp     := tfilestream.create(tmpname, fmcreate);
+  writer  := tgulpwriter.create(tmp);
+  if reader.count > 0 then
   begin
-    for I := 0 to LibReader.Count - 1 do
-      LibWriter.Write(LibReader[I]);
-    for I := 0 to LibReader.Count - 1 do
+    for i := 0 to reader.count - 1 do
+      writer.write(reader[i]);
+
+    for i := 0 to reader.count - 1 do
     begin
-      LibItem := LibReader[I];
-      if LibItem^.Size > 0 then
+      p := reader[i];
+      if gfsize in p^.flags then
       begin
-        Stream.Seek(LibItem^.Beginning, soBeginning);
-        Size := LibItem^.Ending - LibItem^.Beginning;
-        LibItem^.Beginning := Tmp.Seek(0, soCurrent);
-        Tmp.CopyFrom(Stream, Size);
-        LibItem^.Ending := Tmp.Seek(0, soCurrent);
+        stream.seek(p^.beginning, sobeginning);
+        size := p^.ending - p^.beginning;
+        p^.beginning := tmp.seek(0, socurrent);
+        tmp.copyfrom(stream, size);
+        p^.ending := tmp.seek(0, socurrent);
       end;
     end;
 
-    Tmp.Seek(0, soBeginning);
-    for I := 0 to LibReader.Count - 1 do
+    tmp.seek(0, sobeginning);
+    for i := 0 to reader.count - 1 do
     begin
-      LibItem := LibReader[I];
-      if I = LibReader.Count - 1 then
-        System.Include(LibItem^.Flags, gfClose)
+      p := reader[i];
+      if i = reader.count - 1 then
+        system.include(p^.flags, gfclose)
       else
-        System.Exclude(LibItem^.Flags, gfClose);
-      LibWriter.Write(LibItem);
+        system.exclude(p^.flags,gfclose);
+      writer.write(p);
     end;
-    Tmp.Seek(0, soEnd);
+    tmp.seek(0, soend);
   end;
+  size := stream.size - tmp.size;
 
-  Size := Stream.Size - Tmp.Size;
-  FreeAndNil(LibReader);
-  FreeAndNil(LibWriter);
-  FreeAndNil(Stream);
-  FreeAndNil(Tmp);
-
-  if DeleteFile(FileName) = False then
-    raise Exception.CreateFmt('Unable to delete file "%s"', [FileName])
-  else if RenameFile(TmpName, FileName) = False then
-    raise Exception.CreateFmt('Unable to rename file "%s"', [TmpName]);
-
-  ShowMessage(Format('%sFinished (%u removed bytes) %s', [#13, Size, LineEnding]));
+  freeandnil(reader);
+  freeandnil(writer);
+  freeandnil(stream);
+  freeandnil(tmp);
+  if deletefile(filename) = false then
+    raise exception.createfmt(gedeletefile, [filename])
+  else
+  if renamefile(tmpname, filename) = false then
+    raise exception.createfmt(gerenamefile, [tmpname]);
+  showmessage(format(gmpurgefinish, [#13, size, lineending]));
 end;
 
-procedure TGulpApplication.List(const FileName: rawbytestring);
+procedure tgulpapplication.list(const filename: rawbytestring);
 var
-  Count: longint = 0;
-  LibReader: TGulpReader;
-  LibRec: PGulpItem;
-  I, J: longint;
-  Stream: TStream;
-  Version: longword = 0;
+  count:  longint = 0;
+  i, j:   longint;
+  p:      pgulpitem;
+  stream: tstream;
+  reader: tgulpreader;
 begin
-  ShowMessage(GulpDescription);
-  ShowMessage(Format('List the content of "%s" %s', [FileName, LineEnding]));
-  ShowMessage(Format('%sScanning archive...      ', [#13]));
-  Stream := TFileStream.Create(FileName, fmOpenRead);
-  LibReader := TGulpReader.Create(Stream);
-  LibReader.Load(FUntilVersion);
+  showmessage(gulpdescription);
+  showmessage(format(gmlist, [filename, lineending]));
+  showmessage(format(gmscanningarchive, [#13]));
+  stream := tfilestream.create(filename, fmopenread);
+  reader := tgulpreader.create(stream);
+  if funtilversion > 0 then
+    reader.load(funtilversion)
+  else
+    reader.load;
 
-  for I := FInclude.Count - 1 downto 0 do
+  for i := finclude.count - 1 downto 0 do
   begin
-    J := LibReader.Find(FInclude[I]);
-    if J <> -1 then
-      if LibReader[J]^.Attributes and faDirectory = faDirectory then
-        FInclude.Add(IncludeTrailingPathDelimiter(FInclude[I]) + '*');
+    j := reader.find(finclude[i]);
+    if j <> -1 then
+      if reader[j]^.attributes and fadirectory = fadirectory then
+        finclude.add(includetrailingpathdelimiter(finclude[i]) + '*');
   end;
-  if FInclude.Count = 0 then
-    FInclude.Add('*');
+  if finclude.count = 0 then
+    finclude.add('*');
 
-  for I := FExclude.Count - 1 downto 0 do
+  for i := fexclude.count - 1 downto 0 do
   begin
-    J := LibReader.Find(FExclude[I]);
-    if J <> -1 then
-      if LibReader[J]^.Attributes and faDirectory = faDirectory then
-        FExclude.Add(IncludeTrailingPathDelimiter(FExclude[I]) + '*');
+    j := reader.find(fexclude[i]);
+    if j <> -1 then
+      if reader[j]^.attributes and fadirectory = fadirectory then
+        fexclude.add(includetrailingpathdelimiter(fexclude[i]) + '*');
   end;
 
-  ShowMessage(Format('%sListing items...       %s', [#13, LineEnding]));
-  for I := 0 to LibReader.Count - 1 do
+  showmessage(format(gmlistitems, [#13, lineending]));
+  for i := 0 to reader.count - 1 do
   begin
-    LibRec  := LibReader[I];
-    Version := Max(Version, LibRec^.Version);
-    if FileNameMatch(LibRec^.FullName, FInclude) = True then
-      if FileNameMatch(LibRec^.FullName, FExclude) = False then
+    p := reader[i];
+    j := max(j, p^.version);
+    if filenamematch(p^.fullname, finclude) = true then
+      if filenamematch(p^.fullname, fexclude) = false then
       begin
-        ShowItem(LibRec);
-        Inc(Count);
+        showitem(p);
+        inc(count);
       end;
   end;
-  FreeAndNil(LibReader);
-  FreeAndNil(Stream);
-
-  ShowMessage(Format('Finished (%u listed items) %s', [Count, LineEnding]));
-  ShowMessage(Format('Lastest version %u %s', [Version, LineEnding]));
+  freeandnil(reader);
+  freeandnil(stream);
+  showmessage(format(gmlistfinish, [count, lineending]));
+  showmessage(format(gmlistlastversion, [j, lineending]));
 end;
 
 end.

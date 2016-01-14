@@ -1,79 +1,50 @@
-{
-  Copyright (c) 2014-2016 Melchiorre Caruso.
+unit gulpfixes;
 
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-
-  Contains:
-
-    Compiler RTL fixes.
-
-  Modified:
-
-    v0.0.3 - 2016.01.09 by Melchiorre Caruso.
-}
-
-unit GulpFixes;
-
-{$mode objfpc}{$H+}
+{$mode objfpc}
+{$H+}
 
 interface
 
-uses
-  SysUtils;
+uses sysutils;
 
-{ Conversion of UTC to local time and vice versa }
-
-function UniversalTime2Local(UT: TDateTime): TDateTime;
-function UniversalTime2Local(UT: TDateTime; TZOffset: LongInt): TDateTime;
-function LocalTime2Universal(LT: TDateTime): TDateTime;
-function LocalTime2Universal(LT: TDateTime; TZOffset: LongInt): TDateTime;
+function universaltime2local(ut: tdatetime): tdatetime;
+function universaltime2local(ut: tdatetime; tzoffset: longint): tdatetime;
+function localtime2universal(lt: tdatetime): tdatetime;
+function localtime2universal(lt: tdatetime; tzoffset: longint): tdatetime;
 
 implementation
 
-{ Conversion of UTC to local time and vice versa }
-
-function UniversalTime2Local(UT: TDateTime): TDateTime;
+function universaltime2local(ut: tdatetime): tdatetime;
 begin
-  Result := UniversalTime2Local(UT, -GetLocalTimeOffset);
+  result := universaltime2local(ut, -getlocaltimeoffset);
 end;
 
-function UniversalTime2Local(UT: TDateTime; TZOffset: LongInt): TDateTime;
+function universaltime2local(ut: tdatetime; tzoffset: longint): tdatetime;
 begin
-  if (TZOffset > 0) then Result :=
-      UT + EncodeTime(TZOffset div 60, TZOffset mod 60, 0, 0)
+  if (tzoffset > 0) then
+    result := ut + encodetime(tzoffset div 60, tzoffset mod 60, 0, 0)
   else
-  if (TZOffset < 0) then Result :=
-      UT - EncodeTime(Abs(TZOffset) div 60, Abs(TZOffset) mod 60, 0, 0)
+  if (tzoffset < 0) then
+    result := ut - encodetime(abs(tzoffset) div 60, abs(tzoffset) mod 60,
+      0, 0)
   else
-    Result := UT;
+    result := ut;
 end;
 
-function LocalTime2Universal(LT: TDateTime): TDateTime;
+function localtime2universal(lt: tdatetime): tdatetime;
 begin
-  Result := LocalTime2Universal(LT, -GetLocalTimeOffset);
+  result := localtime2universal(lt, -getlocaltimeoffset);
 end;
 
-function LocalTime2Universal(LT: TDateTime; TZOffset: LongInt): TDateTime;
+function localtime2universal(lt: tdatetime; tzoffset: longint): tdatetime;
 begin
-  if (TZOffset > 0) then Result :=
-      LT - EncodeTime(TZOffset div 60, TZOffset mod 60, 0, 0)
+  if (tzoffset > 0) then
+    result := lt - encodetime(tzoffset div 60, tzoffset mod 60, 0, 0)
   else
-  if (TZOffset < 0) then Result :=
-      LT + EncodeTime(Abs(TZOffset) div 60, Abs(TZOffset) mod 60, 0, 0)
+  if (tzoffset < 0) then
+    result := lt + encodetime(abs(tzoffset) div 60, abs(tzoffset) mod 60, 0, 0)
   else
-    Result := LT;
+    result := lt;
 end;
 
 end.

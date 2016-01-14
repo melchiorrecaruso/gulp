@@ -1,192 +1,171 @@
-{
-  Copyright (c) 2014-2016 Melchiorre Caruso.
-
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-
-  Contains:
-
-    The journaling archiver utility.
-
-  Modified:
-
-    v0.0.3 - 2016.01.10 by Melchiorre Caruso.
-}
-
-program Gulp;
+program gulp;
 
 {$codepage utf8}
-{$mode objfpc}{$H+}
+{$mode objfpc}
+{$H+}
 
 uses
- {$IFDEF UNIX}
+  {$IFDEF UNIX}
   cthreads,
- {$ENDIF}
- {$IFDEF UNIX}
-  BaseUnix,
- {$ENDIF}
- {$IFDEF MSWINDOWS}
-  Windows,
- {$ENDIF}
-  Classes,
-  GulpCommandLine,
-  GulpCommon,
-  GulpFixes,
-  GulpLibrary,
-  SysUtils;
+  {$ENDIF}
+  {$IFDEF UNIX}
+  baseunix,
+  {$ENDIF}
+  {$IFDEF MSWINDOWS}
+  windows,
+  {$ENDIF}
+  classes,
+  gulpcommandline,
+  gulpcommon,
+  gulpfixes,
+  gulplibrary,
+  sysutils;
 
 type
-  TShellApplication = class(TObject)
-  PROTECTED
-    procedure ShowItem(P: PGulpItem);
-    procedure ShowMessage(const Message: rawbytestring);
-    procedure Abort;
-  PUBLIC
-    constructor Create;
-    destructor Destroy; OVERRIDE;
-    procedure Run;
-    procedure Help;
+  { gulp shell application }
+
+  tshellapplication = class
+  protected
+    procedure showitem(p: pgulpitem);
+    procedure showmessage(const message: rawbytestring);
+    procedure abort;
+  public
+    constructor create;
+    destructor destroy; override;
+    procedure run;
+    procedure help;
   end;
 
-  constructor TShellApplication.Create;
+  constructor tshellapplication.create;
   begin
-    inherited Create;
-    DefaultFormatSettings.LongDateFormat := 'yyyy-mm-dd';
-    DefaultFormatSettings.ShortDateFormat := 'yyyy-mm-dd';
-    ExitCode := 255;
+    inherited create;
+    defaultformatsettings.longdateformat  := 'yyyy-mm-dd';
+    defaultformatsettings.shortdateformat := 'yyyy-mm-dd';
+    exitcode := 255;
   end;
 
-  destructor TShellApplication.Destroy;
+  destructor tshellapplication.destroy;
   begin
-    inherited Destroy;
+    inherited destroy;
   end;
 
-  procedure TShellApplication.ShowMessage(const Message: rawbytestring);
+  procedure tshellapplication.showmessage(const message: rawbytestring);
   begin
-    Write(Message);
+    write(message);
   end;
 
-  procedure TShellApplication.ShowItem(P: PGulpItem);
+  procedure tshellapplication.showitem(p: pgulpitem);
   begin
-    with P^ do if gfAdd in Flags then
+    with p^ do
+      if gfadd in flags then
       begin
-
-        if Attributes and faDirectory = faDirectory then
-          writeln(Format('%4s %3s %3s %7s %19s %12s %s',
-            [VersionTostring(Version), FlagsToString(Flags),
-            ModeToString(Mode), AttrToString(Attributes),
-            TimeToString(UniversalTime2Local(TimeUTC)), '', FullName]))
+        if attributes and fadirectory = fadirectory then
+          writeln(format('%4s %3s %3s %7s %19s %12s %s',
+            [versiontostring(version), flagstostring(flags),modetostring(mode),
+            attrtostring(attributes), timetostring(universaltime2local(timeutc)),
+            '', fullname]))
         else
-          writeln(Format('%4s %3s %3s %7s %19s %12s %s',
-            [VersionTostring(P^.Version), FlagsToString(Flags),
-            ModeToString(Mode), AttrToString(Attributes),
-            TimeToString(UniversalTime2Local(TimeUTC)),
-            SizeToString(Size), FullName]));
-
+          writeln(format('%4s %3s %3s %7s %19s %12s %s',
+            [versiontostring(p^.version), flagstostring(flags), modetostring(mode),
+            attrtostring(attributes), timetostring(universaltime2local(timeutc)),
+            sizetostring(size), fullname]));
       end else
-      if Attributes and faDirectory = faDirectory then
-        writeln(Format('%4s %3s %3s %7s %19s %12s %s',
-          [VersionTostring(Version), FlagsToString(Flags), '',
-          '', '', '', FullName]))
+      if attributes and fadirectory = fadirectory then
+        writeln(format('%4s %3s %3s %7s %19s %12s %s',
+          [versiontostring(version), flagstostring(flags), '', '', '', '', fullname]))
       else
-        writeln(Format('%4s %3s %3s %7s %19s %12s %s',
-          [VersionTostring(Version), FlagsToString(Flags), '',
-          '', '', '', FullName]));
+        writeln(format('%4s %3s %3s %7s %19s %12s %s',
+          [versiontostring(version), flagstostring(flags), '', '', '', '', fullname]));
   end;
 
-  procedure TShellApplication.Run;
+  procedure tshellapplication.run;
   var
-    App: TGulpApplication;
-    S: rawbytestring;
-    Start: TDateTime;
+    app:   tgulpapplication;
+    s:     rawbytestring;
+    start: tdatetime;
   begin
-    Start := Now;
-    App := TGulpApplication.Create;
-    App.OnShowMessage := @ShowMessage;
-    App.OnShowItem := @ShowItem;
-
+    start := now;
+    app   := tgulpapplication.create;
+    app.onshowmessage := @showmessage;
+    app.onshowitem := @showitem;
     try
-      S := CheckOptions('-s: -r: -p: -l: -c: -f: -u: -m: -i: -e: h ',
+      s := checkoptions('-s: -r: -p: -l: -c: -f: -u: -m: -i: -e: h ',
         '--synch:   --restore: --purge: --list:    ' +
         '--check:   --fix:     --until: --method:  ' +
-        '--include: --exclude: --help   --nodelete ', App.Include);
+        '--include: --exclude: --help   --nodelete ', app.include);
 
-      if S = '' then
+      if s = '' then
       begin
-        if HasOption('-i', '--include') = True then
+        if hasoption('-i', '--include') = true then
         begin
-          S := GetOptionValue('-i', '--include');
-          if S[Length(S)] = PathDelim then App.Include.Add(S + '*')
+          s :=
+            getoptionvalue('-i', '--include');
+          if s[length(s)] = pathdelim then
+            app.include.add(s + '*')
           else
-            App.Include.Add(S);
+            app.include.add(s);
         end;
-
-        if HasOption('-e', '--exclude') = True then
+        if hasoption('-e', '--exclude') = true then
         begin
-          S := GetOptionValue('-e', '--exclude');
-          if S[Length(S)] = PathDelim then App.Exclude.Add(S + '*')
+          s := getoptionvalue('-e', '--exclude');
+          if s[length(s)] = pathdelim then
+            app.exclude.add(s + '*')
           else
-            App.Exclude.Add(S);
+            app.exclude.add(s);
         end;
-
-        if HasOption('-u', '--until') = True then
-          if GetOptionValue('-u', '--until') = 'last' then App.UntilVersion := $FFFFFFFF
+        if hasoption('-u', '--until') = true then
+          if getoptionvalue('-u', '--until') = 'last' then
+            app.untilversion := $FFFFFFFF
           else
-            App.UntilVersion := StrToInt(GetOptionValue('-u', '--until'));
+            app.untilversion := strtoint(getoptionvalue('-u', '--until'));
 
-        App.NoDelete := HasOption('', '--nodelete');
+        app.nodelete := hasoption('', '--nodelete');
 
-        if HasOption('-s', '--synch') then
-          App.Sync(GetOptionValue('-s', '--synch'))
+        if hasoption('-s', '--synch') then
+          app.sync(getoptionvalue('-s', '--synch'))
         else
-        if HasOption('-r', '--restore') then
-          App.Restore(GetOptionValue('-r', '--restore'))
+        if hasoption('-r', '--restore') then
+          app.restore(getoptionvalue('-r', '--restore'))
         else
-        if HasOption('-p', '--purge') then
-          App.Purge(GetOptionValue('-p', '--purge'))
+        if hasoption(
+          '-p', '--purge') then
+          app.purge(getoptionvalue('-p', '--purge'))
         else
-        if HasOption('-c', '--check') then
-          App.Check(GetOptionValue('-c', '--check'))
+        if hasoption('-c', '--check') then
+          app.check(getoptionvalue('-c', '--check'))
         else
-        if HasOption('-f', '--fix') then App.Fix(GetOptionValue('-f', '--fix'))
+        if hasoption('-f', '--fix') then
+          app.fix(getoptionvalue('-f', '--fix'))
         else
-        if HasOption('-l', '--list') then
-          App.List(GetOptionValue('-l', '--list'))
+        if hasoption('-l', '--list') then
+          app.list(getoptionvalue('-l', '--list'))
         else
-        if HasOption('-h', '--help') then Help
+        if hasoption('-h', '--help') then
+          help
         else
-          Help;
+          help;
 
-        ExitCode := 0;
+        exitcode := 0;
       end else
-        writeln(#13, #13: 80, S);
+        writeln(#13, #13: 80, s);
+
     except
-      on E: Exception do writeln(#13, #13: 80,
-          Format('An exception was raised: "%s"', [E.Message]));
+      on e: exception do
+        writeln(#13, #13: 80,
+          format('An exception was raised: "%s"', [e.message]));
     end;
-    FreeAndNil(App);
+
+    app.destroy;
     writeln(#13, #13: 80, 'Elapsed ',
-      Format('%0.2f', [(Now - Start) * (24 * 60 * 60)])
-      , ' sec');
+      format('%0.2f', [(now - start) * (24 * 60 * 60)]), ' sec');
   end;
 
-  procedure TShellApplication.Abort;
+  procedure tshellapplication.abort;
   begin
-    raise Exception.Create('User abort');
+    raise exception.create('User abort');
   end;
 
-  procedure TShellApplication.Help;
+  procedure tshellapplication.help;
   begin
     writeln;
     writeln('NAME                                                                      ');
@@ -334,10 +313,9 @@ type
   end;
 
 var
-  Shell: TShellApplication;
-
+  shell: tshellapplication;
 begin
-  Shell := TShellApplication.Create;
-  Shell.Run;
-  Shell.Destroy;
+  shell := tshellapplication.create;
+  shell.run;
+  shell.destroy;
 end.

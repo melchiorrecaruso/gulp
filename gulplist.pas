@@ -1,244 +1,206 @@
-{
-  Copyright (c) 2016 Melchiorre Caruso.
+unit gulplist;
 
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
-
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
-
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
-
-  Contains:
-
-    List classes.
-
-  Modified:
-
-    v0.0.3 - 2016.01.09 by Melchiorre Caruso.
-}
-
-unit GulpList;
-
-{$mode objfpc}{$H+}
+{$mode objfpc}
+{$H+}
 
 interface
 
-uses
-  Classes,
-  SysUtils;
+uses classes, sysutils;
 
 type
-  { TGenericList }
-
-  generic TGenericList<TGenericItem> = class(TObject)
+  generic tgenericlist<tgenericitem> = class(TObject)
   public
-    type
-    TGenericCompare =
-    function(Item1, Item2: TGenericItem): longint;
+    type tgenericcompare =
+    function(item1, item2: tgenericitem): longint;
   private
-    FList:    TList;
-    FCompare: TGenericCompare;
-    function GetCount: longint;
-    function Get(Index: longint): TGenericItem;
-    function Search(Item: TGenericItem; var M: longint): longint;
+    flist:    tlist;
+    fcompare: tgenericcompare;
+    function getcount: longint;
+    function get(index: longint): tgenericitem;
+    function search(item: tgenericitem; var m: longint): longint;
   public
-    constructor Create(Compare: TGenericCompare);
-    destructor Destroy; override;
-    function Add(Item: TGenericItem): longint;
-    function Find(Item: TGenericItem): longint;
-    procedure Delete(Index: longint);
+    constructor create(compare: tgenericcompare);
+    destructor destroy; override;
+    function add(item: tgenericitem): longint;
+    function find(item: tgenericitem): longint;
+    procedure delete(index: longint);
   public
-    property Items[Index: longint]: TGenericItem Read Get; default;
-    property Count: longint Read GetCount;
+    property items[index: longint]: tgenericitem read get; default;
+    property count: longint read getcount;
   end;
 
-  { TRawByteStringList }
+  prawbytestringitem = ^trawbytestringitem;
 
-  PRawByteStringItem = ^TRawByteStringItem;
-
-  TRawByteStringItem = record
-    FString: rawbytestring;
-    FObject: TObject;
+  trawbytestringitem = record
+    fstring: rawbytestring;
+    fobject: tobject;
   end;
+  prawbytestringlist = specialize tgenericlist<prawbytestringitem>;
 
-  PRawByteStringList = specialize TGenericList<PRawByteStringItem>;
-
-  TRawByteStringList = class(TObject)
+  trawbytestringlist = class(TObject)
   private
-    FList: PRawByteStringList;
-    function GetCount: longint;
-    function Get(Index: longint): rawbytestring;
+    flist: prawbytestringlist;
+    function getcount: longint;
+    function get(index: longint): rawbytestring;
   public
-    constructor Create;
-    destructor Destroy; override;
-    procedure Add(const S: rawbytestring);
-    function Find(const S: rawbytestring): longint;
-    procedure Delete(Index: longint);
-    procedure Clear;
+    constructor create;
+    destructor destroy; override;
+    procedure add(const s: rawbytestring);
+    function find(const s: rawbytestring): longint;
+    procedure delete(index: longint);
+    procedure clear;
   public
-    property Items[Index: longint]: rawbytestring Read Get; default;
-    property Count: longint Read GetCount;
+    property items[index: longint]: rawbytestring read get; default;
+    property count: longint read getcount;
   end;
 
 implementation
 
-{ TGenericList class }
-
-constructor TGenericList.Create(Compare: TGenericCompare);
+constructor tgenericlist.create(compare: tgenericcompare);
 begin
-  inherited Create;
-  FCompare := Compare;
-  FList := TList.Create;
+  inherited create;
+  fcompare := compare;
+  flist    := tlist.create;
 end;
 
-destructor TGenericList.Destroy;
+destructor tgenericlist.destroy;
 begin
-  FList.Destroy;
-  inherited Destroy;
+  flist.destroy;
+  inherited destroy;
 end;
 
-procedure TGenericList.Delete(Index: longint);
+procedure tgenericlist.delete(index: longint);
 begin
-  FList.Delete(Index);
+  flist.delete(index);
 end;
 
-function TGenericList.Search(Item: TGenericItem; var M: longint): longint;
+function tgenericlist.search(item: tgenericitem; var m: longint): longint;
 var
-  L, H, I: longint;
+  l, h, i: longint;
 begin
-  I := 1;
-  L := 0;
-  M := 0;
-  H := FList.Count - 1;
-  while H >= L do
+  i := 1;
+  l :=
+    0;
+  m := 0;
+  h := flist.count - 1;
+  while h >= l do
   begin
-    M := (L + H) div 2;
-    I := FCompare(Get(M), Item);
-    if I < 0 then
-      L := M + 1
-    else if I > 0 then
-      H := M - 1
+    m := (l + h) div 2;
+    i := fcompare(get(m), item);
+    if i < 0 then
+      l := m + 1
     else
-      Break;
+    if i > 0 then
+      h := m - 1
+    else
+      break;
   end;
-
-  if I <> 0 then
+  if i <> 0 then
   begin
-    if I < 0 then
-      M := M + 1;
-    Result := -1;
-  end
-  else
-    Result := M;
+    if i < 0 then
+      m    := m + 1;
+    result := -1;
+  end else
+    result := m;
 end;
 
-function TGenericList.Add(Item: TGenericItem): longint;
+function tgenericlist.add(item: tgenericitem): longint;
 var
-  M: longint;
+  m: longint;
 begin
-  Result := Search(Item, M);
-  if Result = -1 then
+  result := search(item, m);
+  if result = -1 then
   begin
-    FList.Insert(M, Item);
-    Result := M;
+    flist.insert(m, item);
+    result := m;
   end;
 end;
 
-function TGenericList.Find(Item: TGenericItem): longint;
+function tgenericlist.find(item: tgenericitem): longint;
 var
-  M: longint;
+  m: longint;
 begin
-  Result := Search(Item, M);
+  result := search(item, m);
 end;
 
-function TGenericList.Get(Index: longint): TGenericItem;
+function tgenericlist.get(index: longint): tgenericitem;
 begin
-  Result := TGenericItem(FList[Index]);
+  result := tgenericitem(flist[index]);
 end;
 
-function TGenericList.GetCount: longint;
+function tgenericlist.getcount: longint;
 begin
-  Result := FList.Count;
+  result := flist.count;
 end;
 
-{ TRawByteStringList class }
-
-function Compare(Item1, Item2: PRawByteStringItem): longint;
+function compare(item1, item2: prawbytestringitem): longint;
 begin
-  {$IFDEF UNIX}
-    Result := AnsiCompareStr(Item1^.FString, Item2^.FString);
-  {$ELSE}
-  {$IFDEF MSWINDOWS}
-  Result := AnsiCompareText(Item1^.FString, Item2^.FString);
-  {$ELSE}
-    Unsupported platform...
-  {$ENDIF}
-  {$ENDIF}
+{$IFDEF UNIX}
+  result := ansicomparestr(item1^.fstring, item2^.fstring);
+{$ELSE}
+{$IFDEF MSWINDOWS}
+  result := ansicomparetext(item1^.fstring, item2^.fstring);
+{$ELSE}
+  raise exception.create('Unsupported platform.');
+{$ENDIF}
+{$ENDIF}
 end;
 
-constructor TRawByteStringList.Create;
+constructor trawbytestringlist.create;
 begin
-  FList := PRawByteStringList.Create(@Compare);
+  flist := prawbytestringlist.create(@compare);
 end;
 
-destructor TRawByteStringList.Destroy;
+destructor trawbytestringlist.destroy;
 begin
-  Clear;
-  FList.Destroy;
-  inherited Destroy;
+  clear;
+  flist.destroy;
+  inherited destroy;
 end;
 
-procedure TRawByteStringList.Delete(Index: longint);
+procedure trawbytestringlist.delete(index: longint);
 begin
-  Dispose(FList[Index]);
-  FList.Delete(Index);
+  dispose(flist[index]);
+  flist.delete(index);
 end;
 
-procedure TRawByteStringList.Clear;
+procedure trawbytestringlist.clear;
 begin
-  while GetCount > 0 do
-    Delete(0);
+  while
+    getcount > 0 do
+    delete(0);
 end;
 
-procedure TRawByteStringList.Add(const S: rawbytestring);
+procedure trawbytestringlist.add(const s: rawbytestring);
 var
-  P: PRawByteStringItem;
+  p: prawbytestringitem;
 begin
-  P := New(PRawByteStringItem);
-  P^.FString := S;
-  P^.FObject := nil;
-  if FList.Add(P) = -1 then
-    Dispose(P);
+  p := new(prawbytestringitem);
+  p^.fstring := s;
+  p^.fobject := nil;
+  if flist.add(p) = -1 then
+    dispose(p);
 end;
 
-function TRawByteStringList.Find(const S: rawbytestring): longint;
+function trawbytestringlist.find(const s: rawbytestring): longint;
 var
-  P: PRawByteStringItem;
+  p: prawbytestringitem;
 begin
-  P := New(PRawByteStringItem);
-  P^.FString := S;
-  P^.FObject := nil;
-  begin
-    Result := FList.Find(P);
-  end;
-  Dispose(P);
+  p      := new(prawbytestringitem);
+  p^.fstring := s;
+  p^.fobject := nil;
+  result := flist.find(p);
+  dispose(p);
 end;
 
-function TRawByteStringList.GetCount: longint;
+function trawbytestringlist.getcount: longint;
 begin
-  Result := FList.Count;
+  result := flist.count;
 end;
 
-function TRawByteStringList.Get(Index: longint): rawbytestring;
+function trawbytestringlist.get(index: longint): rawbytestring;
 begin
-  Result := FList[Index]^.FString;
+  result := flist[index]^.fstring;
 end;
 
 end.
