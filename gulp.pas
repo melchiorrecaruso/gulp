@@ -1,3 +1,23 @@
+{ Description: shell application unit.
+
+  Copyright (C) 2014-2016 Melchiorre Caruso <melchiorrecaruso@gmail.com>
+
+  This source is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free
+  Software Foundation; either version 2 of the License, or (at your option)
+  any later version.
+
+  This code is distributed in the hope that it will be useful, but WITHOUT ANY
+  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  A copy of the GNU General Public License is available on the World Wide Web
+  at <http://www.gnu.org/copyleft/gpl.html>. You can also obtain it by writing
+  to the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
+  MA 02111-1307, USA.
+}
+
 program gulp;
 
 {$codepage utf8}
@@ -5,15 +25,15 @@ program gulp;
 {$H+}
 
 uses
-  {$IFDEF UNIX}
+{$IFDEF UNIX}
   cthreads,
-  {$ENDIF}
-  {$IFDEF UNIX}
+{$ENDIF}
+{$IFDEF UNIX}
   baseunix,
-  {$ENDIF}
-  {$IFDEF MSWINDOWS}
+{$ENDIF}
+{$IFDEF MSWINDOWS}
   windows,
-  {$ENDIF}
+{$ENDIF}
   classes,
   gulpcommandline,
   gulpcommon,
@@ -262,13 +282,6 @@ type
     writeln('                                                                          ');
     writeln('       -i, --include  [ pattern ]                                         ');
     writeln('              include files in pattern.                                   ');
-    writeln('                                                                          ');
-    writeln('       -m, --method [ gzfast | gz | gzmax ]                               ');
-    writeln('              with synch, select a compression method.                    ');
-    writeln('                                                                          ');
-    writeln('                     gulp -s backup files -m gzfast                       ');
-    writeln('                                                                          ');
-    writeln('              store files with gzfast compression method.                 ');
     writeln('                                                                          ');
     writeln('       --nodelete                                                         ');
     writeln('              with synch, do not mark files in the archive as deleted when');

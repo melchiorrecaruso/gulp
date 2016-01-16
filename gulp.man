@@ -1,6 +1,6 @@
 .\" Manpage for GULP.
 .\" Contact melchiorrecaruso@gmail.com to correct errors or typos.
-.TH man 1 "02 MAY 2015" "0.0.2" "GULP man page"
+.TH man 1 "16 JAN 2016" "0.0.3" "GULP man page"
 .SH NAME
 .B gulp
 \- A simple journaling archiver.
@@ -69,19 +69,6 @@ exclude files in pattern.
 include files in pattern.
 .RE
 
-.BR \-m ", " --method 
-.RI "[ gzfast | gz | gzmax ] " 
-.RS
-with synch, select a compression method. 
-
-.RS
-gulp -s backup files -m gzfast 
-.RE
-
-store files with gzfast compression method. 
-.RE
-
-
 .BR \--nodelete 
 .RS
 with synch , do not mark files in the archive as deleted when the corresponding external file does not exist. With restore , do not delete external files when the corresponding file in archive does not exist. This makes gulp consistent with the behavior of most non-journaling archivers.
@@ -126,4 +113,4 @@ Returns 0 if successful or 1 in case of an error.
 The archive format does not save sufficient information for backing up and restoring the operating system.
 .SH AUTHOR
 .B gulp
-is copyright (C) 2014-2015, Melchiorre Caruso. It is licensed under GPL v2. For information on the license, see <http://www.gnu.org/copyleft/gpl.html>. Program was written by Melchiorre Caruso <melchiorrecaruso at gmail dot com>" 
+is copyright (C) 2014-2016, Melchiorre Caruso. It is licensed under GPL v2. For information on the license, see <http://www.gnu.org/copyleft/gpl.html>. Program was written by Melchiorre Caruso <melchiorrecaruso at gmail dot com>" 

@@ -1,3 +1,23 @@
+{ Description: common routines unit.
+
+  Copyright (C) 2014-2016 Melchiorre Caruso <melchiorrecaruso@gmail.com>
+
+  This source is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free
+  Software Foundation; either version 2 of the License, or (at your option)
+  any later version.
+
+  This code is distributed in the hope that it will be useful, but WITHOUT ANY
+  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  A copy of the GNU General Public License is available on the World Wide Web
+  at <http://www.gnu.org/copyleft/gpl.html>. You can also obtain it by writing
+  to the Free Software Foundation, Inc., 59 Temple Place - Suite 330, Boston,
+  MA 02111-1307, USA.
+}
+
 unit gulpcommon;
 
 {$mode objfpc}
@@ -35,8 +55,7 @@ uses
 
 function filegettimeutc(var sr: tsearchrec): tdatetime;
 begin
-  result := localtime2universal(filedatetodatetime(sr.
-    time));
+  result := localtime2universal(filedatetodatetime(sr.time));
 end;
 
 function filegettimeutc(const filename: rawbytestring): tdatetime;
@@ -45,9 +64,8 @@ var
 begin
   result := 0.0;
   if sysutils.findfirst(filename, fareadonly or fahidden or fasysfile or
-    favolumeid or fadirectory or faarchive or fasymlink or faanyfile,
-    sr) = 0 then
-    result := filegettimeutc(sr);
+    favolumeid or fadirectory or faarchive or fasymlink or faanyfile,sr) = 0 then
+      result := filegettimeutc(sr);
   sysutils.findclose(sr);
 end;
 
@@ -64,9 +82,8 @@ var
 begin
   result := 0;
   if sysutils.findfirst(filename, fareadonly or fahidden or fasysfile or
-    favolumeid or fadirectory or faarchive or fasymlink or
-    faanyfile, sr) = 0 then
-    result := filegetsize(sr);
+    favolumeid or fadirectory or faarchive or fasymlink or faanyfile, sr) = 0 then
+      result := filegetsize(sr);
   sysutils.findclose(sr);
 end;
 
@@ -81,10 +98,8 @@ var
 begin
   result := 0;
   if sysutils.findfirst(filename, fareadonly or fahidden or fasysfile or
-    favolumeid or fadirectory or faarchive or fasymlink or
-    faanyfile, sr) = 0 then
-    result := gulpcommon.filegetattr(
-      sr);
+    favolumeid or fadirectory or faarchive or fasymlink or faanyfile, sr) = 0 then
+      result := gulpcommon.filegetattr(sr);
   sysutils.findclose(sr);
 end;
 
@@ -97,8 +112,6 @@ begin
 {$ELSE}
 {$IFDEF MSWINDOWS}
 {$ELSE}
-  raise
-  exception.create('Unsupported platform.');
 {$ENDIF}
 {$ENDIF}
 end;
@@ -119,8 +132,6 @@ begin
 {$ELSE}
 {$IFDEF MSWINDOWS}
 {$ELSE}
-  raise
-  exception.create('Unsupported platform.');
 {$ENDIF}
 {$ENDIF}
 end;
@@ -141,7 +152,6 @@ begin
 {$ELSE}
 {$IFDEF MSWINDOWS}
 {$ELSE}
-  raise exception.create('Unsupported platform.');
 {$ENDIF}
 {$ENDIF}
 end;
@@ -167,7 +177,6 @@ begin
 {$ELSE}
 {$IFDEF MSWINDOWS}
 {$ELSE}
-  raise exception.create('Unsupported platform.');
 {$ENDIF}
 {$ENDIF}
 end;
@@ -180,13 +189,11 @@ end;
 function setpriorityidle: boolean;
 begin
 {$IFDEF UNIX}
-  result :=
-    fpnice(5) = 0;
+  result := fpnice(5) = 0;
 {$ELSE}
 {$IFDEF MSWINDOWS}
   result := setpriorityclass(getcurrentprocess, idle_priority_class);
 {$ELSE}
-  raise exception.create('Unsupported platform.');
 {$ENDIF}
 {$ENDIF}
 end;
@@ -199,7 +206,6 @@ begin
 {$IFDEF MSWINDOWS}
   result := setpriorityclass(getcurrentprocess, normal_priority_class);
 {$ELSE}
-  raise exception.create('Unsupported platform.');
 {$ENDIF}
 {$ENDIF}
 end;

@@ -1,6 +1,6 @@
-{ Description: library messages unit.
+{ Description: messages unit.
 
-  Copyright (C) 2016 Melchiorre Caruso <melchiorrecaruso@gmail.com>
+  Copyright (C) 2014-2016 Melchiorre Caruso <melchiorrecaruso@gmail.com>
 
   This source is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free
@@ -32,7 +32,7 @@ const
   genotarchive      = 'Stream is not a valid archive (%u)';
   geduplicates      = 'Duplicates non allowed (%u)';
   gereadstream      = 'Unable to read stream (%u)';
-  gechecksum        = 'Mismatched checksum for "%s"';
+  gechecksum        = 'Mismatched checksum (%u)';
   gecreatepath      = 'Unable to create path "%s"';
   gesetid           = 'Unable to set user/group id for "%s"';
   gesetmode         = 'Unable to set mode for "%s"';
