@@ -1,127 +1,119 @@
-{
-  Copyright (c) 2016 Melchiorre Caruso.
+{ Description: The gulp diff utility.
 
-  This program is free software; you can redistribute it and/or modify
-  it under the terms of the GNU General Public License as published by
-  the Free Software Foundation; either version 2 of the License, or
-  (at your option) any later version.
+  Copyright (C) 2016 Melchiorre Caruso <melchiorrecaruso@gmail.com>
 
-  This program is distributed in the hope that it will be useful,
-  but WITHOUT ANY WARRANTY; without even the implied warranty of
-  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  GNU General Public License for more details.
+  This source is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free
+  Software Foundation; either version 2 of the License, or (at your option)
+  any later version.
 
-  You should have received a copy of the GNU General Public License
-  along with this program; if not, write to the Free Software
-  Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+  This code is distributed in the hope that it will be useful, but WiTHOUT ANY
+  WARRANTY; without even the implied warranty of MERCHANTABiLiTY or FiTNESS
+  FOR A PARTiCULAR PURPOSE.  See the GNU General Public License for more
+  details.
 
-  Contains:
-
-    The gulp diff utility.
-
-  Modified:
-
-    v0.0.3 - 2016.01.09 by Melchiorre Caruso.
+  A copy of the GNU General Public License is available on the World Wide Web
+  at <http://www.gnu.org/copyleft/gpl.html>. You can also obtain it by writing
+  to the Free Software Foundation, inc., 59 Temple Place - Suite 330, Boston,
+  MA 02111-1307, USA.
 }
 
-program GDiff;
+program gdiff;
 
 {$codepage utf8}
-{$mode objfpc}{$H+}
+{$mode objfpc}
+{$H+}
 
 uses
-  GulpCommon,
-  GulpScanner,
-  Sha1,
-  SysUtils;
+  gulpcommon,
+  gulpscanner,
+  sha1,
+  sysutils;
 
 var
-  I, J: longint;
-  S:    rawbytestring;
-  Scan: array[1..2] of TScanner;
+  i, j: longint;
+  s:    rawbytestring;
+  scan: array[1..2] of tscanner;
 
 begin
-  writeln('GDIFF v0.0.3 diff utility, copyright (c) 2016 Melchiorre Caruso.');
-  if (ParamCount <> 2) or (DirectoryExists(ParamStr(1)) = false) or
-    (DirectoryExists(ParamStr(2)) = false) then
+  writeln('GDiFF v0.0.3 diff utility, copyright (c) 2016 Melchiorre Caruso.');
+  if (paramcount <> 2) or (directoryexists(paramstr(1)) = false) or
+    (directoryexists(paramstr(2)) = false) then
   begin
     writeln('Usage: gdiff directory1 directory2');
-    writeln('Compare two DIRECTORIES file by file.');
+    writeln('Compare two DiRECTORiES file by file.');
   end else
   begin
 
-    for I := 1 to 2 do
+    for i := 1 to 2 do
     begin
-      Scan[I] := TScanner.Create;
-      Scan[I].Add(IncludeTrailingPathDelimiter(ParamStr(I)) + '*');
-      writeln(Format('%d object(s) in folder "%s"',
-        [Scan[I].Count, ParamStr(I)]));
+      scan[i] := tscanner.create;
+      scan[i].add(includetrailingpathdelimiter(paramstr(i)) + '*');
+      writeln(format('%d object(s) in folder "%s"', [scan[i].count, paramstr(i)]));
     end;
 
-    for I := 0 to Scan[1].Count - 1 do
+    for i := 0 to scan[1].count - 1 do
     begin
-      S := Scan[1] [I];
-      Delete(S, 1, Length(IncludeTrailingPathDelimiter(ParamStr(1))));
-      S := IncludeTrailingPathDelimiter(ParamStr(2)) + S;
+      s := scan[1] [i];
+      delete(s, 1, length(includetrailingpathdelimiter(paramstr(1))));
+      s := includetrailingpathdelimiter(paramstr(2)) + s;
 
-      J := Scan[2].Find(S);
-      if J <> -1 then
+      j := scan[2].find(s);
+      if j <> -1 then
       begin
 
-        if (FileGetAttr(Scan[1] [I]) and faDirectory = 0) and
-          (FileGetAttr(Scan[2] [J]) and faDirectory = 0) then
-          if SHA1Match(SHA1File(Scan[1] [I], 4096),
-            SHA1File(Scan[2] [J], 4096)) = false then
-            writeln(Format('"%s" "%s" differ',
-              [Scan[1] [I], Scan[2] [J]]));
+        if (filegetattr(scan[1] [i]) and fadirectory = 0) and
+           (filegetattr(scan[2] [j]) and fadirectory = 0) then
+          if sha1match(sha1file(scan[1] [i], 4096),
+            sha1file(scan[2] [j], 4096)) = false then
+              writeln(format('"%s" "%s" differ', [scan[1] [i], scan[2] [j]]));
 
-        if FileGetTimeUTC(Scan[1] [I]) <> FileGetTimeUTC(Scan[2] [J]) then
-          writeln(Format('"%s" and "%s" differ in time',
-            [Scan[1] [I], Scan[2] [J]]));
+        if filegettimeutc(scan[1] [i]) <> filegettimeutc(scan[2] [j]) then
+          writeln(format('"%s" and "%s" differ in time',
+            [scan[1] [i], scan[2] [j]]));
 
-        if FileGetSize(Scan[1] [I]) <> FileGetSize(Scan[2] [J]) then
-          writeln(Format('"%s" and "%s" differ in size',
-            [Scan[1] [I], Scan[2] [J]]));
+        if filegetsize(scan[1] [i]) <> filegetsize(scan[2] [j]) then
+          writeln(format('"%s" and "%s" differ in size',
+            [scan[1] [i], scan[2] [j]]));
 
-        if FileGetAttr(Scan[1] [I]) <> FileGetAttr(Scan[2] [J]) then
-          writeln(Format('"%s" and "%s" differ in attr',
-            [Scan[1] [I], Scan[2] [J]]));
+        if filegetattr(scan[1] [i]) <> filegetattr(scan[2] [j]) then
+          writeln(format('"%s" and "%s" differ in attr',
+            [scan[1] [i], scan[2] [j]]));
 
-        if FileGetMode(Scan[1] [I]) <> FileGetMode(Scan[2] [J]) then
-          writeln(Format('"%s" and "%s" differ in mode',
-            [Scan[1] [I], Scan[2] [J]]));
+        if filegetmode(scan[1] [i]) <> filegetmode(scan[2] [j]) then
+          writeln(format('"%s" and "%s" differ in mode',
+            [scan[1] [i], scan[2] [j]]));
 
-        if FileGetLinkName(Scan[1] [I]) <> FileGetLinkName(Scan[2] [J]) then
-          writeln(Format('"%s" and "%s" differ in link',
-            [Scan[1] [I], Scan[2] [J]]));
+        if filegetlinkname(scan[1] [i]) <> filegetlinkname(scan[2] [j]) then
+          writeln(format('"%s" and "%s" differ in linkname',
+            [scan[1] [i], scan[2] [j]]));
 
-        if FileGetUserID(Scan[1] [I]) <> FileGetUserID(Scan[2] [J]) then
-          writeln(Format('"%s" and "%s" differ in uid ',
-            [Scan[1] [I], Scan[2] [J]]));
+        if filegetuserid(scan[1] [i]) <> filegetuserid(scan[2] [j]) then
+          writeln(format('"%s" and "%s" differ in user id ',
+            [scan[1] [i], scan[2] [j]]));
 
-        if FileGetUserName(Scan[1] [I]) <> FileGetUserName(Scan[2] [J]) then
-          writeln(Format('"%s" and "%s" differ in unm ',
-            [Scan[1] [I], Scan[2] [J]]));
+        if filegetusername(scan[1] [i]) <> filegetusername(scan[2] [j]) then
+          writeln(format('"%s" and "%s" differ in user name ',
+            [scan[1] [i], scan[2] [j]]));
 
-        if FileGetGroupID(Scan[1] [I]) <> FileGetGroupID(Scan[2] [J]) then
-          writeln(Format('"%s" and "%s" differ in gid ',
-            [Scan[1] [I], Scan[2] [J]]));
+        if filegetgroupid(scan[1] [i]) <> filegetgroupid(scan[2] [j]) then
+          writeln(format('"%s" and "%s" differ in group id ',
+            [scan[1] [i], scan[2] [j]]));
 
-        if FileGetGroupName(Scan[1] [I]) <>
-          FileGetGroupName(Scan[2] [J]) then
-          writeln(Format('"%s" and "%s" differ in gnm ',
-            [Scan[1] [I], Scan[2] [J]]));
+        if filegetgroupname(scan[1] [i]) <> filegetgroupname(scan[2] [j]) then
+          writeln(format('"%s" and "%s" differ in group name ',
+            [scan[1] [i], scan[2] [j]]));
 
-        Scan[2].Delete(J);
+        scan[2].delete(j);
       end else
-        writeln(Format('"%s" not founded in "%s"',
-          [Scan[1] [I], ParamStr(2)]));
+        writeln(format('"%s" not founded in "%s"', [scan[1] [i], paramstr(2)]));
+
     end;
 
-    for J := 0 to Scan[2].Count - 1 do
-      writeln(Format('"%s" not founded in "%s"', [Scan[2] [J], ParamStr(1)]));
+    for j := 0 to scan[2].count - 1 do
+      writeln(format('"%s" not founded in "%s"', [scan[2] [j], paramstr(1)]));
 
-    for J := 1 to 2 do
-      Scan[J].Destroy;
+    for j := 1 to 2 do
+      scan[j].destroy;
   end;
 end.

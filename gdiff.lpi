@@ -35,9 +35,8 @@
       <Unit0>
         <Filename Value="gdiff.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="GDiff"/>
-        <TopLine Value="57"/>
-        <CursorPos X="69" Y="92"/>
+        <IsVisibleTab Value="True"/>
+        <CursorPos X="16"/>
         <UsageCount Value="52"/>
         <Loaded Value="True"/>
       </Unit0>
@@ -53,7 +52,6 @@
       <Unit2>
         <Filename Value="gulpcommon.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="GulpCommon"/>
         <EditorIndex Value="2"/>
         <TopLine Value="32"/>
         <CursorPos X="35" Y="51"/>
@@ -81,10 +79,7 @@
       <Unit5>
         <Filename Value="gulplist.pas"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="GulpList"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="5"/>
-        <TopLine Value="16"/>
         <CursorPos X="27" Y="154"/>
         <UsageCount Value="39"/>
         <Loaded Value="True"/>
