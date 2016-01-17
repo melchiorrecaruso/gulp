@@ -1,4 +1,4 @@
-{ Description: messages unit.
+{ Description: Messages unit.
 
   Copyright (C) 2014-2016 Melchiorre Caruso <melchiorrecaruso@gmail.com>
 
@@ -26,13 +26,15 @@ unit gulpmessages;
 interface
 
 const
-  gebrokenarchive   = 'Archive is broken, try with the "fix" command (%u)';
-  gewrongmarker     = 'Wrong marker value (%u)';
-  gewrongflag       = 'Wrong flag value (%u)';
-  genotarchive      = 'Stream is not a valid archive (%u)';
-  geduplicates      = 'Duplicates non allowed (%u)';
-  gereadstream      = 'Unable to read stream (%u)';
-  gechecksum        = 'Mismatched checksum (%u)';
+  gebrokenarchive   = 'Archive is broken, try with the "fix" command (%s)';
+  gewrongmarker     = 'Wrong marker value (%s)';
+  gewrongflag       = 'Wrong flag value (%s)';
+  gechecksum        = 'Mismatched checksum (%s)';
+
+  gereadarchive     = 'Stream is not a valid archive (%s)';
+  gereadstream      = 'Unable to read stream (%s)';
+  geduplicates      = 'Duplicates non allowed (%s)';
+
   gecreatepath      = 'Unable to create path "%s"';
   gesetid           = 'Unable to set user/group id for "%s"';
   gesetmode         = 'Unable to set mode for "%s"';
@@ -41,6 +43,8 @@ const
   gerestoreitem     = 'Unable to restore item "%s"';
   gedeletefile      = 'Unable to delete file "%s"';
   gerenamefile      = 'Unable to rename file "%s"';
+
+  gmdeleteitems     = '%sDelete items...          ';
 
   gmsync            = 'Sync the content of "%s" %s';
   gmscanningarchive = '%sScanning archive...      ';

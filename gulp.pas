@@ -1,4 +1,4 @@
-{ Description: shell application unit.
+{ Description: Shell application unit.
 
   Copyright (C) 2014-2016 Melchiorre Caruso <melchiorrecaruso@gmail.com>
 

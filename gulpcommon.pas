@@ -1,4 +1,4 @@
-{ Description: common routines unit.
+{ Description: Common routines unit.
 
   Copyright (C) 2014-2016 Melchiorre Caruso <melchiorrecaruso@gmail.com>
 

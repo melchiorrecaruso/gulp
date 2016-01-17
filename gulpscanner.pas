@@ -1,4 +1,4 @@
-{ Description: directiries scanner class.
+{ Description: Directiries scanner unit.
 
   Copyright (C) 2014-2016 Melchiorre Caruso <melchiorrecaruso@gmail.com>
 
@@ -47,8 +47,8 @@ type
   end;
 
 function filenamematch(const filename: rawbytestring;
-  const filemask: rawbytestring): boolean;
-  overload;
+  const filemask: rawbytestring): boolean; overload;
+
 function filenamematch(const filename: rawbytestring;
   filemasks: trawbytestringlist): boolean; overload;
 
@@ -73,16 +73,16 @@ end;
 
 procedure tscanner.scan(const filemask: rawbytestring; recursive: boolean);
 var
-  e:    longint;
+  err:  longint;
   mask: rawbytestring;
   path: rawbytestring;
   sr:   tsearchrec;
 begin
   path := extractfilepath(filemask);
   mask := extractfilename(filemask);
-  e    := sysutils.findfirst(path + '*', fareadonly or fahidden or fasysfile or
+  err  := sysutils.findfirst(path + '*', fareadonly or fahidden or fasysfile or
     favolumeid or fadirectory or faarchive or fasymlink or faanyfile, sr);
-  while e = 0 do
+  while err = 0 do
   begin
     if sr.attr and fadirectory = fadirectory then
     begin
@@ -90,13 +90,13 @@ begin
       begin
         flist.add(path + sr.name);
         if recursive then
-          if sr.attr and fasymlink = 0 then
+          if sr.attr and (fasymlink and favolumeid) = 0 then
             scan(path + includetrailingpathdelimiter(sr.name) + mask, true);
       end;
     end else
     if filenamematch(path + sr.name, filemask) then
       flist.add(path + sr.name);
-    e := findnext(sr);
+    err := findnext(sr);
   end;
   sysutils.findclose(sr);
 end;

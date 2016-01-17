@@ -1,4 +1,4 @@
-{ Description: Streams unit.
+{ Description: Debug unit.
 
   Copyright (C) 2014-2016 Melchiorre Caruso <melchiorrecaruso@gmail.com>
 
@@ -18,32 +18,38 @@
   MA 02111-1307, USA.
 }
 
-unit gulpstream;
+unit gulpdebug;
 
 {$mode objfpc}
 {$H+}
 
 interface
 
-uses classes;
-
-type
-  tnulstream = class(tstream)
-  public
-    function read(var buffer; count: longint): longint; override;
-    function write(const buffer; count: longint): longint; override;
-  end;
+procedure debugopen(const filename: rawbytestring);
+procedure debugln(const message: rawbytestring);
+procedure debugclose;
 
 implementation
 
-function tnulstream.read(var buffer; count: longint): longint;
+var
+  debugfile: text;
+
+procedure debugopen(const filename: rawbytestring); inline;
 begin
-  result := count;
+  assign(debugfile, filename);
+  rewrite(debugfile);
 end;
 
-function tnulstream.write(const buffer; count: longint): longint;
+procedure debugln(const message: rawbytestring); inline;
 begin
-  result := count;
+  write(debugfile, message);
+  flush(debugfile);
+end;
+
+procedure debugclose; inline;
+begin
+  closefile(debugfile);
 end;
 
 end.
+
