@@ -39,6 +39,7 @@ function filegetuserid(const filename: rawbytestring): longword;
 function filegetusername(const filename: rawbytestring): rawbytestring;
 function filegetgroupid(const filename: rawbytestring): longword;
 function filegetgroupname(const filename: rawbytestring): rawbytestring;
+function isabsolutepath(const pathname: rawbytestring): boolean;
 function setprioritynormal: boolean;
 function setpriorityidle: boolean;
 
@@ -184,6 +185,19 @@ end;
 function filegetgroupname(const filename: rawbytestring): rawbytestring;
 begin
   result := '';
+end;
+
+function isabsolutepath(const pathname: rawbytestring): boolean;
+begin
+{$IFDEF UNIX}
+  result := ((length(pathname) > 0) and (pathname[1] in ['/','\']));
+{$ELSE}
+{$IFDEF MSWINDOWS}
+  result := ((length(pathname) > 0) and (pathname[1] in ['/','\'])) or
+            ((length(pathname) > 1) and (pathname[2] = ':'));
+{$ELSE}
+{$ENDIF}
+{$ENDIF}
 end;
 
 function setpriorityidle: boolean;

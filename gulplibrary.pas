@@ -88,6 +88,7 @@ type
 
   tgulpapplication = class
   private
+    fforcepath: boolean;
     fexclude: trawbytestringlist;
     finclude: trawbytestringlist;
     fnodelete: boolean;
@@ -107,6 +108,7 @@ type
     procedure check(const filename: rawbytestring);
     procedure reset;
   public
+    property forcepath: boolean read fforcepath write fforcepath;
     property exclude: trawbytestringlist read fexclude;
     property include: trawbytestringlist read finclude;
     property nodelete: boolean read fnodelete write fnodelete;
@@ -182,7 +184,7 @@ end;
 
 function attrtostring(const attr: longint): rawbytestring;
 begin
-  result := '       ';
+  result := '-------';
   if attr and fareadonly  <> 0 then result[1] := 'R';
   if attr and fahidden    <> 0 then result[2] := 'H';
   if attr and fasysfile   <> 0 then result[3] := 'S';
@@ -209,11 +211,12 @@ end;
 
 function modetostring(const mode: longint): rawbytestring;
 begin
+  result := '---';
 {$IFDEF UNIX}
-  result := octstr(mode, 3);
+  if mode <> 0 then
+    result := octstr(mode, 3);
 {$ELSE}
 {$IFDEF MSWINDOWS}
-  result := '...';
 {$ELSE}
 {$ENDIF}
 {$ENDIF}
@@ -751,6 +754,7 @@ begin
   inherited create;
   fonshowitem    := nil;
   fonshowmessage := nil;
+  fforcepath     := FALSE;
   fexclude       := trawbytestringlist.create;
   finclude       := trawbytestringlist.create;
   fnodelete      := false;
@@ -818,7 +822,11 @@ begin
   if finclude.count = 0 then
     finclude.add('*');
   for i := finclude.count - 1 downto 0 do
+  begin
+    if (fforcepath = FALSE) and (isabsolutepath(finclude[i]) = TRUE) then
+      raise exception.createfmt(geabsolutepath, ['003021']);
     scan.add(finclude[i]);
+  end;
 
   for i := fexclude.count - 1 downto 0 do
     if directoryexists(fexclude[i]) = true then

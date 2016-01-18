@@ -30,6 +30,7 @@ const
   gewrongmarker     = 'Wrong marker value (%s)';
   gewrongflag       = 'Wrong flag value (%s)';
   gechecksum        = 'Mismatched checksum (%s)';
+  geabsolutepath    = 'Absolute path, try with the "--forcepath" option (%s)';
 
   gereadarchive     = 'Stream is not a valid archive (%s)';
   gereadstream      = 'Unable to read stream (%s)';

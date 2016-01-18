@@ -110,16 +110,15 @@ type
     app.onshowitem := @showitem;
     try
       s := checkoptions('-s: -r: -p: -l: -c: -f: -u: -m: -i: -e: h ',
-        '--synch:   --restore: --purge: --list:    ' +
-        '--check:   --fix:     --until: --method:  ' +
-        '--include: --exclude: --help   --nodelete ', app.include);
+        '--synch: --restore: --purge:    --list:    --check:   ' +
+        '--fix:   --until:   --method:   --include: --exclude: ' +
+        '--help   --nodelete --forcepath   ', app.include);
 
       if s = '' then
       begin
         if hasoption('-i', '--include') = true then
         begin
-          s :=
-            getoptionvalue('-i', '--include');
+          s := getoptionvalue('-i', '--include');
           if s[length(s)] = pathdelim then
             app.include.add(s + '*')
           else
@@ -139,7 +138,8 @@ type
           else
             app.untilversion := strtoint(getoptionvalue('-u', '--until'));
 
-        app.nodelete := hasoption('', '--nodelete');
+        app.nodelete  := hasoption('', '--nodelete');
+        app.forcepath := hasoption('', '--forcepath');
 
         if hasoption('-s', '--synch') then
           app.sync(getoptionvalue('-s', '--synch'))
