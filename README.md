@@ -1,58 +1,236 @@
-GULP stores and extracts files from a disk archive.
+#GULP - A simple journaling archiver.   
 
-A GULP archive is a sequence of timestamped updates, each listing the files 
-and directories that have been added, changed, or deleted since the previous 
-transacted update, normally based on changes to the last-modified dates.
+**GULP** is a free and open source incremental, journaling command-line archiver for Windows and Linux. Journaling means that the archive is append-only. When you add files or directories to the archive, both the old and new versions are saved. You can recover old versions by specifying version number.
 
-1.0 - GENERAL FILE FORMAT FOR VERSION 0.0.2 
+## Build
 
-- BEGIN FILE
-- CENTRAL DIRECTORY OFFSET-1
-  - MARKER                       64            x47/x55/x4C/x50/x00/x00/x02/x00
-  - OFFSET                       64
-  - DIGEST LEN                   32
-  - DIGEST                        8 * DIGEST LEN
-- DATA-1
-- CENTRAL DIRECTORY-1
-  - HEADER-1
-    - MARKER                     64            x47/x55/x4C/x50/x00/x00/x02/x00
-    - FLAGS   (see note)         32
-    - NAME LEN                   32                         if bit 03 in FLAGS
-    - NAME                        8 * NAME LEN              if bit 03 in FLAGS
-    - TIME                       64                         if bit 04 in FLAGS
-    - ATTRIBUTES                 32                         if bit 05 in FLAGS
-    - MODE                       32                         if bit 06 in FLAGS
-    - SIZE                       64                         if bit 07 in FLAGS
-    - LINK NAME LEN              32                         if bit 08 in FLAGS
-    - LINK NAME                   8 * LINK LEN              if bit 08 in FLAGS
-    - USER ID                    32                         if bit 08 in FLAGS
-    - USER NAME LEN              32                         if bit 10 in FLAGS
-    - USER NAME                   8 * USER NAME LEN         if bit 10 in FLAGS
-    - GROUP ID                   32                         if bit 11 in FLAGS
-    - GROUP NAME LEN             32                         if bit 12 in FLAGS
-    - GROUP NAME                  8 * USER NAME LEN         if bit 12 in FLAGS
-    - STORAGE OFFSET             64                         if bit 13 in FLAGS
-    - STORAGE SIZE               64                         if bit 14 in FLAGS
-    - STORAGE DIGEST LEN         32                         if bit 15 in FLAGS
-    - STORAGE DIGEST              8 * STORAGE DIGEST LEN    if bit 15 in FLAGS
-    - COMMENT LEN                32                         if bit 16 in FLAGS
-    - COMMENT                     8 * COMMENT LEN           if bit 16 in FLAGS
-    - PLATFORM                   32                         if bit 17 in FLAGS
-    - HEADER DIGEST LEN          32
-      HEADER DIGEST               8 * DIGEST LEN
-  - HEADER-2
-  - ...
-  - HEADER-N
-- CENTRAL DIRECTORY OFFSET-2
-- DATA-2
-- CENTRAL DIRECTORY-2
-- ...
-- CENTRAL DIRECTORY OFFSET-N
-- DATA-N
-- CENTRAL DIRECTORY-N
-- END FILE
+Source code is written in pascal and it can be compiled with Lazarus/FreePascal.
 
- FLAGS NOTE:
- - bit 00 is reserved for mark last header in current central directory;
- - bit 01 is reserved for mark header added or deleted from archive;
- - bit 02 is reserved but unused.
+###Requirements
+
+- FreePascal 3.0
+- Lazarus 1.6
+
+###Instructions
+
+If you have problems with permissions don't forget to prefix with `sudo`
+
+1. Clone the Gulp repository :
+
+```sh
+  $ git clone https://github.com/melchiorrecaruso/gulp.git
+  $ cd gulp
+```
+2. Checkout the latest Gulp release:
+
+```sh
+  $ git fetch -p
+  $ git checkout $(git describe --tags `git rev-list --tags --max-count=1`)
+```
+
+3. Build Gulp:
+
+```sh
+  $ lazbuild gulp.lpi
+```
+  This will create the gulp application at `$ bin/$(TargetCPU)-$(TargetOS)`.
+
+4. Install the `Gulp` to `/usr/local/bin` by executing:
+
+```sh
+  $ sudo cp bin/$(TargetCPU)-$(TargetOS)/gulp /usr/local/bin/gulp
+```
+
+To use the newly installed Gulp, quit and restart all running Gulp instances.
+
+
+##Usage
+The first argument to gulp should be a function; either one of the letters or one of the long function names. A function letter need be prefixed with "-", and can't be combined with other single letter options. A long function name must be prefixed with "--".  Some options take a parameter; with the single-letter form these must be given as separate arguments. With the long form, they may be given by appending "=value to the option".
+
+``` sh
+SYNOPSIS
+
+	$ gulp [-] s --synch | r --restore | p --purge | l --list |
+			   c --check | f --fix [options ...] [ files ...]
+```
+                     
+
+##Main function mode
+                                           
+####Synchronize archive (*-s*, *--sync*)
+ Append changes in files  to archive, or create archive if it does not exist. "files" is a list of file and directory names separated by spaces. If a name is a directory, then it recursively includes all files and subdirectories within. In Windows, files may contain wildcards "*" and "?" in the last component of the path (after the last slash). "*" matches any string and "?" matches any character. 
+
+ A change is an addition, update, or deletion of any file or directory in "files" or any of its subdirectories to any depth. A file or directory is considered changed if its size, last-modified date, or Windows attributes or Unix/Linux permissions differ between the internal and external versions. File contents are not compared.
+
+ For each added or updated file or directory, the following information is saved in the archive: the contents, the file or directory name as it appears in " files " plus any trailing path, the last-modified date, and the Unix/Linux permissions or Windows attributes. Other metadata such as owner, group, last access time, etc. are not saved. Symbolic links are saved. Hard links are followed as if they were ordinary files. Special file types such as devices, named pipes, and named sockets are not saved. If any file cannot be read (e.g. permission denied), then it is skipped. However, other files are still added and the update is still valid."
+
+###
+> **Note**: 
+> - Updates are transacted. If **GULP** is interrupted before completing the update, then the archive can be repair with fix function.
+>
+
+###
+> **Example** :
+>
+> Create archive.gulp from directories foo and bar
+>
+	$ gulp -s archive.gulp foo bar
+>
+
+#### Restore files and directories (*-r*, *--restore*)
+ Restore "files" (including the contents of directories), or extract the whole archive contents if "files" is omitted. The file names, last-modified date, and permissions or attributes are set as saved in the archive. 
+
+###
+> **Note**: 
+>
+> - If there are multiple versions of a file stored, then only the latest version is extracted. 
+>
+> - If a stored file has been marked as deleted, then it is deleted. Existing files are overwritten if they are considered changed.
+>
+
+###
+>**Example** :
+>
+>	Restore all files from archive.gulp into current directories
+>
+	$ gulp -r archive.gulp
+>
+
+#### Purge archive (*-p*, *--purge*)
+ Purge archive, remove old files archived.
+
+#### List archive contents (*-l*, *--list*)
+ List "files" within the archive, or list the entire archive contents if "files" is omitted. For each file or directory, show marker, last modified date, Windows attributes or Unix/Linux permissions, size and name. 
+
+###
+> **Note**: 
+>
+> - Attributes are listed as an octal number in Unix/Linux (as per chmod(1)) or with the letters D, A, S, H, R, I in Windows (as for the attrib command).
+>
+
+###
+>**Example** :
+>
+>	List all files in archive.gulp
+>			
+	$ gulp -l archive.gulp
+>
+
+#### Check archive integrity (*-c*, *--check*)
+Check archive integrity by verifying that the data agrees with the stored SHA-1 hashes and sizes and that the data otherwise conforms to the **gulp** standard.
+
+#### Fix damaged archive (*-f*, *--fix*)
+Truncates any data added after last valid update.
+
+</br>
+## Options
+
+#### Exclude pattern (*-e*, *--exclude=PATTERN*)
+: Avoid operating on files whose names match filename pattern PATTERN. The option prevents any file or member whose name matches the shell wildcard (pattern) from being operated on. Multiple exclude options are supported. 
+
+>**Example** :
+>
+> List all files in archive.gulp but exclude .pas files
+>
+	$ gulp -l archive.gulp --exclude='*.pas'
+>
+
+#### Force path (*--forcepath*)
+: Force **GULP** to .
+
+#### Include option (*-i*, *--include=PATTERN*)
+: Operating on files whose names match filename pattern PATTERN.
+Multiple include options are supported. 
+
+>**Example** :
+>
+> List *.pas files in archive.gulp
+>
+	$ gulp -l archive.gulp --include=*.pas
+>
+
+#### Not delete files (*--nodelete*)
+: With synch command (***-s***) , do not mark files in the archive as deleted when the corresponding external file does not exist. With restore command (***-r***), do not delete external files when the corresponding file in archive does not exist. 
+
+>**Note**: 
+>
+> - This makes **GULP** consistent with the behavior of most non-journaling archivers.
+
+
+####-u, --until [*version number*]
+: ignore any part of the archive updated after version number. 
+
+>**Example** :
+>
+> - restore content of archive until version 120 into current directories
+>
+		gulp -r archivename.gulp -u 120
+
+> - show files added before version 21
+>
+		gulp -l archive.gulp files --until 20
+> 
+
+</br>
+##General file format version 0.0.3
+
+A **GULP** archive is a sequence of timestamped updates, each listing the files and directories that have been deleted or added, since the previous transacted update, normally based on changes to the last-modified dates.
+
+#### Archive content:
+``` sh
+	- Sequence number 1
+ 	- Sequence number 2
+	- ...
+	- Sequence number N
+```
+#### Sequence content:
+``` sh
+	- File header 1
+	- File header 1 SHA1 digest       (20 bytes)
+ 	- File header 2
+	- File header 2 SHA1 digest       (20 bytes)
+	- ...
+	- File header N
+	- File header N SHA1 digest       (20 bytes)
+	- Stored data 1
+	- Stored data 1 SHA1 digest       (20 bytes)
+	- Stored data 2
+	- Stored data 2 SHA1 digest       (20 bytes)
+	- ...
+	- Stored data N
+	- Stored data N SHA1 digest       (20 bytes)
+```
+
+#### File header content:
+``` sh 
+	- Marker           array of byte  (20 bytes) 
+	- Flags            longint        ( 4 bytes)
+	- Full File Name   rawbytestring  
+ 	- Time (UTC)       double         ( 8 bytes)  if bit 03 in Flags
+	- Attributes       longint        ( 4 bytes)  if bit 03 in Flags
+	- Mode             longint        ( 4 bytes)  if bit 03 in Flags
+	- Size             int64          ( 8 bytes)  if bit 03 in Flags
+	- Link Name        rawbytestring              if bit 03 in Flags
+	- User ID          longint        ( 4 bytes)  if bit 03 in Flags
+	- Group ID         longint        ( 4 bytes)  if bit 03 in Flags
+	- User Name        rawbytestring              if bit 03 in Flags
+	- Group Name       rawbytestring              if bit 03 in Flags
+	- Comment          rawbytestring              if bit 03 in Flags
+	- OffSet1          int64                      if bit 03 in Flags
+	- OffSet2          int64                      if bit 03 in Flags
+```
+
+
+>
+> **Note:** 
+> 
+> - bit 01 is reserved for mark header added to archive;
+> - bit 02 is reserved for mark header deleted from archive;
+> - bit 03 is reserved for mark last header in current sequence.
+>
+
+</br>
+
+##Credits
+
+**GULP** is copyright (c) 2014-2016, Melchiorre Caruso. It is  licensed under The GNU General Public License v2. For information on the license, see [GPLv2](http://www.gnu.org/copyleft/gpl.html) . Program was written by Melchiorre Caruso,  melchiorrecaruso (at) gmail (dot) com
