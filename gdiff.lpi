@@ -33,68 +33,69 @@
     </RunParams>
     <Units Count="6">
       <Unit0>
-        <Filename Value="gdiff.pas"/>
+        <Filename Value="src/gdiff.pas"/>
         <IsPartOfProject Value="True"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="43"/>
-        <CursorPos Y="55"/>
+        <TopLine Value="14"/>
+        <CursorPos X="25" Y="25"/>
         <UsageCount Value="53"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
-        <Filename Value="gulpfixes.pas"/>
+        <Filename Value="src/gulpfixes.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="1"/>
-        <TopLine Value="14"/>
-        <CursorPos X="48" Y="13"/>
-        <UsageCount Value="43"/>
-        <Loaded Value="True"/>
+        <EditorIndex Value="-1"/>
+        <WindowIndex Value="-1"/>
+        <TopLine Value="-1"/>
+        <CursorPos X="-1" Y="-1"/>
+        <UsageCount Value="20"/>
       </Unit1>
       <Unit2>
-        <Filename Value="gulpcommon.pas"/>
+        <Filename Value="src/gulpcommon.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="2"/>
-        <TopLine Value="32"/>
-        <CursorPos X="35" Y="51"/>
-        <UsageCount Value="42"/>
-        <Loaded Value="True"/>
+        <EditorIndex Value="-1"/>
+        <WindowIndex Value="-1"/>
+        <TopLine Value="-1"/>
+        <CursorPos X="-1" Y="-1"/>
+        <UsageCount Value="20"/>
       </Unit2>
       <Unit3>
-        <Filename Value="gulpcommandline.pas"/>
+        <Filename Value="src/gulpcommandline.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="3"/>
-        <TopLine Value="18"/>
-        <CursorPos X="44" Y="18"/>
-        <UsageCount Value="41"/>
-        <Loaded Value="True"/>
+        <EditorIndex Value="-1"/>
+        <WindowIndex Value="-1"/>
+        <TopLine Value="-1"/>
+        <CursorPos X="-1" Y="-1"/>
+        <UsageCount Value="20"/>
       </Unit3>
       <Unit4>
-        <Filename Value="gulpscanner.pas"/>
+        <Filename Value="src/gulpscanner.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="4"/>
-        <TopLine Value="73"/>
-        <CursorPos X="28" Y="78"/>
-        <UsageCount Value="40"/>
-        <Loaded Value="True"/>
+        <EditorIndex Value="-1"/>
+        <WindowIndex Value="-1"/>
+        <TopLine Value="-1"/>
+        <CursorPos X="-1" Y="-1"/>
+        <UsageCount Value="20"/>
       </Unit4>
       <Unit5>
-        <Filename Value="gulplist.pas"/>
+        <Filename Value="src/gulplist.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="5"/>
-        <CursorPos X="27" Y="154"/>
-        <UsageCount Value="40"/>
-        <Loaded Value="True"/>
+        <EditorIndex Value="-1"/>
+        <WindowIndex Value="-1"/>
+        <TopLine Value="-1"/>
+        <CursorPos X="-1" Y="-1"/>
+        <UsageCount Value="20"/>
       </Unit5>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
     <Version Value="11"/>
     <Target>
-      <Filename Value="gdiff"/>
+      <Filename Value="build/$(TargetCPU)-$(TargetOS)/bin/gdiff"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
+      <UnitOutputDirectory Value="build/$(TargetCPU)-$(TargetOS)/lib"/>
     </SearchPaths>
     <Parsing>
       <SyntaxOptions>
