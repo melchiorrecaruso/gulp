@@ -8,8 +8,8 @@ Source code is written in pascal and it can be compiled with Lazarus/FreePascal.
 
 ###Requirements
 
-- FreePascal 3.0
-- Lazarus 1.6
+- FreePascal >= 3.0
+- Lazarus >= 1.6
 
 ###Instructions
 
@@ -21,6 +21,7 @@ If you have problems with permissions don't forget to prefix with `sudo`
   $ git clone https://github.com/melchiorrecaruso/gulp.git
   $ cd gulp
 ```
+
 2. Checkout the latest Gulp release:
 
 ```sh
@@ -33,16 +34,15 @@ If you have problems with permissions don't forget to prefix with `sudo`
 ```sh
   $ lazbuild gulp.lpi
 ```
-  This will create the gulp application at `$ bin/$(TargetCPU)-$(TargetOS)`.
+  This will create the gulp application at `$ build/$(TargetCPU)-$(TargetOS)/bin`.
 
 4. Install the `Gulp` to `/usr/local/bin` by executing:
 
 ```sh
-  $ sudo cp bin/$(TargetCPU)-$(TargetOS)/gulp /usr/local/bin/gulp
+  $ sudo cp build/$(TargetCPU)-$(TargetOS)/bin/gulp /usr/local/bin/gulp
 ```
 
 To use the newly installed Gulp, quit and restart all running Gulp instances.
-
 
 ##Usage
 The first argument to gulp should be a function; either one of the letters or one of the long function names. A function letter need be prefixed with "-", and can't be combined with other single letter options. A long function name must be prefixed with "--".  Some options take a parameter; with the single-letter form these must be given as separate arguments. With the long form, they may be given by appending "=value to the option".
@@ -52,17 +52,16 @@ SYNOPSIS
 
 	$ gulp [-] s --synch | r --restore | p --purge | l --list |
 			   c --check | f --fix [options ...] [ files ...]
-```
-                     
+```                  
 
 ##Main function mode
                                            
 ####Synchronize archive (*-s*, *--sync*)
- Append changes in files  to archive, or create archive if it does not exist. "files" is a list of file and directory names separated by spaces. If a name is a directory, then it recursively includes all files and subdirectories within. In Windows, files may contain wildcards "*" and "?" in the last component of the path (after the last slash). "*" matches any string and "?" matches any character. 
+Append changes in files  to archive, or create archive if it does not exist. "files" is a list of file and directory names separated by spaces. If a name is a directory, then it recursively includes all files and subdirectories within. In Windows, files may contain wildcards "*" and "?" in the last component of the path (after the last slash). "*" matches any string and "?" matches any character. 
 
- A change is an addition, update, or deletion of any file or directory in "files" or any of its subdirectories to any depth. A file or directory is considered changed if its size, last-modified date, or Windows attributes or Unix/Linux permissions differ between the internal and external versions. File contents are not compared.
+A change is an addition, update, or deletion of any file or directory in "files" or any of its subdirectories to any depth. A file or directory is considered changed if its size, last-modified date, or Windows attributes or Unix/Linux permissions differ between the internal and external versions. File contents are not compared.
 
- For each added or updated file or directory, the following information is saved in the archive: the contents, the file or directory name as it appears in " files " plus any trailing path, the last-modified date, and the Unix/Linux permissions or Windows attributes. Other metadata such as owner, group, last access time, etc. are not saved. Symbolic links are saved. Hard links are followed as if they were ordinary files. Special file types such as devices, named pipes, and named sockets are not saved. If any file cannot be read (e.g. permission denied), then it is skipped. However, other files are still added and the update is still valid."
+For each added or updated file or directory, the following information is saved in the archive: the contents, the file or directory name as it appears in " files " plus any trailing path, the last-modified date, and the Unix/Linux permissions or Windows attributes. Other metadata such as owner, group, last access time, etc. are not saved. Symbolic links are saved. Hard links are followed as if they were ordinary files. Special file types such as devices, named pipes, and named sockets are not saved. If any file cannot be read (e.g. permission denied), then it is skipped. However, other files are still added and the update is still valid."
 
 ###
 > **Note**: 
@@ -78,7 +77,7 @@ SYNOPSIS
 >
 
 #### Restore files and directories (*-r*, *--restore*)
- Restore "files" (including the contents of directories), or extract the whole archive contents if "files" is omitted. The file names, last-modified date, and permissions or attributes are set as saved in the archive. 
+Restore "files" (including the contents of directories), or extract the whole archive contents if "files" is omitted. The file names, last-modified date, and permissions or attributes are set as saved in the archive. 
 
 ###
 > **Note**: 
@@ -100,7 +99,7 @@ SYNOPSIS
  Purge archive, remove old files archived.
 
 #### List archive contents (*-l*, *--list*)
- List "files" within the archive, or list the entire archive contents if "files" is omitted. For each file or directory, show marker, last modified date, Windows attributes or Unix/Linux permissions, size and name. 
+List "files" within the archive, or list the entire archive contents if "files" is omitted. For each file or directory, show marker, last modified date, Windows attributes or Unix/Linux permissions, size and name. 
 
 ###
 > **Note**: 
@@ -126,7 +125,7 @@ Truncates any data added after last valid update.
 ## Options
 
 #### Exclude pattern (*-e*, *--exclude=PATTERN*)
-: Avoid operating on files whose names match filename pattern PATTERN. The option prevents any file or member whose name matches the shell wildcard (pattern) from being operated on. Multiple exclude options are supported. 
+Avoid operating on files whose names match filename pattern PATTERN. The option prevents any file or member whose name matches the shell wildcard (pattern) from being operated on. Multiple exclude options are supported. 
 
 >**Example** :
 >
@@ -136,10 +135,10 @@ Truncates any data added after last valid update.
 >
 
 #### Force path (*--forcepath*)
-: Force **GULP** to .
+Force **GULP** to .
 
 #### Include option (*-i*, *--include=PATTERN*)
-: Operating on files whose names match filename pattern PATTERN.
+Operating on files whose names match filename pattern PATTERN.
 Multiple include options are supported. 
 
 >**Example** :
@@ -150,7 +149,7 @@ Multiple include options are supported.
 >
 
 #### Not delete files (*--nodelete*)
-: With synch command (***-s***) , do not mark files in the archive as deleted when the corresponding external file does not exist. With restore command (***-r***), do not delete external files when the corresponding file in archive does not exist. 
+With synch command (***-s***) , do not mark files in the archive as deleted when the corresponding external file does not exist. With restore command (***-r***), do not delete external files when the corresponding file in archive does not exist. 
 
 >**Note**: 
 >
@@ -158,7 +157,7 @@ Multiple include options are supported.
 
 
 ####-u, --until [*version number*]
-: ignore any part of the archive updated after version number. 
+Ignore any part of the archive updated after version number. 
 
 >**Example** :
 >
@@ -178,48 +177,48 @@ A **GULP** archive is a sequence of timestamped updates, each listing the files 
 
 #### Archive content:
 ``` sh
-	- Sequence number 1
- 	- Sequence number 2
+	- Slice 1
+ 	- Slice 2
 	- ...
-	- Sequence number N
+	- Slice N
 ```
-#### Sequence content:
-``` sh
-	- File header 1
-	- File header 1 SHA1 digest       (20 bytes)
- 	- File header 2
-	- File header 2 SHA1 digest       (20 bytes)
+#### Slice content:
+``` sh	 
+	- Marker          (20 bytes)
+	- Header      1
+	- Checksum    1   (20 bytes) 
+	- Marker          (20 bytes)
+ 	- Header      2
+	- Checksum    2   (20 bytes)
 	- ...
-	- File header N
-	- File header N SHA1 digest       (20 bytes)
-	- Stored data 1
-	- Stored data 1 SHA1 digest       (20 bytes)
+	- Marker          (20 bytes)
+	- Header      N
+	- Checksum    N   (20 bytes)
+	- Stored data 1   
 	- Stored data 2
-	- Stored data 2 SHA1 digest       (20 bytes)
 	- ...
 	- Stored data N
-	- Stored data N SHA1 digest       (20 bytes)
 ```
 
-#### File header content:
-``` sh 
-	- Marker           array of byte  (20 bytes) 
-	- Flags            longint        ( 4 bytes)
-	- Full File Name   rawbytestring  
- 	- Time (UTC)       double         ( 8 bytes)  if bit 03 in Flags
-	- Attributes       longint        ( 4 bytes)  if bit 03 in Flags
-	- Mode             longint        ( 4 bytes)  if bit 03 in Flags
-	- Size             int64          ( 8 bytes)  if bit 03 in Flags
-	- Link Name        rawbytestring              if bit 03 in Flags
-	- User ID          longint        ( 4 bytes)  if bit 03 in Flags
-	- Group ID         longint        ( 4 bytes)  if bit 03 in Flags
-	- User Name        rawbytestring              if bit 03 in Flags
-	- Group Name       rawbytestring              if bit 03 in Flags
-	- Comment          rawbytestring              if bit 03 in Flags
-	- OffSet1          int64                      if bit 03 in Flags
-	- OffSet2          int64                      if bit 03 in Flags
+#### Header content:
+``` sh
+	- Flags        longword        ( 4 bytes)
+	- Name         rawbytestring 
+ 	- sTime (UTC)  double          ( 8 bytes)  	  
+ 	- mTime (UTC)  double          ( 8 bytes)  if bit 04 in Flags
+	- Attributes   longint         ( 4 bytes)  if bit 05 in Flags
+	- Mode         longint         ( 4 bytes)  if bit 06 in Flags
+	- Size         int64           ( 8 bytes)  if bit 07 in Flags
+	- Link Name    rawbytestring               if bit 08 in Flags
+	- User ID      longint         ( 4 bytes)  if bit 09 in Flags
+	- Group ID     longint         ( 4 bytes)  if bit 10 in Flags
+	- User Name    rawbytestring               if bit 11 in Flags
+	- Group Name   rawbytestring               if bit 12 in Flags
+	- Comment      rawbytestring               if bit 13 in Flags
+	- Offset1      int64                       if bit 07 in Flags
+	- Offset2      int64                       if bit 07 in Flags
+	- Checksum     array of bytes  (20 bytes)  if bit 07 in Flags   
 ```
-
 
 >
 > **Note:** 

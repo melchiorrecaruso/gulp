@@ -82,20 +82,20 @@ type
         if attributes and fadirectory = fadirectory then
           writeln(format('%4s %3s %3s %7s %19s %12s %s',
             [versiontostring(version), flagstostring(flags),modetostring(mode),
-            attrtostring(attributes), timetostring(universaltime2local(timeutc)),
-            '', fullname]))
+            attrtostring(attributes), timetostring(universaltime2local(mtimeutc)),
+            '', name]))
         else
           writeln(format('%4s %3s %3s %7s %19s %12s %s',
             [versiontostring(p^.version), flagstostring(flags), modetostring(mode),
-            attrtostring(attributes), timetostring(universaltime2local(timeutc)),
-            sizetostring(size), fullname]));
+            attrtostring(attributes), timetostring(universaltime2local(mtimeutc)),
+            sizetostring(size), name]));
       end else
       if attributes and fadirectory = fadirectory then
         writeln(format('%4s %3s %3s %7s %19s %12s %s',
-          [versiontostring(version), flagstostring(flags), '', '', '', '', fullname]))
+          [versiontostring(version), flagstostring(flags), '', '', '', '', name]))
       else
         writeln(format('%4s %3s %3s %7s %19s %12s %s',
-          [versiontostring(version), flagstostring(flags), '', '', '', '', fullname]));
+          [versiontostring(version), flagstostring(flags), '', '', '', '', name]));
   end;
 
   procedure tshellapplication.run;

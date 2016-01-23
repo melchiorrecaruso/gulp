@@ -40,6 +40,8 @@ function filegetusername(const filename: rawbytestring): rawbytestring;
 function filegetgroupid(const filename: rawbytestring): longword;
 function filegetgroupname(const filename: rawbytestring): rawbytestring;
 function isabsolutepath(const pathname: rawbytestring): boolean;
+function hex(const data; count: longint): rawbytestring;
+function hextodata(const s: rawbytestring; var data; count: longint): boolean;
 function setprioritynormal: boolean;
 function setpriorityidle: boolean;
 
@@ -53,6 +55,11 @@ uses
   windows,
 {$ENDIF}
   gulpfixes;
+
+const
+  HexaDecimals: array [0..15] of char = '0123456789ABCDEF';
+  HexValues: array ['0'..'F'] of byte = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+    0, 0, 0, 0, 0, 0, 0, 10, 11, 12, 13, 14, 15);
 
 function filegettimeutc(var sr: tsearchrec): tdatetime;
 begin
@@ -198,6 +205,41 @@ begin
 {$ELSE}
 {$ENDIF}
 {$ENDIF}
+end;
+
+function hex(const data; count: longint): rawbytestring;
+var
+  i, j: longint;
+  k:    longword;
+begin
+  setlength(result, count shl 1);
+  j := 1;
+  for i := 0 to count - 1 do
+  begin
+    k := tbytearray(data)[i];
+    result[j] := hexadecimals[k shr 4];
+    inc(j);
+    result[j] := hexadecimals[k and $f];
+    inc(j);
+  end;
+end;
+
+function hextodata(const s: rawbytestring; var data; count: longint): boolean;
+var
+  i: longint;
+begin
+  result := false;
+  if length(s) < count * 2 then exit;
+
+  for i := 0 to count - 1 do
+  begin
+    if (s[i * 2 + 1] in ['0'..'9', 'A'..'F']) and (s[i * 2 + 2] in ['0'..'9', 'A'..'F']) then
+    begin
+      tbytearray(data)[i] := hexvalues[s[i * 2 + 1]] shl 4 + hexvalues[s[i * 2 + 2]]
+    end else
+      exit;
+  end;
+  result := true;
 end;
 
 function setpriorityidle: boolean;

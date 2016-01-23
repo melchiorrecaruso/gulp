@@ -49,14 +49,10 @@ var
       begin
         inc(i);
         if (i > paramcount) then
-          result := format(
-            'Option at position %d does not allow an argument: "%s"',
-            [i - 1, s])
+          result := format('Option at position %d does not allow an argument: "%s"', [i - 1, s])
         else
-        if (pos(paramstr(i), shortopts) <> 0) or
-          (pos(paramstr(i), longopts) <> 0) then
-          result := format('Option at position %d needs an argument : "%s"',
-            [i - 1, s]);
+        if (pos(paramstr(i), shortopts) <> 0) or (pos(paramstr(i), longopts) <> 0) then
+          result := format('Option at position %d needs an argument : "%s"',[i - 1, s]);
       end else
       if options[pos(s, options) + length(s)] <> ' ' then
         result := format('Invalid option at position %d: "%s"', [i, s]);
