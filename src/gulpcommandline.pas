@@ -43,15 +43,21 @@ var
   function checkoption(const options: rawbytestring): rawbytestring;
   begin
     result := '';
-    if pos(s, options) <> 0 then
+    if pos(s, options) > 0 then
     begin
-      if options[pos(s, options) + length(s)] = ':' then
+      if (options[pos(s, options) + length(s)] = ':') and (s[2] = '-') then
+      begin
+        s := paramstr(i);
+        if pos('=' ,s ) = length(s) then
+          result := format('Option at position %d does not allow an argument: "%s"', [i, s]);
+      end else
+      if (options[pos(s, options) + length(s)] = ':') then
       begin
         inc(i);
         if (i > paramcount) then
           result := format('Option at position %d does not allow an argument: "%s"', [i - 1, s])
         else
-        if (pos(paramstr(i), shortopts) <> 0) or (pos(paramstr(i), longopts) <> 0) then
+        if (pos(paramstr(i), shortopts) > 0) or (pos(paramstr(i), longopts) > 0) then
           result := format('Option at position %d needs an argument : "%s"',[i - 1, s]);
       end else
       if options[pos(s, options) + length(s)] <> ' ' then
@@ -71,8 +77,11 @@ begin
         result := checkoption(shortopts)
       else
       if s[2] = '-' then
+      begin
+        if pos('=', s) > 0 then
+          setlength(s, pos('=', s) - 1);
         result := checkoption(longopts)
-      else
+      end else
         result := format('Invalid option at position %d: "%s"', [i, s]);
     end else
     if assigned(filemasks) then
@@ -93,8 +102,12 @@ begin
     if s = shortopt then
       result := true
     else
-    if s = longopt then
-      result := true;
+    begin
+      if pos('=', s) > 0 then
+        setlength(s, pos('=', s) - 1);
+      if s = longopt then
+        result := true;
+    end;
     inc(i);
   end;
 end;
@@ -111,8 +124,15 @@ begin
     if s = shortopt then
       result := paramstr(i + 1)
     else
-    if s = longopt then
-      result := paramstr(i + 1);
+    begin
+      if pos('=', s) > 0 then
+        setlength(s, pos('=', s) - 1);
+      if s = longopt then
+      begin
+        result := paramstr(i);
+        delete(result, 1, length(s) + 1);
+      end;
+    end;
     inc(i);
   end;
 end;
