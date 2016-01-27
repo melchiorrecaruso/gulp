@@ -31,7 +31,11 @@ procedure debugclose;
 
 implementation
 
+uses
+  gulplist;
+
 var
+  log: trawbytestringlist;
   debugfile: text;
 
 procedure debugopen(const filename: rawbytestring); inline;

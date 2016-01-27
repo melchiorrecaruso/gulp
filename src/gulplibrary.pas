@@ -30,7 +30,6 @@ uses
 {$IFDEF UNIX}
   baseunix,
 {$ENDIF}
-  classes,
   gulpcommon,
 {$IFDEF DEBUG}
   gulpdebug,
@@ -141,7 +140,7 @@ uses
   math;
 
 const
-  gulpmarker :  tsha1digest = (106,144,157,18,207,10,
+  gulpmarker : tsha1digest = (106,144,157,18,207,10,
     68,233,72,6,60,107,74,16,223,55,134,75,20,207);
 
   gulpdescription =
@@ -407,7 +406,7 @@ begin
       result := 1;
 end;
 
-function librestore(instream, outstream: tstream; size: int64): tsha1digest;
+function libmove(instream, outstream: tstream; size: int64): tsha1digest;
 var
   buffer:  array[0..$FFFF] of byte;
   context: tsha1context;
@@ -430,7 +429,7 @@ procedure librestore(instream: tstream; p: pgulpitem);
 var
   check:     boolean;
   outpath:   rawbytestring;
-  outstream: tfilestream;
+  outstream: tstream;
 begin
   if p^.attributes and (gulpnotsupported) = 0 then
   begin
@@ -457,12 +456,10 @@ begin
     end else
     if (gfsize in p^.flags) then
     begin
-      instream.seek(p^.offset1, sobeginning);
-      if fileexists(p^.name) = false then
-        outstream := tfilestream.create(p^.name, fmcreate)
-      else
-        outstream := tfilestream.create(p^.name, fmopenwrite);
-      check := sha1match(librestore(instream, outstream, p^.size), p^.checksum);
+      instream.seek(p^.offset1);
+      outstream := tstream.create(p^.name, fmoutput);
+
+      check := sha1match(libmove(instream, outstream, p^.offset2 - p^.offset1), p^.checksum);
 
       if check = false then
         raise exception.createfmt(gechecksum, ['003016']);
@@ -494,42 +491,23 @@ begin
   end;
 end;
 
-function libwrite(outstream, instream: tstream; size: int64): tsha1digest;
-var
-  buffer:  array[0..$FFFF] of byte;
-  context: tsha1context;
-  readed:  longint;
-begin
-  sha1init(context);
-  while size > 0 do
-  begin
-    readed := instream.read(buffer, min(sizeof(buffer), size));
-    if readed = 0 then
-      raise exception.createfmt(gereadstream, ['003017']);
-    sha1update(context, buffer, readed);
-    outstream.write(buffer, readed);
-    dec(size, readed);
-  end;
-  sha1final(context, result);
-end;
-
 procedure libwrite(outstream: tstream; p: pgulpitem);
 begin
   outstream.write(gulpmarker, sizeof(tsha1digest));
   outstream.write(p^.flags, sizeof(p^.flags));
-  outstream.writeansistring(p^.name);
+  outstream.writerawbytestring(p^.name);
   outstream.write(p^.stimeutc, sizeof(p^.stimeutc));
 
   if gfmtimeutc   in p^.flags then outstream.write(p^.mtimeutc, sizeof(p^.mtimeutc));
   if gfattributes in p^.flags then outstream.write(p^.attributes, sizeof(p^.attributes));
   if gfmode       in p^.flags then outstream.write(p^.mode, sizeof(p^.mode));
   if gfsize       in p^.flags then outstream.write(p^.size, sizeof(p^.size));
-  if gflinkname   in p^.flags then outstream.writeansistring(p^.linkname);
+  if gflinkname   in p^.flags then outstream.writerawbytestring(p^.linkname);
   if gfuserid     in p^.flags then outstream.write(p^.userid, sizeof(p^.userid));
   if gfgroupid    in p^.flags then outstream.write(p^.groupid, sizeof(p^.groupid));
-  if gfusername   in p^.flags then outstream.writeansistring(p^.username);
-  if gfgroupname  in p^.flags then outstream.writeansistring(p^.groupname);
-  if gfcomment    in p^.flags then outstream.writeansistring(p^.comment);
+  if gfusername   in p^.flags then outstream.writerawbytestring(p^.username);
+  if gfgroupname  in p^.flags then outstream.writerawbytestring(p^.groupname);
+  if gfcomment    in p^.flags then outstream.writerawbytestring(p^.comment);
 
   if gfsize in p^.flags then
   begin
@@ -548,7 +526,7 @@ var
 begin
   if list.count > 0 then
   begin
-    size := outstream.seek(0, soend);
+    size := outstream.seek(outstream.size);
     include(list[list.count - 1]^.flags, gfclose);
     for i := 0 to list.count - 1 do
       libwrite(outstream, list[i]);
@@ -559,18 +537,22 @@ begin
         if list[i]^.attributes and (fasymlink or fadirectory) = 0 then
           if gfsize in list[i]^.flags then
           begin
-            list[i]^.offset1 := outstream.seek(0, socurrent);
-            instream := tfilestream.create(list[i]^.name,
-              fmopenread or fmsharedenynone);
-            list[i]^.checksum := libwrite(outstream, instream, list[i]^.size);
-            list[i]^.offset2 := outstream.seek(0, socurrent);
-            freeandnil(instream);
+            list[i]^.offset1 := outstream.position;
+            try
+              instream := tstream.create(list[i]^.name, fminput);
+              list[i]^.checksum := libmove(instream, outstream, list[i]^.size);
+              freeandnil(instream);
+            except
+
+            end;
+            list[i]^.offset2 := outstream.position;
+
           end;
       end;
-    outstream.seek(size, sobeginning);
+    outstream.seek(size);
     for i := 0 to list.count - 1 do
       libwrite(outstream, list[i]);
-    outstream.seek(0, soend);
+    outstream.seek(outstream.size);
   end;
 end;
 
@@ -585,19 +567,19 @@ begin
     raise exception.createfmt(gewrongmarker, ['003002']);
 
   instream.read(p^.flags, sizeof(p^.flags));
-  p^.name := instream.readansistring;
+  instream.readrawbytestring(p^.name);
   instream.read(p^.stimeutc, sizeof(p^.stimeutc));
 
   if gfmtimeutc   in p^.flags then instream.read(p^.mtimeutc, sizeof(p^.mtimeutc));
   if gfattributes in p^.flags then instream.read(p^.attributes, sizeof(p^.attributes));
   if gfmode       in p^.flags then instream.read(p^.mode, sizeof(p^.mode));
   if gfsize       in p^.flags then instream.read(p^.size, sizeof(p^.size));
-  if gflinkname   in p^.flags then p^.linkname := instream.readansistring;
+  if gflinkname   in p^.flags then instream.readrawbytestring(p^.linkname);
   if gfuserid     in p^.flags then instream.read(p^.userid, sizeof(p^.userid));
   if gfgroupid    in p^.flags then instream.read(p^.groupid, sizeof(p^.groupid));
-  if gfusername   in p^.flags then p^.username  := instream.readansistring;
-  if gfgroupname  in p^.flags then p^.groupname := instream.readansistring;
-  if gfcomment    in p^.flags then p^.comment   := instream.readansistring;
+  if gfusername   in p^.flags then instream.readrawbytestring(p^.username);
+  if gfgroupname  in p^.flags then instream.readrawbytestring(p^.groupname);
+  if gfcomment    in p^.flags then instream.readrawbytestring(p^.comment);
 
   if gfsize in p^.flags then
   begin
@@ -626,8 +608,8 @@ var
   size:    int64    = 0;
   version: longword = 1;
 begin
-  size := instream.seek(0, soend);
-          instream.seek(0, sobeginning);
+  size := instream.size;
+          instream.seek(0);
   p    := new(pgulpitem);
   while offset < size do
   begin
@@ -636,7 +618,7 @@ begin
     inc(offset, p^.offset2 - p^.offset1);
     if gfclose in p^.flags then
     begin
-      if instream.seek(offset, sobeginning) <> offset then
+      if instream.seek(offset) <> offset then
         raise exception.createfmt(gereadarchive, ['003008']);
       inc(version);
     end;
@@ -658,8 +640,8 @@ var
   size:    int64    = 0;
   version: longword = 1;
 begin
-  size := instream.seek(0, soend);
-          instream.seek(0, sobeginning);
+  size := instream.size;
+          instream.seek(0);
   p    := new(pgulpitem);
   while offset < size do
   begin
@@ -668,7 +650,7 @@ begin
     inc(offset, p^.offset2 - p^.offset1);
     if gfclose in p^.flags then
     begin
-      if instream.seek(offset, sobeginning) <> offset then
+      if instream.seek(offset) <> offset then
         raise exception.createfmt(gereadarchive, ['003018']);
       inc(version);
     end;
@@ -693,7 +675,7 @@ begin
     end;
   end;
   dispose(p);
-  if size <> instream.seek(0, soend) then
+  if offset <> size then
     raise exception.createfmt(gebrokenarchive, ['003014']);
 end;
 
@@ -833,12 +815,12 @@ begin
   showmessage(format(gmsync, [filename, lineending]));
   showmessage(format(gmscanningarchive, [#13]));
   if fileexists(filename) = TRUE then
-    stream := tfilestream.create(filename, fmopenreadwrite)
+    stream := tstream.create(filename, fminout)
   else
-    stream := tfilestream.create(filename, fmcreate);
+    stream := tstream.create(filename, fmoutput);
   list1    := tgulplist.create(@compare40);
   libread(stream, list1, $FFFFFFFF);
-  size := stream.seek(0, soend);
+  size := stream.seek(stream.size);
 
   showmessage(format(gmscanningfs, [#13]));
   scan := tscanner.create;
@@ -924,7 +906,7 @@ begin
   showmessage(gulpdescription);
   showmessage(format(gmrestore, [filename, lineending]));
   showmessage(format(gmscanningarchive, [#13]));
-  stream := tfilestream.create(filename, fmopenread);
+  stream := tstream.create(filename, fminput);
   list1  := tgulplist.create(@compare40);
   if funtilversion = 0 then
     funtilversion := $FFFFFFFF;
@@ -1012,12 +994,12 @@ begin
   showmessage(gulpdescription);
   showmessage(format(gmcheck, [filename, lineending]));
   showmessage(format(gmscanningarchive, [#13]));
-  stream := tfilestream.create(filename, fmopenread);
+  stream := tstream.create(filename, fminput);
   list1  := tgulplist.create(@compare41);
   libread(stream, list1);
 
   showmessage(format(gmcheckitems, [#13]));
-  nul := tnulstream.create;
+  nul := tnulstream.create('nul', fmoutput);
   for i := 0 to list1.count - 1 do
   begin
   {$IFDEF DEBUG}
@@ -1025,8 +1007,8 @@ begin
   {$ENDIF}
     if gfsize in list1[i]^.flags then
     begin
-      stream.seek(list1[i]^.offset1, sobeginning);
-      librestore(stream, nul, list1[i]^.size);
+      stream.seek(list1[i]^.offset1);
+      libmove(stream, nul, list1[i]^.offset2 - list1[i]^.offset1);
     end;
   end;
   libclear(list1);
@@ -1052,7 +1034,7 @@ begin
   showmessage(gulpdescription);
   showmessage(format(gmfix, [filename, lineending]));
   showmessage(format(gmfixitems, [#13]));
-  stream := tfilestream.create(filename, fmopenreadwrite);
+  stream := tstream.create(filename, fminout);
 
   p := new(pgulpitem);
   try
@@ -1066,7 +1048,7 @@ begin
       inc(offset, p^.offset2 - p^.offset1);
       if gfclose in p^.flags then
       begin
-        if stream.seek(offset, sobeginning) <> offset then
+        if stream.seek(offset) <> offset then
           raise exception.createfmt(gereadarchive, ['003020']);
         size := offset;
       end;
@@ -1103,13 +1085,13 @@ begin
   showmessage(gulpdescription);
   showmessage(format(gmpurge, [filename, lineending]));
   showmessage(format(gmscanningarchive, [#13]));
-  stream := tfilestream.create(filename, fmopenread);
+  stream := tstream.create(filename, fminput);
   list1  := tgulplist.create(@compare40);
   libread(stream, list1, $FFFFFFFF);
 
   showmessage(format(gmmoveitems, [#13]));
   tmpname := gettempfilename(extractfiledir(filename), '');
-  tmp     := tfilestream.create(tmpname, fmcreate);
+  tmp     := tstream.create(tmpname, fmoutput);
   if list1.count > 0 then
   begin
     for i := 0 to list1.count - 1 do
@@ -1123,15 +1105,15 @@ begin
     {$ENDIF}
       if gfsize in p^.flags then
       begin
-        stream.seek(p^.offset1, sobeginning);
+        stream.seek(p^.offset1);
         size := p^.offset2 - p^.offset1;
-        p^.offset1 := tmp.seek(0, socurrent);
+        p^.offset1 := tmp.position;
         tmp.copyfrom(stream, size);
-        p^.offset2 := tmp.seek(0, socurrent);
+        p^.offset2 := tmp.position;
       end;
     end;
 
-    tmp.seek(0, sobeginning);
+    tmp.seek(0);
     for i := 0 to list1.count - 1 do
     begin
       p := list1[i];
@@ -1141,7 +1123,7 @@ begin
         system.exclude(p^.flags,gfclose);
       libwrite(tmp, p);
     end;
-    tmp.seek(0, soend);
+    tmp.seek(tmp.size);
   end;
   size := stream.size - tmp.size;
 
@@ -1174,7 +1156,7 @@ begin
   showmessage(gulpdescription);
   showmessage(format(gmlist, [filename, lineending]));
   showmessage(format(gmscanningarchive, [#13]));
-  stream := tfilestream.create(filename, fmopenread);
+  stream := tstream.create(filename, fminput);
   if funtilversion > 0 then
   begin
     list1 := tgulplist.create(@compare40);

@@ -25,7 +25,9 @@ unit gulpscanner;
 
 interface
 
-uses classes, gulplist, sysutils;
+uses
+  gulplist,
+  sysutils;
 
 type
   tscanner = class(TObject)

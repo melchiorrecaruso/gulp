@@ -18,28 +18,28 @@ If you have problems with permissions don't forget to prefix with `sudo`
 1. Clone the Gulp repository :
 
 ```sh
-  $ git clone https://github.com/melchiorrecaruso/gulp.git
-  $ cd gulp
+  git clone https://github.com/melchiorrecaruso/gulp.git
+  cd gulp
 ```
 
 2. Checkout the latest Gulp release:
 
 ```sh
-  $ git fetch -p
-  $ git checkout $(git describe --tags `git rev-list --tags --max-count=1`)
+  git fetch -p
+  git checkout $(git describe --tags `git rev-list --tags --max-count=1`)
 ```
 
 3. Build Gulp:
 
 ```sh
-  $ lazbuild gulp.lpi
+  lazbuild gulp.lpi
 ```
-  This will create the gulp application at `$ build/$(TargetCPU)-$(TargetOS)/bin`.
+  This will create the gulp application at `build/$(TargetCPU)-$(TargetOS)/bin`.
 
 4. Install the `Gulp` to `/usr/local/bin` by executing:
 
 ```sh
-  $ sudo cp build/$(TargetCPU)-$(TargetOS)/bin/gulp /usr/local/bin/gulp
+  sudo cp build/$(TargetCPU)-$(TargetOS)/bin/gulp /usr/local/bin/gulp
 ```
 
 To use the newly installed Gulp, quit and restart all running Gulp instances.
@@ -47,25 +47,26 @@ To use the newly installed Gulp, quit and restart all running Gulp instances.
 ##Usage
 The first argument to gulp should be a function; either one of the letters or one of the long function names. A function letter need be prefixed with "-", and can't be combined with other single letter options. A long function name must be prefixed with "--".  Some options take a parameter; with the single-letter form these must be given as separate arguments. With the long form, they may be given by appending "=value to the option".
 
-``` sh
+```sh
 SYNOPSIS
 
-	$ gulp [-] s --synch | r --restore | p --purge | l --list |
-			   c --check | f --fix [options ...] [ files ...]
+	gulp [-] s --synch | r --restore | p --purge | l --list |
+	    	 c --check | f --fix [options ...] [ files ...]
 ```                  
 
 ##Main function mode
                                            
 ####Synchronize archive (*-s*, *--sync*)
-Append changes in files  to archive, or create archive if it does not exist. "files" is a list of file and directory names separated by spaces. If a name is a directory, then it recursively includes all files and subdirectories within. In Windows, files may contain wildcards "*" and "?" in the last component of the path (after the last slash). "*" matches any string and "?" matches any character. 
+Append changes in files  to archive, or create archive if it does not exist. "files" is a list of file and directory names separated by spaces. If a name is a directory, then it recursively includes all files and subdirectories within. In Windows, files may contain wildcards "\*" and "?" in the last component of the path (after the last slash). "\*" matches any string and "?" matches any character. 
 
 A change is an addition, update, or deletion of any file or directory in "files" or any of its subdirectories to any depth. A file or directory is considered changed if its size, last-modified date, or Windows attributes or Unix/Linux permissions differ between the internal and external versions. File contents are not compared.
 
-For each added or updated file or directory, the following information is saved in the archive: the contents, the file or directory name as it appears in " files " plus any trailing path, the last-modified date, and the Unix/Linux permissions or Windows attributes. Other metadata such as owner, group, last access time, etc. are not saved. Symbolic links are saved. Hard links are followed as if they were ordinary files. Special file types such as devices, named pipes, and named sockets are not saved. If any file cannot be read (e.g. permission denied), then it is skipped. However, other files are still added and the update is still valid."
+For each added or updated file or directory, the following information is saved in the archive: the contents, the file or directory name as it appears in "files" plus any trailing path, the last-modified date and the Unix/Linux permissions or Windows attributes. Other metadata such as owner name, group name, last access time, etc. are not saved. Symbolic links are saved. Hard links are followed as if they were ordinary files. Special file types such as devices, named pipes, and named sockets are not saved. If any file cannot be read (e.g. permission denied), exception is raised.
 
 ###
-> **Note**: 
-> - Updates are transacted. If **GULP** is interrupted before completing the update, then the archive can be repair with fix function.
+> **Note** :
+>
+> - Updates are transacted. If GULP is interrupted before completing the update, then the archive can be repair with fix function.
 >
 
 ###
@@ -73,14 +74,14 @@ For each added or updated file or directory, the following information is saved 
 >
 > Create archive.gulp from directories foo and bar
 >
-	$ gulp -s archive.gulp foo bar
+	gulp -s archive.gulp foo bar
 >
 
 #### Restore files and directories (*-r*, *--restore*)
 Restore "files" (including the contents of directories), or extract the whole archive contents if "files" is omitted. The file names, last-modified date, and permissions or attributes are set as saved in the archive. 
 
 ###
-> **Note**: 
+> **Note** : 
 >
 > - If there are multiple versions of a file stored, then only the latest version is extracted. 
 >
@@ -90,19 +91,19 @@ Restore "files" (including the contents of directories), or extract the whole ar
 ###
 >**Example** :
 >
->	Restore all files from archive.gulp into current directories
+> Restore all files from archive.gulp into current directories
 >
-	$ gulp -r archive.gulp
+	gulp -r archive.gulp
 >
 
 #### Purge archive (*-p*, *--purge*)
- Purge archive, remove old files archived.
+Purge archive, remove old files archived.
 
 #### List archive contents (*-l*, *--list*)
 List "files" within the archive, or list the entire archive contents if "files" is omitted. For each file or directory, show marker, last modified date, Windows attributes or Unix/Linux permissions, size and name. 
 
 ###
-> **Note**: 
+> **Note** : 
 >
 > - Attributes are listed as an octal number in Unix/Linux (as per chmod(1)) or with the letters D, A, S, H, R, I in Windows (as for the attrib command).
 >
@@ -110,13 +111,13 @@ List "files" within the archive, or list the entire archive contents if "files" 
 ###
 >**Example** :
 >
->	List all files in archive.gulp
+> List all files in archive.gulp
 >			
-	$ gulp -l archive.gulp
+	gulp -l archive.gulp
 >
 
 #### Check archive integrity (*-c*, *--check*)
-Check archive integrity by verifying that the data agrees with the stored SHA-1 hashes and sizes and that the data otherwise conforms to the **gulp** standard.
+Check archive integrity by verifying that the data agrees with the stored SHA-1 hashes and sizes and that the data otherwise conforms to the gulp standard.
 
 #### Fix damaged archive (*-f*, *--fix*)
 Truncates any data added after last valid update.
@@ -131,11 +132,11 @@ Avoid operating on files whose names match filename pattern PATTERN. The option 
 >
 > List all files in archive.gulp but exclude .pas files
 >
-	$ gulp -l archive.gulp --exclude='*.pas'
+	gulp -l archive.gulp --exclude='*.pas'
 >
 
 #### Force path (*--forcepath*)
-Force **GULP** to .
+It's recommended store files in archive with relative path names. This option forces GULP to operate on files with absolute path.
 
 #### Include option (*-i*, *--include=PATTERN*)
 Operating on files whose names match filename pattern PATTERN.

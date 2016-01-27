@@ -318,7 +318,7 @@ type
     writeln('       up and restoring the operating system.                             ');
     writeln('                                                                          ');
     writeln('AUTHOR                                                                    ');
-    writeln('       gulp is copyright (c) 2014-2015, Melchiorre Caruso. It is  licensed');
+    writeln('       gulp is copyright (c) 2014-2016, Melchiorre Caruso. It is  licensed');
     writeln('       under    GPL    v2.   For   information   on   the   license,   see');
     writeln('       <http://www.gnu.org/copyleft/gpl.html>. Program was written by Mel‐');
     writeln('       chiorre Caruso <melchiorrecaruso at gmail dot com>"                ');
