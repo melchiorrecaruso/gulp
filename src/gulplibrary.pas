@@ -71,7 +71,7 @@ type
     offset1:    int64;
     offset2:    int64;
     checksum:   tsha1digest;
-    version:    longword;
+    version:    longint;
   end;
 
   { gulp item list }
@@ -136,8 +136,7 @@ uses
   dateutils,
   gulpmessages,
   gulpscanner,
-  gulpstream,
-  math;
+  gulpstream;
 
 const
   gulpmarker : tsha1digest = (106,144,157,18,207,10,
@@ -495,19 +494,19 @@ procedure libwrite(outstream: tstream; p: pgulpitem);
 begin
   outstream.write(gulpmarker, sizeof(tsha1digest));
   outstream.write(p^.flags, sizeof(p^.flags));
-  outstream.writerawbytestring(p^.name);
+  outstream.write(p^.name);
   outstream.write(p^.stimeutc, sizeof(p^.stimeutc));
 
   if gfmtimeutc   in p^.flags then outstream.write(p^.mtimeutc, sizeof(p^.mtimeutc));
   if gfattributes in p^.flags then outstream.write(p^.attributes, sizeof(p^.attributes));
   if gfmode       in p^.flags then outstream.write(p^.mode, sizeof(p^.mode));
   if gfsize       in p^.flags then outstream.write(p^.size, sizeof(p^.size));
-  if gflinkname   in p^.flags then outstream.writerawbytestring(p^.linkname);
+  if gflinkname   in p^.flags then outstream.write(p^.linkname);
   if gfuserid     in p^.flags then outstream.write(p^.userid, sizeof(p^.userid));
   if gfgroupid    in p^.flags then outstream.write(p^.groupid, sizeof(p^.groupid));
-  if gfusername   in p^.flags then outstream.writerawbytestring(p^.username);
-  if gfgroupname  in p^.flags then outstream.writerawbytestring(p^.groupname);
-  if gfcomment    in p^.flags then outstream.writerawbytestring(p^.comment);
+  if gfusername   in p^.flags then outstream.write(p^.username);
+  if gfgroupname  in p^.flags then outstream.write(p^.groupname);
+  if gfcomment    in p^.flags then outstream.write(p^.comment);
 
   if gfsize in p^.flags then
   begin
@@ -530,6 +529,7 @@ begin
     include(list[list.count - 1]^.flags, gfclose);
     for i := 0 to list.count - 1 do
       libwrite(outstream, list[i]);
+
     for i := 0 to list.count - 1 do
       if list[i]^.attributes and (gulpnotsupported) = 0 then
       begin
@@ -541,17 +541,17 @@ begin
             try
               instream := tstream.create(list[i]^.name, fminput);
               list[i]^.checksum := libmove(instream, outstream, list[i]^.size);
-              freeandnil(instream);
+              instream.destroy;
             except
 
             end;
             list[i]^.offset2 := outstream.position;
-
           end;
       end;
     outstream.seek(size);
     for i := 0 to list.count - 1 do
       libwrite(outstream, list[i]);
+
     outstream.seek(outstream.size);
   end;
 end;
@@ -567,19 +567,19 @@ begin
     raise exception.createfmt(gewrongmarker, ['003002']);
 
   instream.read(p^.flags, sizeof(p^.flags));
-  instream.readrawbytestring(p^.name);
+  instream.read(p^.name);
   instream.read(p^.stimeutc, sizeof(p^.stimeutc));
 
   if gfmtimeutc   in p^.flags then instream.read(p^.mtimeutc, sizeof(p^.mtimeutc));
   if gfattributes in p^.flags then instream.read(p^.attributes, sizeof(p^.attributes));
   if gfmode       in p^.flags then instream.read(p^.mode, sizeof(p^.mode));
   if gfsize       in p^.flags then instream.read(p^.size, sizeof(p^.size));
-  if gflinkname   in p^.flags then instream.readrawbytestring(p^.linkname);
+  if gflinkname   in p^.flags then instream.read(p^.linkname);
   if gfuserid     in p^.flags then instream.read(p^.userid, sizeof(p^.userid));
   if gfgroupid    in p^.flags then instream.read(p^.groupid, sizeof(p^.groupid));
-  if gfusername   in p^.flags then instream.readrawbytestring(p^.username);
-  if gfgroupname  in p^.flags then instream.readrawbytestring(p^.groupname);
-  if gfcomment    in p^.flags then instream.readrawbytestring(p^.comment);
+  if gfusername   in p^.flags then instream.read(p^.username);
+  if gfgroupname  in p^.flags then instream.read(p^.groupname);
+  if gfcomment    in p^.flags then instream.read(p^.comment);
 
   if gfsize in p^.flags then
   begin
@@ -999,7 +999,7 @@ begin
   libread(stream, list1);
 
   showmessage(format(gmcheckitems, [#13]));
-  nul := tnulstream.create('nul', fmoutput);
+  nul := tnulstream.create;
   for i := 0 to list1.count - 1 do
   begin
   {$IFDEF DEBUG}

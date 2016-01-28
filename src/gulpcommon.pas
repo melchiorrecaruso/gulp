@@ -45,6 +45,11 @@ function hextodata(const s: rawbytestring; var data; count: longint): boolean;
 function setprioritynormal: boolean;
 function setpriorityidle: boolean;
 
+function max(a, b: longint): longint; inline; overload;
+function min(a, b: longint): longint; inline; overload;
+function max(const a, b: int64): int64; inline; overload;
+function min(const a, b: int64): int64; inline; overload;
+
 implementation
 
 uses
@@ -265,5 +270,38 @@ begin
 {$ENDIF}
 {$ENDIF}
 end;
+
+function max(a, b: longint): longint; inline;
+begin
+  if a > b then
+    result := a
+  else
+    result := b;
+end;
+
+function min(a, b: longint): longint; inline;
+begin
+  if a < b then
+    result := a
+  else
+    result := b;
+end;
+
+function max(const a, b: int64): int64; inline;
+begin
+  if a > b then
+    result := a
+  else
+    result := b;
+end;
+
+function min(const a, b: int64): int64; inline;
+begin
+  if a < b then
+    result := a
+  else
+    result := b;
+end;
+
 
 end.
