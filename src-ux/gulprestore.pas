@@ -1,37 +1,40 @@
 unit gulprestore;
 
+{$mode objfpc}
+{$h+}
+
 interface
 
 uses
-  Classes, SysUtils, FileUtil, DividerBevel,
-  Forms, Controls, Graphics, Dialogs,
-  ExtCtrls, StdCtrls, Buttons;
+  classes, sysutils, fileutil, dividerbevel,
+  forms, controls, graphics, dialogs,
+  extctrls, stdctrls, buttons;
 
 type
 
-  { TRestoreForm }
+  { trestoreform }
 
-  TRestoreForm = class(TForm)
-    OkBitBtn: TBitBtn;
-    CancelBitBtn: TBitBtn;
-    ModeComboBox: TComboBox;
-    ExcludeDividerBevel: TDividerBevel;
-    IncludeDividerBevel: TDividerBevel;
-    FolderDividerBevel: TDividerBevel;
-    FolderBitBtn: TBitBtn;
-    RevisionComboBox: TComboBox;
-    OptionDividerBevel: TDividerBevel;
-    FolderEdit: TEdit;
-    TopShape: TShape;
-    TopImage: TImage;
-    TopLabel: TLabel;
-    ModeLabel: TLabel;
-    RevisionLabel: TLabel;
-    IncludeMemo: TMemo;
-    ExcludeMemo: TMemo;
-    SelectDirectoryDialog: TSelectDirectoryDialog;
-    TopPanel: TPanel;
-    procedure FolderBitBtnClick(Sender: TObject);
+  trestoreform = class(tform)
+    okbitbtn: tbitbtn;
+    cancelbitbtn: tbitbtn;
+    modecombobox: tcombobox;
+    excludedividerbevel: tdividerbevel;
+    includedividerbevel: tdividerbevel;
+    folderdividerbevel: tdividerbevel;
+    folderbitbtn: tbitbtn;
+    revisioncombobox: tcombobox;
+    optiondividerbevel: tdividerbevel;
+    folderedit: tedit;
+    topshape: tshape;
+    topimage: timage;
+    toplabel: tlabel;
+    modelabel: tlabel;
+    revisionlabel: tlabel;
+    includememo: tmemo;
+    excludememo: tmemo;
+    selectdirectorydialog: tselectdirectorydialog;
+    toppanel: tpanel;
+    procedure folderbitbtnclick(sender: tobject);
   private
     { private declarations }
   public
@@ -41,15 +44,15 @@ type
 
 implementation
 
-{$R gulprestore.lfm}
+{$r gulprestore.lfm}
 
-{ TRestoreForm }
+{ trestoreform }
 
-procedure TRestoreForm.FolderBitBtnClick(Sender: TObject);
+procedure trestoreform.folderbitbtnclick(sender: tobject);
 begin
-  if SelectDirectoryDialog.Execute = TRUE then
+  if selectdirectorydialog.execute = true then
   begin
-    FolderEdit.Text := SelectDirectoryDialog.FileName;
+    folderedit.text := selectdirectorydialog.filename;
   end;
 end;
 

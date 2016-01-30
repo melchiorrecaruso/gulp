@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 408
+  Left = 623
   Height = 439
-  Top = 81
+  Top = 117
   Width = 625
   Caption = 'Gulp - A simple journaling archiver'
   ClientHeight = 439
@@ -12,7 +12,7 @@ object MainForm: TMainForm
   OnDestroy = FormDestroy
   ParentFont = True
   SessionProperties = 'Width;Height;WindowState'
-  LCLVersion = '1.5'
+  LCLVersion = '1.7'
   object ListView: TListView
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = FiltersPanel
@@ -67,7 +67,7 @@ object MainForm: TMainForm
     Enabled = False
     MultiSelect = True
     OwnerData = True
-    PopupMenu = PopupMenu
+    PopupMenu = PopupMenu2
     ReadOnly = True
     RowSelect = True
     ScrollBars = ssAutoBoth
@@ -1752,7 +1752,7 @@ object MainForm: TMainForm
     left = 24
     top = 184
   end
-  object PopupMenu: TPopupMenu
+  object PopupMenu2: TPopupMenu
     left = 104
     top = 248
     object MenuItem1: TMenuItem
@@ -1786,5 +1786,10 @@ object MainForm: TMainForm
     object MenuItem2: TMenuItem
       Caption = 'New Item2'
     end
+  end
+  object IdleTimer1: TIdleTimer
+    Enabled = False
+    left = 520
+    top = 184
   end
 end

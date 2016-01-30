@@ -68,11 +68,15 @@ uses
 
 constructor tstream.create(const filename: rawbytestring; mode: longint);
 begin
+  {$i-}
   system.assign(ff, filename);
   if mode = fmoutput then
     system.rewrite(ff)
   else
     system.reset(ff);
+  {$i+}
+  if ioresult <> 0 then
+    fail;
 end;
 
 destructor tstream.destroy;

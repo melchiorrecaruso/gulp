@@ -1,37 +1,38 @@
 unit gulpsync;
 
+{$mode objfpc}
+{$h+}
+
 interface
 
 uses
-  Classes, SysUtils, FileUtil, DividerBevel,
-  Forms, Controls, Graphics, Dialogs,
-  ExtCtrls, StdCtrls, Buttons;
+  classes, sysutils, fileutil, dividerbevel,
+  forms, controls, graphics, dialogs,
+  extctrls, stdctrls, buttons;
 
 type
 
-  { TSyncForm }
+  { tsyncform }
 
-  TSyncForm = class(TForm)
-    CompressionModeComboBox: TComboBox;
-    CompressionModeLabel: TLabel;
-    OkBitBtn: TBitBtn;
-    CancelBitBtn: TBitBtn;
-    UpdateModeComboBox: TComboBox;
-    ExcludeDividerBevel: TDividerBevel;
-    IncludeDividerBevel: TDividerBevel;
-    FolderDividerBevel: TDividerBevel;
-    FileNameBitBtn: TBitBtn;
-    OptionDividerBevel: TDividerBevel;
-    FileNameEdit: TEdit;
-    TopShape: TShape;
-    TopImage: TImage;
-    TopLabel: TLabel;
-    UpdateModeLabel: TLabel;
-    IncludeMemo: TMemo;
-    ExcludeMemo: TMemo;
-    SaveDialog: TSaveDialog;
-    TopPanel: TPanel;
-    procedure FileNameBitBtnClick(Sender: TObject);
+  tsyncform = class(tform)
+    okbitbtn: tbitbtn;
+    cancelbitbtn: tbitbtn;
+    updatemodecombobox: tcombobox;
+    excludedividerbevel: tdividerbevel;
+    includedividerbevel: tdividerbevel;
+    folderdividerbevel: tdividerbevel;
+    filenamebitbtn: tbitbtn;
+    optiondividerbevel: tdividerbevel;
+    filenameedit: tedit;
+    topshape: tshape;
+    topimage: timage;
+    toplabel: tlabel;
+    updatemodelabel: tlabel;
+    includememo: tmemo;
+    excludememo: tmemo;
+    savedialog: tsavedialog;
+    toppanel: tpanel;
+    procedure filenamebitbtnclick(sender: tobject);
   private
     { private declarations }
   public
@@ -41,17 +42,17 @@ type
 
 implementation
 
-{$R gulpsync.lfm}
+{$r gulpsync.lfm}
 
-{ TSyncForm }
+{ tsyncform }
 
-procedure TSyncForm.FileNameBitBtnClick(Sender: TObject);
+procedure tsyncform.filenamebitbtnclick(sender: tobject);
 var
-  Folder : string;
+  folder : string;
 begin
-  if SelectDirectory(Folder, [sdAllowCreate, sdPerformCreate, sdPrompt], 0) = TRUE then
+  if selectdirectory(folder, [sdallowcreate, sdperformcreate, sdprompt], 0) = true then
   begin
-    FileNameEdit.Text := Folder;
+    filenameedit.text := folder;
   end;
 end;
 

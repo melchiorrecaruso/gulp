@@ -1,7 +1,7 @@
 object SyncForm: TSyncForm
-  Left = 450
+  Left = 788
   Height = 530
-  Top = 114
+  Top = 93
   Width = 460
   Caption = 'Aggiorna'
   ClientHeight = 530
@@ -10,7 +10,7 @@ object SyncForm: TSyncForm
   Constraints.MinHeight = 530
   Constraints.MinWidth = 460
   Position = poMainFormCenter
-  LCLVersion = '1.5'
+  LCLVersion = '1.7'
   object TopPanel: TPanel
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = Owner
@@ -253,7 +253,6 @@ object SyncForm: TSyncForm
   end
   object IncludeDividerBevel: TDividerBevel
     AnchorSideLeft.Control = Owner
-    AnchorSideTop.Control = CompressionModeComboBox
     AnchorSideTop.Side = asrBottom
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
@@ -343,50 +342,6 @@ object SyncForm: TSyncForm
     Constraints.MaxHeight = 1
     Constraints.MinHeight = 1
     Pen.Color = clGray
-  end
-  object CompressionModeComboBox: TComboBox
-    AnchorSideLeft.Control = CompressionModeLabel
-    AnchorSideLeft.Side = asrBottom
-    AnchorSideTop.Control = UpdateModeComboBox
-    AnchorSideTop.Side = asrBottom
-    AnchorSideRight.Control = Owner
-    AnchorSideRight.Side = asrBottom
-    Left = 200
-    Height = 29
-    Top = 207
-    Width = 250
-    Anchors = [akTop, akLeft, akRight]
-    BorderSpacing.Left = 10
-    BorderSpacing.Top = 10
-    BorderSpacing.Right = 10
-    Constraints.MinHeight = 29
-    ItemHeight = 0
-    Items.Strings = (
-      'Nessuna compressione'
-      'GZ - compressione veloce'
-      'GZ - compressione standard'
-      'GZ - compressione massima'
-    )
-    Style = csDropDownList
-    TabOrder = 8
-  end
-  object CompressionModeLabel: TLabel
-    AnchorSideLeft.Control = Owner
-    AnchorSideTop.Control = CompressionModeComboBox
-    AnchorSideRight.Control = UpdateModeLabel
-    AnchorSideRight.Side = asrBottom
-    AnchorSideBottom.Control = CompressionModeComboBox
-    AnchorSideBottom.Side = asrBottom
-    Left = 10
-    Height = 29
-    Top = 207
-    Width = 180
-    Anchors = [akTop, akLeft, akRight, akBottom]
-    AutoSize = False
-    BorderSpacing.Left = 10
-    Caption = 'Modalità di compressione'
-    Layout = tlCenter
-    ParentColor = False
   end
   object SaveDialog: TSaveDialog
     left = 344

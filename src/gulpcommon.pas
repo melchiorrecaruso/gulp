@@ -39,9 +39,12 @@ function filegetuserid(const filename: rawbytestring): longword;
 function filegetusername(const filename: rawbytestring): rawbytestring;
 function filegetgroupid(const filename: rawbytestring): longword;
 function filegetgroupname(const filename: rawbytestring): rawbytestring;
+
 function isabsolutepath(const pathname: rawbytestring): boolean;
+
 function hex(const data; count: longint): rawbytestring;
 function hextodata(const s: rawbytestring; var data; count: longint): boolean;
+
 function setprioritynormal: boolean;
 function setpriorityidle: boolean;
 

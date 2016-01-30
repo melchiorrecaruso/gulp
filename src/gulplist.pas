@@ -44,6 +44,7 @@ type
     function add(item: tgenericitem): longint; virtual;
     function find(item: tgenericitem): longint; virtual;
     procedure delete(index: longint); virtual;
+    procedure clear; virtual;
   public
     property items[index: longint]: tgenericitem read get; default;
     property count: longint read getcount;
@@ -94,13 +95,18 @@ begin
   flist.delete(index);
 end;
 
+procedure tgenericlist.clear;
+begin
+  while flist.count > 0 do
+    delete(0);
+end;
+
 function tgenericlist.search(item: tgenericitem; var m: longint): longint;
 var
   l, h, i: longint;
 begin
   i := 1;
-  l :=
-    0;
+  l := 0;
   m := 0;
   h := flist.count - 1;
   while h >= l do
@@ -115,25 +121,22 @@ begin
     else
       break;
   end;
+
   if i <> 0 then
   begin
     if i < 0 then
-      m    := m + 1;
+      m := m + 1;
     result := -1;
   end else
     result := m;
 end;
 
 function tgenericlist.add(item: tgenericitem): longint;
-var
-  m: longint;
 begin
-  result := search(item, m);
-  if result = -1 then
-  begin
-    flist.insert(m, item);
-    result := m;
-  end;
+  if search(item, result) = -1 then
+    flist.insert(result, item)
+  else
+    result := -1;
 end;
 
 function tgenericlist.find(item: tgenericitem): longint;

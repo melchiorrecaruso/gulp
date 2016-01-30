@@ -20,7 +20,6 @@
 
 unit gulplibrary;
 
-{$define debug}
 {$mode objfpc}
 {$H+}
 
@@ -31,9 +30,6 @@ uses
   baseunix,
 {$ENDIF}
   gulpcommon,
-{$IFDEF DEBUG}
-  gulpdebug,
-{$ENDIF}
   gulpfixes,
   gulplist,
 {$IFDEF MSWINDOWS}
@@ -457,12 +453,14 @@ begin
     begin
       instream.seek(p^.offset1);
       outstream := tstream.create(p^.name, fmoutput);
-
-      check := sha1match(libmove(instream, outstream, p^.offset2 - p^.offset1), p^.checksum);
-
+      if assigned(outstream) then
+      begin
+        check := sha1match(libmove(instream,
+          outstream, p^.offset2 - p^.offset1), p^.checksum);
+        outstream.destroy;
+      end;
       if check = false then
         raise exception.createfmt(gechecksum, ['003016']);
-      freeandnil(outstream);
     end;
 
     if check = true then
@@ -532,26 +530,21 @@ begin
 
     for i := 0 to list.count - 1 do
       if list[i]^.attributes and (gulpnotsupported) = 0 then
-      begin
-        {$IFDEF DEBUG} debugln(lineending + list[i]^.name); {$ENDIF}
         if list[i]^.attributes and (fasymlink or fadirectory) = 0 then
           if gfsize in list[i]^.flags then
           begin
             list[i]^.offset1 := outstream.position;
-            try
-              instream := tstream.create(list[i]^.name, fminput);
+            instream := tstream.create(list[i]^.name, fminput);
+            if assigned(instream) then
+            begin
               list[i]^.checksum := libmove(instream, outstream, list[i]^.size);
               instream.destroy;
-            except
-
             end;
             list[i]^.offset2 := outstream.position;
           end;
-      end;
     outstream.seek(size);
     for i := 0 to list.count - 1 do
       libwrite(outstream, list[i]);
-
     outstream.seek(outstream.size);
   end;
 end;
@@ -728,8 +721,11 @@ end;
 
 procedure libappend(list: tgulplist; p: pgulpitem);
 begin
-  if list.add(p) = -1 then
-    raise exception.createfmt(geduplicates, ['003019']);
+  if assigned(p) then
+  begin
+    if list.add(p) = -1 then
+      raise exception.createfmt(geduplicates, ['003019']);
+  end;
 end;
 
 function libfind(list: tgulplist; const filename: rawbytestring): longint;
@@ -792,9 +788,6 @@ end;
 
 procedure tgulpapplication.showmessage(const message: rawbytestring);
 begin
-{$IFDEF DEBUG}
-  debugln(message);
-{$ENDIF}
   if assigned(fonshowmessage) then
     fonshowmessage(message);
 end;
@@ -808,9 +801,6 @@ var
   size:   int64;
   stream: tstream;
 begin
-{$IFDEF DEBUG}
-  debugopen(changefileext(filename, '.debug'));
-{$ENDIF}
   showmessage(gulpdescription);
   showmessage(format(gmsync, [filename, lineending]));
   showmessage(format(gmscanningarchive, [#13]));
@@ -849,29 +839,18 @@ begin
   if fnodelete = false then
     for i := 0 to list1.count - 1 do
       if scan.find(list1[i]^.name) = -1 then
-      begin
-      {$IFDEF DEBUG}
-        debugln(lineending + list1[i]^.name);
-      {$ENDIF}
         libappend(list2, libnew1(list1[i]^.name, fstimeutc));
-      end;
 
   showmessage(format(gmsyncitems, [#13]));
   for i := 0 to scan.count - 1 do
   begin
     j := libfind(list1, scan[i]);
     if j = -1 then
-    begin
-    {$IFDEF DEBUG}
-      debugln(lineending + scan[i]);
-    {$ENDIF}
-      libappend(list2, libnew2(scan[i], fstimeutc))
+    begin;
+      libappend(list2, libnew2(scan[i], fstimeutc));
     end else
     if filegettimeutc(scan[i]) <> list1[j]^.mtimeutc then
     begin
-    {$IFDEF DEBUG}
-      debugln(lineending + scan[i]);
-    {$ENDIF}
       libappend(list2, libnew1(scan[i], fstimeutc));
       libappend(list2, libnew2(scan[i], fstimeutc));
     end;
@@ -886,9 +865,6 @@ begin
   freeandnil(scan);
   showmessage(format(gmsyncfinish, [#13,
     filegetsize(filename) - size, lineending]));
-{$IFDEF DEBUG}
-  debugclose;
-{$ENDIF}
 end;
 
 procedure tgulpapplication.restore(const filename: rawbytestring);
@@ -900,9 +876,6 @@ var
   size:   int64 = 0;
   stream: tstream;
 begin
-{$IFDEF DEBUG}
-  debugopen(changefileext(filename, '.debug'));
-{$ENDIF}
   showmessage(gulpdescription);
   showmessage(format(gmrestore, [filename, lineending]));
   showmessage(format(gmscanningarchive, [#13]));
@@ -943,9 +916,6 @@ begin
          (filenamematch(list1[j]^.name, finclude) = false) or
          (filenamematch(list1[j]^.name, fexclude) = true) then
       begin
-      {$IFDEF DEBUG}
-        debugln(lineending + scan[i]);
-      {$ENDIF}
         if directoryexists(scan[i]) = true then
           removedir(scan[i])
         else
@@ -963,9 +933,6 @@ begin
         j := scan.find(p^.name);
         if (j = -1) or (filegettimeutc(scan[j]) <> p^.mtimeutc) then
         begin
-        {$IFDEF DEBUG}
-          debugln(lineending + p^.name );
-        {$ENDIF}
           librestore(stream, p);
           inc(size, p^.size);
         end;
@@ -976,9 +943,6 @@ begin
   freeandnil(stream);
   freeandnil(scan);
   showmessage(format(gmrestorefinish, [#13, size, lineending]));
-{$IFDEF DEBUG}
-  debugclose;
-{$ENDIF}
 end;
 
 procedure tgulpapplication.check(const filename: rawbytestring);
@@ -988,9 +952,6 @@ var
   nul:    tstream;
   stream: tstream;
 begin
-{$IFDEF DEBUG}
-  debugopen(changefileext(filename, '.debug'));
-{$ENDIF}
   showmessage(gulpdescription);
   showmessage(format(gmcheck, [filename, lineending]));
   showmessage(format(gmscanningarchive, [#13]));
@@ -1002,9 +963,6 @@ begin
   nul := tnulstream.create;
   for i := 0 to list1.count - 1 do
   begin
-  {$IFDEF DEBUG}
-    debugln(lineending + list1[i]^.name);
-  {$ENDIF}
     if gfsize in list1[i]^.flags then
     begin
       stream.seek(list1[i]^.offset1);
@@ -1016,9 +974,6 @@ begin
   freeandnil(stream);
   freeandnil(nul);
   showmessage(format(gmcheckfinish, [#13, filegetsize(filename), lineending]));
-{$IFDEF DEBUG}
-  debugclose;
-{$ENDIF}
 end;
 
 procedure tgulpapplication.fix(const filename: rawbytestring);
@@ -1028,9 +983,6 @@ var
   size:   int64 = 0;
   stream: tstream;
 begin
-{$IFDEF DEBUG}
-  debugopen(changefileext(filename, '.debug'));
-{$ENDIF}
   showmessage(gulpdescription);
   showmessage(format(gmfix, [filename, lineending]));
   showmessage(format(gmfixitems, [#13]));
@@ -1041,9 +993,6 @@ begin
     while true do
     begin
       libread(stream, p);
-    {$IFDEF DEBUG}
-      debugln(lineending + p^.name);
-    {$ENDIF}
       inc(offset, itemgetsize(p));
       inc(offset, p^.offset2 - p^.offset1);
       if gfclose in p^.flags then
@@ -1064,9 +1013,6 @@ begin
     raise exception.createfmt(gereadarchive, ['003015']);
   freeandnil(stream);
   showmessage(format(gmfixfinish, [#13, offset, lineending]));
-{$IFDEF DEBUG}
-  debugclose;
-{$ENDIF}
 end;
 
 procedure tgulpapplication.purge(const filename: rawbytestring);
@@ -1074,14 +1020,11 @@ var
   i:       longint;
   list1:   tgulplist;
   p:       pgulpitem;
-  size:    int64 = 0;
+  size:    int64;
   stream:  tstream;
   tmp:     tstream;
   tmpname: rawbytestring;
 begin
-{$IFDEF DEBUG}
-  debugopen(changefileext(filename, '.debug'));
-{$ENDIF}
   showmessage(gulpdescription);
   showmessage(format(gmpurge, [filename, lineending]));
   showmessage(format(gmscanningarchive, [#13]));
@@ -1100,9 +1043,6 @@ begin
     for i := 0 to list1.count - 1 do
     begin
       p := list1[i];
-    {$IFDEF DEBUG}
-      debugln(lineending + p^.name);
-    {$ENDIF}
       if gfsize in p^.flags then
       begin
         stream.seek(p^.offset1);
@@ -1137,9 +1077,6 @@ begin
   if renamefile(tmpname, filename) = false then
     raise exception.createfmt(gerenamefile, [tmpname]);
   showmessage(format(gmpurgefinish, [#13, size, lineending]));
-{$IFDEF DEBUG}
-  debugclose;
-{$ENDIF}
 end;
 
 procedure tgulpapplication.list(const filename: rawbytestring);
@@ -1150,9 +1087,6 @@ var
   p:      pgulpitem;
   stream: tstream;
 begin
-{$IFDEF DEBUG}
-  debugopen(changefileext(filename, '.debug'));
-{$ENDIF}
   showmessage(gulpdescription);
   showmessage(format(gmlist, [filename, lineending]));
   showmessage(format(gmscanningarchive, [#13]));
@@ -1191,9 +1125,6 @@ begin
   for i := 0 to list1.count - 1 do
   begin
     p := list1[i];
-  {$IFDEF DEBUG}
-    debugln(lineending + p^.name);
-  {$ENDIF}
     j := max(j, p^.version);
     if filenamematch(p^.name, finclude) = true then
       if filenamematch(p^.name, fexclude) = false then
@@ -1207,9 +1138,6 @@ begin
   freeandnil(stream);
   showmessage(format(gmlistfinish, [c, lineending]));
   showmessage(format(gmlistlastversion, [j, lineending]));
-{$IFDEF DEBUG}
-  debugclose;
-{$ENDIF}
 end;
 
 end.
