@@ -1,5 +1,6 @@
-program gulpui;
+program gulpx;
 
+{$define usecthreads}
 {$mode objfpc}
 {$h+}
 
@@ -17,7 +18,6 @@ uses
 {$r *.res}
 
 begin
-  application.title :='gulp user interface';
   requirederivedformresource := true;
   application.initialize;
   application.createform(tmainform, mainform);

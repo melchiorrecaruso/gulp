@@ -80,39 +80,43 @@ type
   tgulpshowmessage = procedure(const message: rawbytestring) of object;
   tgulpterminate   = function: boolean of object;
 
-   { gulp application }
+  { gulp application }
 
   tgulpapplication = class
   private
-    fexclude: trawbytestringlist;
+    fexclude:trawbytestringlist;
     finclude: trawbytestringlist;
     fforcepath: boolean;
     fnodelete: boolean;
     fstimeutc: tdatetime;
+    fterminated: boolean;
     funtilversion: longword;
     fonshowitem: tgulpshowitem;
-    fonshowmessage: tgulpshowmessage;
+    fonshowmessage1: tgulpshowmessage;
+    fonshowmessage2: tgulpshowmessage;
     procedure showitem(const item: pgulpitem);
-    procedure showmessage(const message: rawbytestring);
+    procedure showmessage1(const message: rawbytestring);
+    procedure showmessage2(const message: rawbytestring);
   public
     constructor create;
     destructor destroy; override;
     procedure sync(const filename: rawbytestring);
     procedure restore(const filename: rawbytestring);
+    procedure check(const filename: rawbytestring);
+    procedure fix(const filename: rawbytestring);
     procedure purge(const filename: rawbytestring);
     procedure list(const filename: rawbytestring);
-    procedure fix(const filename: rawbytestring);
-    procedure check(const filename: rawbytestring);
     procedure reset;
   public
     property exclude: trawbytestringlist read fexclude;
     property include: trawbytestringlist read finclude;
     property forcepath: boolean read fforcepath write fforcepath;
     property nodelete: boolean read fnodelete write fnodelete;
+    property terminated: boolean read fterminated;
     property untilversion: longword read funtilversion write funtilversion;
     property onshowitem: tgulpshowitem read fonshowitem write fonshowitem;
-    property onshowmessage: tgulpshowmessage
-      read fonshowmessage write fonshowmessage;
+    property onshowmessage1: tgulpshowmessage read fonshowmessage1 write fonshowmessage1;
+    property onshowmessage2: tgulpshowmessage read fonshowmessage2 write fonshowmessage2;
   end;
 
 { usefull routines }
@@ -141,8 +145,7 @@ const
   gulpdescription =
     'GULP v0.0.3 journaling archiver, copyright (c) 2014-2016 Melchiorre Caruso.'
     + lineending +
-    'GULP archiver for user-level incremental backups with rollback capability.'
-    + lineending;
+    'GULP archiver for user-level incremental backups with rollback capability.';
 
   gulpnotsupported = fasysfile or favolumeid;
 
@@ -753,18 +756,17 @@ end;
 constructor tgulpapplication.create;
 begin
   inherited create;
-  fonshowitem    := nil;
-  fonshowmessage := nil;
-  fexclude       := trawbytestringlist.create;
-  finclude       := trawbytestringlist.create;
-  fforcepath     := false;
-  fnodelete      := false;
-  fstimeutc      := localtime2universal(now);
-  funtilversion  := $FFFFFFFF;
+  fonshowitem     := nil;
+  fonshowmessage1 := nil;
+  fonshowmessage2 := nil;
+  fexclude := trawbytestringlist.create;
+  finclude := trawbytestringlist.create;
+  reset;
 end;
 
 destructor tgulpapplication.destroy;
 begin
+  reset;
   fexclude.destroy;
   finclude.destroy;
   inherited destroy;
@@ -777,6 +779,7 @@ begin
   fforcepath    := false;
   fnodelete     := false;
   fstimeutc     := localtime2universal(now);
+  fterminated   := true;
   funtilversion := $FFFFFFFF;
 end;
 
@@ -786,10 +789,16 @@ begin
     fonshowitem(item);
 end;
 
-procedure tgulpapplication.showmessage(const message: rawbytestring);
+procedure tgulpapplication.showmessage1(const message: rawbytestring);
 begin
-  if assigned(fonshowmessage) then
-    fonshowmessage(message);
+  if assigned(fonshowmessage1) then
+    fonshowmessage1(message);
+end;
+
+procedure tgulpapplication.showmessage2(const message: rawbytestring);
+begin
+  if assigned(fonshowmessage2) then
+    fonshowmessage2(message);
 end;
 
 procedure tgulpapplication.sync(const filename: rawbytestring);
@@ -801,18 +810,17 @@ var
   size:   int64;
   stream: tstream;
 begin
-  showmessage(gulpdescription);
-  showmessage(format(gmsync, [filename, lineending]));
-  showmessage(format(gmscanningarchive, [#13]));
+  fterminated := false;
+  showmessage1(gulpdescription);
+  showmessage1(format(gmsync, [filename]));
   if fileexists(filename) = TRUE then
-    stream := tstream.create(filename, fminout)
+    stream := createstream(filename, fminout)
   else
-    stream := tstream.create(filename, fmoutput);
+    stream := createstream(filename, fmoutput);
   list1    := tgulplist.create(@compare40);
   libread(stream, list1, $FFFFFFFF);
   size := stream.seek(stream.size);
 
-  showmessage(format(gmscanningfs, [#13]));
   scan := tscanner.create;
   for i := finclude.count - 1 downto 0 do
     if directoryexists(finclude[i]) = true then
@@ -834,23 +842,26 @@ begin
     if filenamematch(scan[i], fexclude) = true then
       scan.delete(i);
 
-  showmessage(format(gmdeleteitems, [#13]));
   list2 := tgulplist.create(@compare42);
   if fnodelete = false then
     for i := 0 to list1.count - 1 do
       if scan.find(list1[i]^.name) = -1 then
+      begin
+        showmessage2(format(gmdeleteitem, [list1[i]^.name]));
         libappend(list2, libnew1(list1[i]^.name, fstimeutc));
+      end;
 
-  showmessage(format(gmsyncitems, [#13]));
   for i := 0 to scan.count - 1 do
   begin
     j := libfind(list1, scan[i]);
     if j = -1 then
     begin;
+      showmessage2(format(gmsyncitem, [scan[i]]));
       libappend(list2, libnew2(scan[i], fstimeutc));
     end else
     if filegettimeutc(scan[i]) <> list1[j]^.mtimeutc then
     begin
+      showmessage2(format(gmsyncitem, [scan[i]]));
       libappend(list2, libnew1(scan[i], fstimeutc));
       libappend(list2, libnew2(scan[i], fstimeutc));
     end;
@@ -863,8 +874,8 @@ begin
   freeandnil(list2);
   freeandnil(stream);
   freeandnil(scan);
-  showmessage(format(gmsyncfinish, [#13,
-    filegetsize(filename) - size, lineending]));
+  showmessage1(format(gmsyncfinish, [filegetsize(filename) - size]));
+  fterminated := true;
 end;
 
 procedure tgulpapplication.restore(const filename: rawbytestring);
@@ -876,16 +887,15 @@ var
   size:   int64 = 0;
   stream: tstream;
 begin
-  showmessage(gulpdescription);
-  showmessage(format(gmrestore, [filename, lineending]));
-  showmessage(format(gmscanningarchive, [#13]));
-  stream := tstream.create(filename, fminput);
+  fterminated := false;
+  showmessage1(gulpdescription);
+  showmessage1(format(gmrestore, [filename]));
+  stream := createstream(filename, fminput);
   list1  := tgulplist.create(@compare40);
   if funtilversion = 0 then
     funtilversion := $FFFFFFFF;
   libread(stream, list1, funtilversion);
 
-  showmessage(format(gmscanningfs, [#13]));
   scan := tscanner.create;
   scan.add('*');
   for i := finclude.count - 1 downto 0 do
@@ -907,7 +917,6 @@ begin
   end;
   fexclude.add(filename);
 
-  showmessage(format(gmdeleteitems, [#13]));
   if fnodelete = false then
     for i := scan.count - 1 downto 0 do
     begin
@@ -916,6 +925,7 @@ begin
          (filenamematch(list1[j]^.name, finclude) = false) or
          (filenamematch(list1[j]^.name, fexclude) = true) then
       begin
+        showmessage2(format(gmdeleteitem, [scan[i]]));
         if directoryexists(scan[i]) = true then
           removedir(scan[i])
         else
@@ -923,7 +933,6 @@ begin
       end;
     end;
 
-  showmessage(format(gmrestoreitems, [#13]));
   for i := list1.count - 1 downto 0 do
   begin
     p := list1[i];
@@ -933,6 +942,7 @@ begin
         j := scan.find(p^.name);
         if (j = -1) or (filegettimeutc(scan[j]) <> p^.mtimeutc) then
         begin
+          showmessage2(format(gmrestoreitem, [p^.name]));
           librestore(stream, p);
           inc(size, p^.size);
         end;
@@ -942,7 +952,8 @@ begin
   freeandnil(list1);
   freeandnil(stream);
   freeandnil(scan);
-  showmessage(format(gmrestorefinish, [#13, size, lineending]));
+  showmessage1(format(gmrestorefinish, [size]));
+  fterminated := true;
 end;
 
 procedure tgulpapplication.check(const filename: rawbytestring);
@@ -952,19 +963,20 @@ var
   nul:    tstream;
   stream: tstream;
 begin
-  showmessage(gulpdescription);
-  showmessage(format(gmcheck, [filename, lineending]));
-  showmessage(format(gmscanningarchive, [#13]));
-  stream := tstream.create(filename, fminput);
+  fterminated := false;
+  showmessage1(gulpdescription);
+  showmessage1(format(gmcheck, [filename]));
+  stream := createstream(filename, fminput);
   list1  := tgulplist.create(@compare41);
   libread(stream, list1);
 
-  showmessage(format(gmcheckitems, [#13]));
   nul := tnulstream.create;
   for i := 0 to list1.count - 1 do
   begin
     if gfsize in list1[i]^.flags then
     begin
+      showmessage2(format(
+        gmcheckitem, [list1[i]^.name]));
       stream.seek(list1[i]^.offset1);
       libmove(stream, nul, list1[i]^.offset2 - list1[i]^.offset1);
     end;
@@ -973,7 +985,8 @@ begin
   freeandnil(list1);
   freeandnil(stream);
   freeandnil(nul);
-  showmessage(format(gmcheckfinish, [#13, filegetsize(filename), lineending]));
+  showmessage1(format(gmcheckfinish, [filegetsize(filename)]));
+  fterminated := true;
 end;
 
 procedure tgulpapplication.fix(const filename: rawbytestring);
@@ -983,10 +996,10 @@ var
   size:   int64 = 0;
   stream: tstream;
 begin
-  showmessage(gulpdescription);
-  showmessage(format(gmfix, [filename, lineending]));
-  showmessage(format(gmfixitems, [#13]));
-  stream := tstream.create(filename, fminout);
+  fterminated := false;
+  showmessage1(gulpdescription);
+  showmessage1(format(gmfix, [filename]));
+  stream := createstream(filename, fminout);
 
   p := new(pgulpitem);
   try
@@ -995,6 +1008,8 @@ begin
       libread(stream, p);
       inc(offset, itemgetsize(p));
       inc(offset, p^.offset2 - p^.offset1);
+
+      showmessage2(format(gmfixitem, [p^.name]));
       if gfclose in p^.flags then
       begin
         if stream.seek(offset) <> offset then
@@ -1012,7 +1027,8 @@ begin
   else
     raise exception.createfmt(gereadarchive, ['003015']);
   freeandnil(stream);
-  showmessage(format(gmfixfinish, [#13, offset, lineending]));
+  showmessage1(format(gmfixfinish, [offset]));
+  fterminated := true;
 end;
 
 procedure tgulpapplication.purge(const filename: rawbytestring);
@@ -1025,16 +1041,15 @@ var
   tmp:     tstream;
   tmpname: rawbytestring;
 begin
-  showmessage(gulpdescription);
-  showmessage(format(gmpurge, [filename, lineending]));
-  showmessage(format(gmscanningarchive, [#13]));
-  stream := tstream.create(filename, fminput);
+  fterminated := false;
+  showmessage1(gulpdescription);
+  showmessage1(format(gmpurge, [filename]));
+  stream := createstream(filename, fminput);
   list1  := tgulplist.create(@compare40);
   libread(stream, list1, $FFFFFFFF);
 
-  showmessage(format(gmmoveitems, [#13]));
   tmpname := gettempfilename(extractfiledir(filename), '');
-  tmp     := tstream.create(tmpname, fmoutput);
+  tmp     := createstream(tmpname, fmoutput);
   if list1.count > 0 then
   begin
     for i := 0 to list1.count - 1 do
@@ -1043,6 +1058,8 @@ begin
     for i := 0 to list1.count - 1 do
     begin
       p := list1[i];
+
+      showmessage2(format(gmmoveitem, [p^.name]));
       if gfsize in p^.flags then
       begin
         stream.seek(p^.offset1);
@@ -1076,7 +1093,8 @@ begin
   else
   if renamefile(tmpname, filename) = false then
     raise exception.createfmt(gerenamefile, [tmpname]);
-  showmessage(format(gmpurgefinish, [#13, size, lineending]));
+  showmessage1(format(gmpurgefinish, [size]));
+  fterminated := true;
 end;
 
 procedure tgulpapplication.list(const filename: rawbytestring);
@@ -1087,10 +1105,10 @@ var
   p:      pgulpitem;
   stream: tstream;
 begin
-  showmessage(gulpdescription);
-  showmessage(format(gmlist, [filename, lineending]));
-  showmessage(format(gmscanningarchive, [#13]));
-  stream := tstream.create(filename, fminput);
+  fterminated := false;
+  showmessage1(gulpdescription);
+  showmessage1(format(gmlist, [filename]));
+  stream := createstream(filename, fminput);
   if funtilversion > 0 then
   begin
     list1 := tgulplist.create(@compare40);
@@ -1121,7 +1139,6 @@ begin
 
   c := 0;
   j := 0;
-  showmessage(format(gmlistitems, [#13, lineending]));
   for i := 0 to list1.count - 1 do
   begin
     p := list1[i];
@@ -1136,8 +1153,9 @@ begin
   libclear(list1);
   freeandnil(list1);
   freeandnil(stream);
-  showmessage(format(gmlistfinish, [c, lineending]));
-  showmessage(format(gmlistlastversion, [j, lineending]));
+  showmessage1(format(gmlistfinish, [c]));
+  showmessage1(format(gmlistlastversion, [j]));
+  fterminated := true;
 end;
 
 end.

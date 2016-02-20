@@ -71,7 +71,7 @@ type
 
   procedure tshellapplication.showmessage(const message: rawbytestring);
   begin
-    write(message);
+    writeln(message);
   end;
 
   procedure tshellapplication.showitem(p: pgulpitem);
@@ -106,8 +106,9 @@ type
   begin
     start := now;
     app   := tgulpapplication.create;
-    app.onshowmessage := @showmessage;
-    app.onshowitem := @showitem;
+    app.onshowitem     := @showitem;
+    app.onshowmessage1 := @showmessage;
+    app.onshowmessage2 := nil;
     try
       s := checkoptions('-s: -r: -p: -l: -c: -f: -u: -m: -i: -e: h ',
         '--synch: --restore: --purge:    --list:    --check:   ' +
@@ -147,8 +148,7 @@ type
         if hasoption('-r', '--restore') then
           app.restore(getoptionvalue('-r', '--restore'))
         else
-        if hasoption(
-          '-p', '--purge') then
+        if hasoption('-p', '--purge') then
           app.purge(getoptionvalue('-p', '--purge'))
         else
         if hasoption('-c', '--check') then

@@ -59,10 +59,20 @@ type
     function seek(const offset: int64): int64; override;
   end;
 
+  function createstream(const filename: rawbytestring; mode: longint): tstream;
+
 implementation
 
 uses
-  gulpcommon;
+  gulpcommon,
+  sysutils;
+
+function createstream(const filename: rawbytestring; mode: longint): tstream;
+begin
+  result := tstream.create(filename, mode);
+  if assigned(result) = false then
+    raise exception.createfmt('Unable to open stream "%s"', [filename]);
+end;
 
 { tstream class }
 

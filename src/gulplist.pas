@@ -30,8 +30,7 @@ uses classes, sysutils;
 type
   generic tgenericlist<tgenericitem> = class(TObject)
   public
-    type
-      tgenericcompare = function(item1, item2: tgenericitem): longint;
+    type tgenericcompare = function(item1, item2: tgenericitem): longint;
   private
     flist:    tlist;
     fcompare: tgenericcompare;
@@ -44,7 +43,7 @@ type
     function add(item: tgenericitem): longint; virtual;
     function find(item: tgenericitem): longint; virtual;
     procedure delete(index: longint); virtual;
-    procedure clear; virtual;
+    procedure clear;
   public
     property items[index: longint]: tgenericitem read get; default;
     property count: longint read getcount;
@@ -77,6 +76,8 @@ type
 
 implementation
 
+{ tgenericlist }
+
 constructor tgenericlist.create(compare: tgenericcompare);
 begin
   inherited create;
@@ -86,6 +87,7 @@ end;
 
 destructor tgenericlist.destroy;
 begin
+  clear;
   flist.destroy;
   inherited destroy;
 end;
@@ -97,7 +99,7 @@ end;
 
 procedure tgenericlist.clear;
 begin
-  while flist.count > 0 do
+  while getcount > 0 do
     delete(0);
 end;
 
@@ -156,6 +158,8 @@ begin
   result := flist.count;
 end;
 
+{ trawbytestringlist }
+
 function compare(item1, item2: prawbytestringitem): longint;
 begin
 {$IFDEF UNIX}
@@ -188,8 +192,7 @@ end;
 
 procedure trawbytestringlist.clear;
 begin
-  while
-    getcount > 0 do
+  while getcount > 0 do
     delete(0);
 end;
 

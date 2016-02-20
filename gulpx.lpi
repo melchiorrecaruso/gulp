@@ -8,8 +8,9 @@
       </Flags>
       <MainUnit Value="0"/>
       <AutoCreateForms Value="False"/>
-      <Title Value="gulp user interface"/>
+      <Title Value="gulpx"/>
       <UseXPManifest Value="True"/>
+      <Icon Value="0"/>
     </General>
     <i18n>
       <EnableI18N LFM="False"/>
@@ -36,26 +37,26 @@
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="7">
+    <Units Count="4">
       <Unit0>
-        <Filename Value="src-ux/gulpui.pas"/>
+        <Filename Value="src-ux/gulpx.pas"/>
         <IsPartOfProject Value="True"/>
         <IsVisibleTab Value="True"/>
-        <EditorIndex Value="5"/>
-        <CursorPos X="11" Y="15"/>
-        <UsageCount Value="116"/>
+        <EditorIndex Value="1"/>
+        <CursorPos X="11" Y="18"/>
+        <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
         <Filename Value="src-ux/gulpmain.pas"/>
         <IsPartOfProject Value="True"/>
-        <ComponentName Value="MainForm"/>
+        <ComponentName Value="mainform"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <TopLine Value="435"/>
-        <CursorPos Y="547"/>
-        <FoldState Value=" T3kO0N013 piekd0H02A pjBkY034f"/>
-        <UsageCount Value="116"/>
+        <TopLine Value="355"/>
+        <CursorPos X="29" Y="379"/>
+        <FoldState Value=" T3mC0K021741195-"/>
+        <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit1>
@@ -65,55 +66,23 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="31"/>
         <CursorPos Y="29"/>
-        <UsageCount Value="73"/>
-        <DefaultSyntaxHighlighter Value="Delphi"/>
+        <UsageCount Value="167"/>
       </Unit2>
       <Unit3>
         <Filename Value="src/gulplibrary.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="2"/>
-        <TopLine Value="88"/>
-        <CursorPos X="7" Y="120"/>
-        <UsageCount Value="73"/>
+        <TopLine Value="769"/>
+        <CursorPos X="24" Y="778"/>
+        <UsageCount Value="167"/>
         <Loaded Value="True"/>
       </Unit3>
-      <Unit4>
-        <Filename Value="src-ux/gulprestore.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="RestoreForm"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-        <EditorIndex Value="4"/>
-        <TopLine Value="25"/>
-        <CursorPos X="68" Y="32"/>
-        <UsageCount Value="73"/>
-        <Loaded Value="True"/>
-      </Unit4>
-      <Unit5>
-        <Filename Value="src-ux/gulpsync.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="SyncForm"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-        <EditorIndex Value="3"/>
-        <CursorPos X="22" Y="5"/>
-        <UsageCount Value="73"/>
-        <Loaded Value="True"/>
-      </Unit5>
-      <Unit6>
-        <Filename Value="src-ux/gulpthreadlibrary.pas"/>
-        <IsPartOfProject Value="True"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="8"/>
-        <CursorPos X="39" Y="23"/>
-        <UsageCount Value="24"/>
-      </Unit6>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
     <Version Value="11"/>
     <Target>
-      <Filename Value="build/$(TargetCPU)-$(TargetOS)/bin/gulpui"/>
+      <Filename Value="build/$(TargetCPU)-$(TargetOS)/bin/gulpx"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
@@ -130,7 +99,7 @@
     <CodeGeneration>
       <SmartLinkUnit Value="True"/>
       <Optimizations>
-        <OptimizationLevel Value="3"/>
+        <OptimizationLevel Value="4"/>
       </Optimizations>
     </CodeGeneration>
     <Linking>
@@ -149,8 +118,6 @@
       <Verbosity>
         <ShoLineNum Value="True"/>
         <ShowDebugInfo Value="True"/>
-        <ShowCond Value="True"/>
-        <ShowExecInfo Value="True"/>
       </Verbosity>
       <WriteFPCLogo Value="False"/>
     </Other>

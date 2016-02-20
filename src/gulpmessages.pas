@@ -45,34 +45,31 @@ const
   gedeletefile      = 'Unable to delete file "%s"';
   gerenamefile      = 'Unable to rename file "%s"';
 
-  gmdeleteitems     = '%sDelete items...          ';
+  gmdeleteitem      = 'Delete "%s"';
 
-  gmsync            = 'Sync the content of "%s" %s';
-  gmscanningarchive = '%sScanning archive...      ';
-  gmscanningfs      = '%sScanning filesystem...   ';
-  gmsyncitems       = '%sSyncing items...         ';
-  gmsyncfinish      = '%sFinished (%u added bytes) %s';
+  gmsync            = 'Syncing the content of "%s"';
+  gmsyncitem        = 'Syncing "%s"';
+  gmsyncfinish      = 'Finished (%u added bytes)';
 
-  gmrestore         = 'Restore the content of "%s" %s';
-  gmrestoreitems    = '%sRestoring items...          ';
-  gmrestorefinish   = '%sFinished (%u extracted bytes) %s';
+  gmrestore         = 'Restore the content of "%s"';
+  gmrestoreitem     = 'Restoring "%s"';
+  gmrestorefinish   = 'Finished (%u extracted bytes)';
 
-  gmcheck           = 'Check the content of "%s" %s';
-  gmcheckitems      = '%sChecking items...         ';
-  gmcheckfinish     = '%sFinished (%u checked bytes) %s';
+  gmcheck           = 'Checking the content of "%s"';
+  gmcheckitem       = 'Checking "%s"';
+  gmcheckfinish     = 'Finished (%u checked bytes)';
 
-  gmfix             = 'Fix the content of "%s" %s';
-  gmfixitems        = '%sFixing items...         ';
-  gmfixfinish       = '%sFinished (%u removed bytes) %s';
+  gmfix             = 'Fixing the content of "%s"';
+  gmfixitem         = 'Fixing "%s"';
+  gmfixfinish       = 'Finished (%u removed bytes)';
 
-  gmpurge           = 'Purge the content of "%s" %s';
-  gmmoveitems       = '%sMoving items...           ';
-  gmpurgefinish     = '%sFinished (%u removed bytes) %s';
+  gmpurge           = 'Purging the content of "%s"';
+  gmmoveitem        = 'Purging %s';
+  gmpurgefinish     = 'Finished (%u removed bytes)';
 
-  gmlist            = 'List the content of "%s" %s';
-  gmlistitems       = '%sListing items...       %s';
-  gmlistfinish      = 'Finished (%u listed items) %s';
-  gmlistlastversion = 'Lastest version %u %s';
+  gmlist            = 'Listing the content of "%s"';
+  gmlistfinish      = 'Finished (%u listed items)';
+  gmlistlastversion = 'Lastest version %u';
 
 implementation
 
