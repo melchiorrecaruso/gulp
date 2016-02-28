@@ -10,7 +10,6 @@
       <AutoCreateForms Value="False"/>
       <Title Value="gulpx"/>
       <UseXPManifest Value="True"/>
-      <Icon Value="0"/>
     </General>
     <i18n>
       <EnableI18N LFM="False"/>
@@ -41,7 +40,6 @@
       <Unit0>
         <Filename Value="src-ux/gulpx.pas"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
         <CursorPos X="11" Y="18"/>
         <UsageCount Value="200"/>
@@ -53,9 +51,10 @@
         <ComponentName Value="mainform"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <TopLine Value="355"/>
-        <CursorPos X="29" Y="379"/>
-        <FoldState Value=" T3mC0K021741195-"/>
+        <IsVisibleTab Value="True"/>
+        <TopLine Value="558"/>
+        <CursorPos X="24" Y="574"/>
+        <FoldState Value=" T3mH0K65112B6p"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -66,7 +65,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="31"/>
         <CursorPos Y="29"/>
-        <UsageCount Value="167"/>
+        <UsageCount Value="174"/>
       </Unit2>
       <Unit3>
         <Filename Value="src/gulplibrary.pas"/>
@@ -74,7 +73,7 @@
         <EditorIndex Value="2"/>
         <TopLine Value="769"/>
         <CursorPos X="24" Y="778"/>
-        <UsageCount Value="167"/>
+        <UsageCount Value="174"/>
         <Loaded Value="True"/>
       </Unit3>
     </Units>

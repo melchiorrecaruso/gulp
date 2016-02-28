@@ -8,21 +8,21 @@ interface
 uses
   Classes, SysUtils, FileUtil, DividerBevel, ShortPathEdit, ListFilterEdit,
   Forms, Controls, Graphics, Dialogs, ComCtrls, StdCtrls, Buttons, ExtCtrls,
-  Menus, EditBtn, FileCtrl, Math, gulplibrary, gulplist, Types;
+  Menus, EditBtn, FileCtrl, ComboEx, Math, gulplibrary, gulplist, Types;
 
 type
   { tliteitem }
 
   tliteitem = class
   private
-    name     : rawbytestring;
-    path     : rawbytestring;
-    timeutc  : tdatetime;
-    attr     : longint;
-    mode     : longint;
-    size     : int64;
-    version  : longint;
-    visible  : boolean;
+    name    : rawbytestring;
+    path    : rawbytestring;
+    timeutc : tdatetime;
+    attr    : longint;
+    mode    : longint;
+    size    : int64;
+    version : longint;
+    visible : boolean;
   end;
 
   tliteitemlist = specialize tgenericlist<tliteitem>;
@@ -35,6 +35,7 @@ type
     procedure showstatus;
     procedure showitem(p: pgulpitem);
     procedure showmessage(const message: rawbytestring);
+    procedure showpercentage(percentage: longint);
   protected
     procedure execute; override;
   public
@@ -44,31 +45,37 @@ type
   { Tmainform }
 
   Tmainform = class(TForm)
+    aboutname: TLabel;
+    aboutversion: TLabel;
+    aboutdescription: TLabel;
+    aboutlink: TLabel;
+    aboutcopyrigth: TLabel;
+    aboutlicense: TLabel;
+    openpath: TComboBox;
+    restorepath: TDirectoryEdit;
+    aboutimage: TImage;
     welcomepurge: TSpeedButton;
     syncok: TBitBtn;
     restoreok: TBitBtn;
     synccancel: TBitBtn;
     restorecancel: TBitBtn;
     buttonspanel: TPanel;
-    findBtn: TSpeedButton;
-    restorepathchange: TBitBtn;
-    restbevel1: TDividerBevel;
+    findbtn: TSpeedButton;
+    restorebevel1: TDividerBevel;
     homebtn: TSpeedButton;
     revImg: TImage;
-    checkmemo: TMemo;
+    logmemo: TMemo;
     restoremodelabel: TLabel;
     morebtn: TSpeedButton;
-    OptionDividerBevel: TDividerBevel;
-    checkpage: TPage;
+    restorebevel2: TDividerBevel;
+    logpage: TPage;
     restorepanel2: TPanel;
     restorepanel4: TPanel;
     restbtn: TSpeedButton;
-    restorepath: TEdit;
     restoremode: TComboBox;
     restorerevision: TComboBox;
     restorerevisionlabel: TLabel;
     listrevision: TComboBox;
-    pathdialog: TSelectDirectoryDialog;
     welcomecheck: TSpeedButton;
     welcomefix: TSpeedButton;
     syncbtn: TSpeedButton;
@@ -80,9 +87,8 @@ type
     synclistview: TListView;
     syncpanel1: TPanel;
     syncpanel3: TPanel;
-    pathbox: TComboBox;
     open2btn: TSpeedButton;
-    SpeedButton3: TSpeedButton;
+    openup: TSpeedButton;
     syncexcludedir: TSpeedButton;
     syncaddfile: TSpeedButton;
     syncadddir: TSpeedButton;
@@ -93,9 +99,8 @@ type
     MenuItem13: TMenuItem;
     AboutMenuItem: TMenuItem;
     restorepage: TPage;
-    SaveDialog1: TSaveDialog;
     syncpage: TPage;
-    PopupMenu1: TPopupMenu;
+    MoreMenu: TPopupMenu;
     openpanel1: TPanel;
     openlistview: TListView;
     MenuItem4: TMenuItem;
@@ -122,32 +127,36 @@ type
     MenuItem7: TMenuItem;
     MenuItem8: TMenuItem;
     MenuItem9: TMenuItem;
-    PopupMenu2: TPopupMenu;
     savedialog: TSaveDialog;
     BottomShape: TShape;
-    ImageList: TImageList;
+    images: TImageList;
     opendialog: TOpenDialog;
     welcomepanel1: TPanel;
 
 
     procedure AboutMenuItemClick(Sender: TObject);
-    procedure AttributesEditKeyPress(Sender: TObject; var Key: char);
+
 
     procedure BitBtn2Click(Sender: TObject);
+    procedure openfindKeyPress(Sender: TObject; var Key: char);
+    procedure openpathEditingDone(Sender: TObject);
+
     procedure restorecancelClick(Sender: TObject);
 
 
 
     procedure PositionBitBtnClick(Sender: TObject);
-    procedure PositionEditEditingDone(Sender: TObject);
-    procedure findBtnClick(Sender: TObject);
+
+    procedure findbtnClick(Sender: TObject);
 
 
     procedure openlistviewData(Sender: TObject; Item: TListItem);
     procedure openlistviewDblClick(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
-    procedure ModeEditKeyPress(Sender: TObject; var Key: char);
-    procedure openfindKeyPress(Sender: TObject; var Key: char);
+
+
+    procedure restorepathAcceptDirectory(Sender: TObject; var Value: String);
+
     procedure welcomefixClick(Sender: TObject);
 
     procedure welcomenewClick(Sender: TObject);
@@ -155,10 +164,10 @@ type
     procedure HomeBitBtnClick(Sender: TObject);
     procedure PathComboBoxCloseUp(Sender: TObject);
     procedure PathComboBoxKeyPress(Sender: TObject; var Key: char);
-    procedure ResetBitBtnClick(Sender: TObject);
+
     procedure listrevisionChange(Sender: TObject);
     procedure welcomecheckClick(Sender: TObject);
-    procedure restorepathchangeClick(Sender: TObject);
+
 
     procedure SpeedButton5Click(Sender: TObject);
     procedure syncdeleteClick(Sender: TObject);
@@ -181,17 +190,13 @@ type
 
   private
     { private declarations }
-
-
-
-
     procedure clear;
     procedure start;
     procedure finish;
 
+
     procedure synclistviewupdate;
     procedure updatebuttons(value: boolean);
-
   public
     { public declarations }
   end;
@@ -277,9 +282,14 @@ begin
   synchronize(@showstatus);
 end;
 
+procedure tappthread.showpercentage(percentage: longint);
+begin
+
+end;
+
 procedure tappthread.showstatus;
 begin
-  mainform.checkmemo.lines.add(fstatustext);
+  mainform.logmemo.lines.add(fstatustext);
 end;
 
 procedure tappthread.execute;
@@ -324,10 +334,9 @@ begin
   openlistview.columns[4].width := ini.readinteger('listview', 'columns[4].width', 100);
   openlistview.columns[5].width := ini.readinteger('listview', 'columns[5].width', 100);
 
-  savedialog.initialdir := ini.readstring('savedialog', 'initialdir', '');
-  opendialog.initialdir := ini.readstring('opendialog', 'initialdir', '');
-  pathdialog.initialdir := ini.readstring('pathdialog', 'initialdir', '');
-
+  savedialog .initialdir := ini.readstring('savedialog', ' initialdir', '');
+  opendialog .initialdir := ini.readstring('opendialog',  'initialdir', '');
+  restorepath.rootdir    := ini.readstring('restorepath', 'rootdir',    '');
 
   ini.destroy;
   // gulp application core
@@ -339,7 +348,7 @@ begin
   appfolders        := trawbytestringlist.create;
   // form style
   font.name           := 'droid sans';
-  checkmemo.font.name := 'droid sans';
+  logmemo.font.name := 'droid sans';
 
 
   welcomenoopenlabel.font.size  := 20;
@@ -378,9 +387,9 @@ begin
   ini.writeinteger('listview', 'columns[4].width', openlistview.columns[4].width);
   ini.writeinteger('listview', 'columns[5].width', openlistview.columns[5].width);
 
-  ini.writestring('savedialog', 'initialdir', savedialog.initialdir);
-  ini.writestring('opendialog', 'initialdir', opendialog.initialdir);
-  ini.writestring('pathdialog', 'initialdir', pathdialog.initialdir);
+  ini.writestring('savedialog',  'initialdir', savedialog .initialdir);
+  ini.writestring('opendialog',  'initialdir', opendialog .initialdir);
+  ini.writestring('restorepath', 'rootdir',    restorepath.rootdir);
 
   ini.destroy;
   // destroy
@@ -392,14 +401,15 @@ end;
 
 procedure Tmainform.clear;
 begin
-  openlistview.clear;
-  checkmemo.clear;
   applist2.clear;
   while applist1.count > 0 do
   begin
     applist1[0].destroy;
     applist1.delete(0);
   end;
+  logmemo.clear;
+  openpath.clear;
+  openlistview.clear;
 end;
 
 procedure Tmainform.start;
@@ -418,7 +428,7 @@ begin
     notebook.pageindex := 5
 end;
 
-procedure Tmainform.finish;
+procedure tmainform.finish;
 var
   i: longint = 0;
   v: longint = 0;
@@ -440,11 +450,10 @@ begin
     for i := 0 to applist1.count - 1 do
       appfolders.add(applist1[i].path);
 
-    pathbox.clear;
+    openpath.clear;
     for i := 0 to appfolders.count - 1 do
-      pathbox.additem(appfolders[i], nil);
+      openpath.additem(appfolders[i], nil);
 
-    pathbox.text := appfolder;
     if appfolders.find(appfolder) = -1 then
     begin
       if appfolders.count > 0 then
@@ -452,12 +461,14 @@ begin
       else
         appfolder := '';
     end;
-
-    caption := 'Gulp - ' + opendialog.filename;
-    positionediteditingdone(nil);
+    openpath.text := appfolder;
+    openpath.editingdone;
     updatebuttons(true);
+    caption := 'Gulp - ' + opendialog.filename;
   end;
 end;
+
+
 
 procedure Tmainform.updatebuttons(value: boolean);
 begin
@@ -500,7 +511,7 @@ begin
   end;
 end;
 
-procedure Tmainform.openlistviewDblClick(sender: tobject);
+procedure Tmainform.openlistviewdblclick(sender: tobject);
 begin
   menuitem1click(sender);
 end;
@@ -514,27 +525,13 @@ begin
     t := applist2[openlistview.selected.index];
     if t.attr and fadirectory = fadirectory then
     begin
-      pathbox.text := t.path + includetrailingpathdelimiter(t.name);
-      pathbox.editingdone;
+      openpath.text := t.path + includetrailingpathdelimiter(t.name);
+      openpath.editingdone;
     end;
   end;
 end;
 
 // filter panel routines
-
-procedure Tmainform.openfindKeyPress(sender: tobject; var key: char);
-begin
-  if key = #13 then
-    //applybitbtn.click;
-end;
-
-
-
-procedure Tmainform.attributeseditkeypress(sender: tobject; var key: char);
-begin
-  if key = #13 then
-    // applybitbtn.click;
-end;
 
 procedure Tmainform.aboutmenuitemclick(sender: tobject);
 begin
@@ -543,12 +540,53 @@ end;
 
 procedure Tmainform.bitbtn2click(sender: tobject);
 begin
-  popupmenu1.popup(
-    mainform.left + morebtn.left - 5,
+  moremenu.popup(
+    mainform.left + morebtn.left,
     mainform.top  + morebtn.top  + morebtn.height + 25);
 end;
 
-procedure Tmainform.restorecancelClick(sender: tobject);
+procedure Tmainform.openfindkeypress(sender: tobject; var key: char);
+begin
+  if key = #13 then openpath.editingdone;
+end;
+
+procedure Tmainform.openpatheditingdone(sender: tobject);
+var
+   i: longint;
+   t: tliteitem;
+begin
+  if appfolders.find(openpath.text) <> -1 then
+  begin
+
+    //if (openpanel1.height < 10) = false then
+    //  findbtn.click;
+
+    appfolder := openpath.text;
+    openlistview.items.beginupdate;
+    openlistview.items.clear;
+    applist2.clear;
+    for i := 0 to applist1.count - 1 do
+    begin
+      t := applist1[i];
+      if filenamematch(t.path, appfolder) = true then
+      begin
+        if openfind.text <> '' then
+          t.visible := filenamematch(t.name, openfind.text)
+        else
+          t.visible := true;
+      end else
+        t.visible := false;
+
+      if t.visible = true then
+        applist2.add(t);
+    end;
+    openlistview.items.count := applist2.count;
+    openlistview.items.endupdate;
+  end else
+    openpath.text := appfolder;
+end;
+
+procedure tmainform.restorecancelclick(sender: tobject);
 begin
   notebook.pageindex := 1;
   updatebuttons(true);
@@ -562,67 +600,71 @@ end;
 
 
 
-procedure Tmainform.positionbitbtnclick(sender: tobject);
+procedure tmainform.positionbitbtnclick(sender: tobject);
 begin
-  pathbox.text := extractfilepath(excludetrailingpathdelimiter(pathbox.text));
-  positionediteditingdone(self);
-end;
-
-procedure Tmainform.positionediteditingdone(sender: tobject);
-var
-   i: longint;
-   t: tliteitem;
-begin
-  if appfolders.find(pathbox.text) <> -1 then
-  begin
-
-    if (openpanel1.height < 10) = false then
-      findbtnclick(sender);
-
-    appfolder := pathbox.text;
-    openlistview.items.beginupdate;
-    openlistview.items.clear;
-    applist2.clear;
-    for i := 0 to applist1.count - 1 do
-    begin
-      t := applist1[i];
-
-      t.visible := filenamematch(t.path, appfolder);
-
-      if t.visible = true then
-        applist2.add(t);
-    end;
-    openlistview.items.count := applist2.count;
-    openlistview.items.endupdate;
-  end else
-    pathbox.text := appfolder;
-end;
-
-procedure Tmainform.modeeditkeypress(sender: tobject; var key: char);
-begin
-  if key = #13 then
-    // applybitbtn.click;
+  openpath.text := extractfilepath(excludetrailingpathdelimiter(openpath.text));
+  openpath.editingdone;
 end;
 
 procedure Tmainform.pathcomboboxkeypress(sender: tobject; var key: char);
 begin
   if key = #13 then
-    // applybitbtn.click;
+    openpath.editingdone;
 end;
 
 procedure Tmainform.pathcomboboxcloseup(sender: tobject);
 begin
-  // applybitbtn.click;
+  openpath.editingdone;
 end;
 
-procedure Tmainform.resetbitbtnclick(sender: tobject);
+// buttons panel routines
+
+procedure tmainform.syncbitbtnclick(sender: tobject);
 begin
-  openfind  .text := '*';
-
-
+  syncmode.itemindex := 1;
+  synclistview.clear;
+  syncroot.clear;
+  updatebuttons(false);
+  notebook.pageindex := 3;
 end;
 
+procedure tmainform.restbitbtnclick(sender: tobject);
+var
+  i: longint;
+begin
+  restorepath.text := '';
+  restoremode.itemindex := 1;
+  restorerevision.clear;
+  for i := 0 to listrevision.items.count - 1 do
+    restorerevision.additem(listrevision.items[i], nil);
+  restorerevision.itemindex := listrevision.itemindex;
+  updatebuttons(false);
+  notebook.pageindex := 4;
+end;
 
+procedure tmainform.findbtnclick(sender: tobject);
+begin
+  if openpanel1.height < 10 then
+  begin
+    openpanel1.autosize := true;
+    openpanel2.autosize := false;
+    openpanel2.height   := 1;
+  end else
+  begin
+    openpanel2.autosize := true;
+    openpanel1.autosize := false;
+    openpanel1.height   := 1;
+  end;
+end;
+
+procedure tmainform.listrevisionchange(sender: tobject);
+begin
+  clear;
+  app.reset;
+  appcommand := 'list';
+  app.untilversion := listrevision.itemindex + 1;
+  appthread  := tappthread.create(false);
+end;
 
 // welcome panel routines
 
@@ -703,20 +745,166 @@ begin
   end;
 end;
 
+// list panel routines
 
 
+// sync panel routines
 
-
-
-procedure Tmainform.restorepathchangeclick(sender: tobject);
+procedure tmainform.speedbutton5click(sender: tobject);
+var
+  d: string;
+  t: tlistitem;
 begin
-  if pathdialog.execute then
+  if selectdirectory('Select directory', getcurrentdir, d) then
   begin
-    pathdialog.initialdir :=
-      extractfiledir(pathdialog.filename);
-    restorepath.text := pathdialog.filename;
+    t := synclistview.items.add;
+    t.caption  := (d);
+    t.subitems.add(d);
+    t.imageindex := 0;
+    synclistviewupdate;
+    syncrootcbchangebounds(sender);
   end;
 end;
+
+procedure tmainform.syncexcludedirclick(sender: tobject);
+var
+  d: string;
+  t: tlistitem;
+begin
+  if selectdirectory('select directory', getcurrentdir, d) then
+  begin
+    t := synclistview.items.add;
+    t.caption  := (d);
+    t.subitems.add(d);
+    t.imageindex := 1;
+    synclistviewupdate;
+    syncrootcbchangebounds(sender);
+  end;
+end;
+
+procedure tmainform.syncaddfileclick(sender: tobject);
+var
+  t: tlistitem;
+begin
+  if opendialog.execute then
+  begin
+    t := synclistview.items.add;
+    t.caption:= opendialog.filename;
+    t.subitems.add(opendialog.filename);
+    t.imageindex := 0;
+    synclistviewupdate;
+    syncrootcbchangebounds(sender);
+  end;
+end;
+
+procedure tmainform.syncexcludefileclick(sender: tobject);
+var
+  t: tlistitem;
+begin
+  if opendialog.execute then
+  begin
+    t := synclistview.items.add;
+    t.caption:= opendialog.filename;
+    t.subitems.add(opendialog.filename);
+    t.imageindex := 1;
+    synclistviewupdate;
+    syncrootcbchangebounds(sender);
+  end;
+end;
+
+procedure tmainform.synclistviewedited(sender: tobject; item: tlistitem; var avalue: string);
+begin
+  if filenamematch(
+    extractfilepath(item.caption),
+    extractfilepath(avalue)) = false then
+    avalue := item.caption
+  else
+    item.subitems[0] :=
+      extractfilepath(item.subitems[0]) +
+      extractfilename(avalue);
+  syncrootcbchangebounds(sender);
+end;
+
+procedure tmainform.syncdeleteclick(sender: tobject);
+var
+  i: longint;
+begin
+  for i := synclistview.items.count - 1 downto 0 do
+    if synclistview.items[i].selected then
+      synclistview.items.delete(i);
+  synclistviewupdate;
+  syncrootcbchangebounds(sender);
+end;
+
+procedure tmainform.synclistviewupdate;
+var
+  i: longint;
+  s: rawbytestring;
+  list: trawbytestringlist;
+begin
+  list := trawbytestringlist.create;
+  for i := 0 to synclistview.items.count - 1 do
+  begin
+    s := synclistview.items[i].subitems[0];
+    if directoryexists(s) then
+      list.add(extractfilepath(s))
+    else
+      list.add(extractfilepath(excludetrailingpathdelimiter(s)));
+  end;
+  if list.count > 0 then
+    list.add('');
+
+  i := 0;
+  while i < list.count do
+  begin
+    s := list[i];
+    while s <> '' do
+    begin
+      list.add(s);
+      s := extractfilepath(excludetrailingpathdelimiter(s));
+    end;
+    inc(i);
+  end;
+
+  s := syncroot.caption;
+  syncroot.clear;
+  for i := 0 to list.count - 1 do
+    syncroot.items.add(list[i]);
+  syncroot.enabled := syncroot.items.count <> 0;
+
+  if list.find(s) <> -1 then
+    syncroot.itemindex:= list.find(s);
+  list.destroy;
+end;
+
+procedure tmainform.syncrootcbchangebounds(sender: tobject);
+var
+  c: rawbytestring;
+  r: rawbytestring;
+  i: longint;
+begin
+  r := syncroot.text;
+  for i := 0 to synclistview.items.count - 1 do
+  begin
+    c := synclistview.items[i].subitems[0];
+    if pos(r, c) > 0 then
+      synclistview.items[i].caption :=
+        copy(c, length(r) + 1, length(c) - length(r))
+    else
+      synclistview.items[i].caption := c;
+  end;
+end;
+
+// restore panel routines
+
+procedure tmainform.restorepathacceptdirectory(sender: tobject; var value: string);
+begin
+  restorepath.rootdir:= extractfilepath(value);
+end;
+
+
+
+
 
 
 
@@ -772,53 +960,14 @@ end;
 
 *)
 
-procedure Tmainform.syncbitbtnclick(sender: tobject);
-begin
-  syncmode.itemindex := 1;
-  synclistview.clear;
-  syncroot.clear;
-  updatebuttons(false);
-  notebook.pageindex := 3;
-end;
 
 
-procedure Tmainform.restbitbtnclick(sender: tobject);
-var
-  i: longint;
-begin
-  restorepath.text := '';
-  restoremode.itemindex := 1;
-  restorerevision.clear;
-  for i := 0 to listrevision.items.count - 1 do
-    restorerevision.additem(listrevision.items[i], nil);
-  restorerevision.itemindex := listrevision.itemindex;
-  updatebuttons(false);
-  notebook.pageindex := 4;
-end;
 
-procedure Tmainform.findbtnclick(sender: tobject);
-begin
-  if openpanel1.height < 10 then
-  begin
-    openpanel1.autosize := true;
-    openpanel2.autosize := false;
-    openpanel2.height   := 1;
-  end else
-  begin
-    openpanel2.autosize := true;
-    openpanel1.autosize := false;
-    openpanel1.height   := 1;
-  end;
-end;
 
-procedure Tmainform.listrevisionChange(sender: tobject);
-begin
-  clear;
-  app.reset;
-  appcommand := 'list';
-  app.untilversion := listrevision.itemindex + 1;
-  appthread  := tappthread.create(false);
-end;
+
+
+
+
 
 
 
@@ -878,148 +1027,7 @@ end;
 
 // SYNC PAGE //
 
-procedure Tmainform.speedbutton5click(sender: tobject);
-var
-  d: string;
-  t: tlistitem;
-begin
-  if selectdirectory('select directory', getcurrentdir, d) then
-  begin
-    t := synclistview.items.add;
-    t.caption  := (d);
-    t.subitems.add(d);
-    t.imageindex := 0;
-    synclistviewupdate;
-    syncrootcbchangebounds(sender);
-  end;
-end;
 
-procedure Tmainform.syncexcludedirClick(sender: tobject);
-var
-  d: string;
-  t: tlistitem;
-begin
-  if selectdirectory('select directory', getcurrentdir, d) then
-  begin
-    t := synclistview.items.add;
-    t.caption  := (d);
-    t.subitems.add(d);
-    t.imageindex := 1;
-    synclistviewupdate;
-    syncrootcbchangebounds(sender);
-  end;
-end;
-
-procedure Tmainform.syncaddfileClick(sender: tobject);
-var
-  t: tlistitem;
-begin
-  if opendialog.execute then
-  begin
-    t := synclistview.items.add;
-    t.caption:= opendialog.filename;
-    t.subitems.add(opendialog.filename);
-    t.imageindex := 0;
-    synclistviewupdate;
-    syncrootcbchangebounds(sender);
-  end;
-end;
-
-procedure Tmainform.syncexcludefileClick(sender: tobject);
-var
-  t: tlistitem;
-begin
-  if opendialog.execute then
-  begin
-    t := synclistview.items.add;
-    t.caption:= opendialog.filename;
-    t.subitems.add(opendialog.filename);
-    t.imageindex := 1;
-    synclistviewupdate;
-    syncrootcbchangebounds(sender);
-  end;
-end;
-
-procedure Tmainform.synclistviewEdited(sender: tobject; item: tlistitem; var avalue: string);
-begin
-  if filenamematch(
-    extractfilepath(item.caption),
-    extractfilepath(avalue)) = false then
-    avalue := item.caption
-  else
-    item.subitems[0] :=
-      extractfilepath(item.subitems[0]) +
-      extractfilename(avalue);
-  syncrootcbchangebounds(sender);
-end;
-
-procedure Tmainform.syncdeleteClick(sender: tobject);
-var
-  i: longint;
-begin
-  for i := synclistview.items.count - 1 downto 0 do
-    if synclistview.items[i].selected then
-      synclistview.items.delete(i);
-  synclistviewupdate;
-  syncrootcbchangebounds(sender);
-end;
-
-procedure Tmainform.synclistviewupdate;
-var
-  i: longint;
-  s: rawbytestring;
-  list: trawbytestringlist;
-begin
-  list := trawbytestringlist.create;
-  for i := 0 to synclistview.items.count - 1 do
-  begin
-    s := synclistview.items[i].subitems[0];
-    if directoryexists(s) then
-      list.add(extractfilepath(s))
-    else
-      list.add(extractfilepath(excludetrailingpathdelimiter(s)));
-  end;
-  list.add('');
-
-  i := 0;
-  while i < list.count do
-  begin
-    s := list[i];
-    while s <> '' do
-    begin
-      list.add(s);
-      s := extractfilepath(excludetrailingpathdelimiter(s));
-    end;
-    inc(i);
-  end;
-
-  s := syncroot.caption;
-  syncroot.clear;
-  for i := 0 to list.count - 1 do
-    syncroot.items.add(list[i]);
-
-  if list.find(s) <> -1 then
-    syncroot.itemindex:= list.find(s);
-  list.destroy;
-end;
-
-procedure Tmainform.syncrootcbchangebounds(sender: tobject);
-var
-  c: rawbytestring;
-  r: rawbytestring;
-  i: longint;
-begin
-  r := syncroot.text;
-  for i := 0 to synclistview.items.count - 1 do
-  begin
-    c := synclistview.items[i].subitems[0];
-    if pos(r, c) > 0 then
-      synclistview.items[i].caption :=
-        copy(c, length(r) + 1, length(c) - length(r))
-    else
-      synclistview.items[i].caption := c;
-  end;
-end;
 
 
 
