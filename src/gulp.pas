@@ -113,7 +113,7 @@ type
       s := checkoptions('-s: -r: -p: -l: -c: -f: -u: -m: -i: -e: h ',
         '--synch: --restore: --purge:    --list:    --check:   ' +
         '--fix:   --until:   --method:   --include: --exclude: ' +
-        '--help   --nodelete --forcepath   ', app.include);
+        '--help   --nodelete --forcepath --verbose  ', app.include);
 
       if s = '' then
       begin
@@ -134,10 +134,16 @@ type
             app.exclude.add(s);
         end;
         if hasoption('-u', '--until') = true then
+        begin
           if getoptionvalue('-u', '--until') = 'last' then
             app.untilversion := $FFFFFFFF
           else
             app.untilversion := strtoint(getoptionvalue('-u', '--until'));
+        end;
+        if hasoption('', '--verbose') then
+        begin
+          app.onshowmessage2 := @showmessage;
+        end;
 
         app.nodelete  := hasoption('', '--nodelete');
         app.forcepath := hasoption('', '--forcepath');
