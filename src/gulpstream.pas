@@ -26,9 +26,10 @@ unit gulpstream;
 interface
 
 type
+
   tstream = class
   private
-    ff: file of byte;
+    ffile: file of byte;
     function  getsize: int64; virtual;
     function  getposition: int64; virtual;
     procedure setsize(const newsize: int64); virtual;
@@ -37,13 +38,15 @@ type
     destructor destroy; override;
     function read(var buffer; count: longint): longint; virtual; overload;
     function read(var s: rawbytestring): longint; overload;
+    function readbyte: byte;
     function write(const buffer; count: longint): longint; virtual; overload;
     function write(const s: rawbytestring): longint; overload;
+    function writebyte(b: byte): longint;
     function seek(const offset: int64): int64; virtual;
     procedure copyfrom(source: tstream; count: int64);
   public
-    property size: int64 read getsize write setsize;
     property position: int64 read getposition;
+    property size: int64 read getsize write setsize;
   end;
 
   tnulstream = class(tstream)
@@ -79,11 +82,11 @@ end;
 constructor tstream.create(const filename: rawbytestring; mode: longint);
 begin
   {$i-}
-  system.assign(ff, filename);
+  system.assign(ffile, filename);
   if mode = fmoutput then
-    system.rewrite(ff)
+    system.rewrite(ffile)
   else
-    system.reset(ff);
+    system.reset(ffile);
   {$i+}
   if ioresult <> 0 then
     fail;
@@ -91,36 +94,46 @@ end;
 
 destructor tstream.destroy;
 begin
-  system.close(ff);
+  system.close(ffile);
   inherited destroy;
 end;
 
 function tstream.read(var buffer; count: longint): longint;
 begin
-  system.blockread(ff, buffer, count, result);
+  system.blockread(ffile, buffer, count, result);
 end;
 
 function tstream.write(const buffer; count: longint): longint;
 begin
-  system.blockwrite(ff, buffer, count, result);
+  system.blockwrite(ffile, buffer, count, result);
 end;
 
 function tstream.read(var s: rawbytestring): longint;
 begin
-  system.blockread(ff, result, sizeof(longint));
+  system.blockread(ffile, result, sizeof(longint));
   setlength(s, result);
   if result > 0 then
-    system.blockread(ff, s[1], result);
+    system.blockread(ffile, s[1], result);
   inc(result, sizeof(longint));
 end;
 
 function tstream.write(const s: rawbytestring): longint;
 begin
   result := length(s);
-  system.blockwrite(ff, result, sizeof(longint));
+  system.blockwrite(ffile, result, sizeof(longint));
   if result > 0 then
-    system.blockwrite(ff, s[1], result);
+    system.blockwrite(ffile, s[1], result);
   inc(result, sizeof(longint));
+end;
+
+function tstream.readbyte: byte;
+begin
+  read(result, 1);
+end;
+
+function tstream.writebyte(b: byte): longint;
+begin
+  result := write(b, 1);
 end;
 
 procedure tstream.copyfrom(source: tstream; count: int64);
@@ -133,24 +146,24 @@ end;
 
 function tstream.seek(const offset: int64): int64;
 begin
-  system.seek(ff, offset);
+  system.seek(ffile, offset);
   result := offset;
 end;
 
 procedure tstream.setsize(const newsize: int64);
 begin
-  system.seek(ff, newsize);
-  system.truncate(ff);
+  system.seek(ffile, newsize);
+  system.truncate(ffile);
 end;
 
 function tstream.getsize: int64;
 begin
-  result := system.filesize(ff);
+  result := system.filesize(ffile);
 end;
 
 function tstream.getposition: int64;
 begin
-  result := system.filepos(ff);
+  result := system.filepos(ffile);
 end;
 
 { tnulstream class }
