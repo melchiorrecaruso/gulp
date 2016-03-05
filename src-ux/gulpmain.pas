@@ -32,6 +32,7 @@ type
   tappthread = class(tthread)
   private
     fstatustext: string;
+    fpercentage: longint;
     procedure showstatus;
     procedure showitem(p: pgulpitem);
     procedure showmessage(const message: rawbytestring);
@@ -52,6 +53,8 @@ type
     aboutcopyrigth: TLabel;
     aboutlicense: TLabel;
     openpath: TComboBox;
+
+    progressbar: TProgressBar;
     restorepath: TDirectoryEdit;
     aboutimage: TImage;
     welcomepurge: TSpeedButton;
@@ -284,7 +287,7 @@ end;
 
 procedure tappthread.showpercentage(percentage: longint);
 begin
-
+  mainform.progressbar.position:= percentage;
 end;
 
 procedure tappthread.showstatus;
@@ -415,6 +418,9 @@ end;
 procedure Tmainform.start;
 begin
   updatebuttons(false);
+  progressbar.style   := pbstmarquee;
+  progressbar.visible := true;
+
   if appcommand = 'list' then
     notebook.pageindex := 1
   else
@@ -466,6 +472,8 @@ begin
     updatebuttons(true);
     caption := 'Gulp - ' + opendialog.filename;
   end;
+  progressbar.style   := pbstnormal;
+  progressbar.visible := false;
 end;
 
 
@@ -479,6 +487,7 @@ begin
   openpanel1.enabled := value;
   revimg .enabled := value;
   listrevision .enabled := value;
+  logmemo.enabled := value;
   openpanel2.enabled := value;
   openlistview  .enabled := value;
   openlistview  .showcolumnheaders := value;

@@ -1,12 +1,13 @@
 object mainform: Tmainform
-  Left = 469
+  Left = 470
   Height = 540
-  Top = 147
+  Top = 146
   Width = 757
   ActiveControl = buttonspanel
   Caption = 'Gulp - A simple journaling archiver'
   ClientHeight = 540
   ClientWidth = 757
+  Color = clNone
   Constraints.MinHeight = 540
   Constraints.MinWidth = 625
   OnCreate = FormCreate
@@ -20,13 +21,12 @@ object mainform: Tmainform
     AnchorSideTop.Side = asrBottom
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
-    AnchorSideBottom.Control = Owner
-    AnchorSideBottom.Side = asrBottom
+    AnchorSideBottom.Control = progressbar
     Left = 0
-    Height = 499
+    Height = 483
     Top = 41
     Width = 757
-    PageIndex = 1
+    PageIndex = 0
     Anchors = [akTop, akLeft, akRight, akBottom]
     Color = clNone
     TabOrder = 0
@@ -34,13 +34,13 @@ object mainform: Tmainform
     object welcomepage: TPage
       object welcomepanel1: TPanel
         Left = 0
-        Height = 499
+        Height = 483
         Top = 0
         Width = 757
         Align = alClient
         Anchors = []
         BevelOuter = bvNone
-        ClientHeight = 499
+        ClientHeight = 483
         ClientWidth = 757
         Color = clNone
         ParentColor = False
@@ -3165,6 +3165,22 @@ object mainform: Tmainform
     Constraints.MaxHeight = 1
     Constraints.MinHeight = 1
     Pen.Color = clMedGray
+  end
+  object progressbar: TProgressBar
+    AnchorSideLeft.Control = Owner
+    AnchorSideRight.Control = Owner
+    AnchorSideRight.Side = asrBottom
+    AnchorSideBottom.Control = Owner
+    AnchorSideBottom.Side = asrBottom
+    Left = 0
+    Height = 16
+    Top = 524
+    Width = 757
+    Anchors = [akLeft, akRight, akBottom]
+    Enabled = False
+    Smooth = True
+    TabOrder = 2
+    Visible = False
   end
   object opendialog: TOpenDialog
     left = 88
