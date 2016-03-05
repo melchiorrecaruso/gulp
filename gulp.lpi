@@ -52,8 +52,8 @@
         <IsPartOfProject Value="True"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="851"/>
-        <CursorPos X="36" Y="866"/>
+        <TopLine Value="142"/>
+        <CursorPos X="15" Y="150"/>
         <UsageCount Value="85"/>
         <Loaded Value="True"/>
       </Unit1>
@@ -112,7 +112,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="src;../bcm"/>
+      <OtherUnitFiles Value="src"/>
       <UnitOutputDirectory Value="build/$(TargetCPU)-$(TargetOS)/lib"/>
     </SearchPaths>
     <Parsing>

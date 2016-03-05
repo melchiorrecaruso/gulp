@@ -147,7 +147,7 @@ const
     68,233,72,6,60,107,74,16,223,55,134,75,20,207);
 
   gulpdescription =
-    'GULP v0.0.3 journaling archiver, copyright (c) 2014-2016 Melchiorre Caruso.'
+    'GULP v0.3 journaling archiver, copyright (c) 2014-2016 Melchiorre Caruso.'
     + lineending +
     'GULP archiver for user-level incremental backups with rollback capability.';
 

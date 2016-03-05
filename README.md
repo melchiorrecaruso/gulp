@@ -172,7 +172,7 @@ Ignore any part of the archive updated after version number.
 > 
 
 </br>
-##General file format version 0.0.3
+##General file format version 0.3
 
 A **GULP** archive is a sequence of timestamped updates, each listing the files and directories that have been deleted or added, since the previous transacted update, normally based on changes to the last-modified dates.
 
