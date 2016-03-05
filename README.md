@@ -226,7 +226,7 @@ A **GULP** archive is a sequence of timestamped updates, each listing the files 
 > 
 > - bit 01 is reserved for mark header added to archive;
 > - bit 02 is reserved for mark header deleted from archive;
-> - bit 03 is reserved for mark last header in current sequence.
+> - bit 03 is reserved for mark last header in current slice.
 >
 
 </br>

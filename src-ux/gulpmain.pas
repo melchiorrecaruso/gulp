@@ -32,11 +32,11 @@ type
   tappthread = class(tthread)
   private
     fstatustext: string;
-    fpercentage: longint;
+    fprogress: longint;
     procedure showstatus;
     procedure showitem(p: pgulpitem);
     procedure showmessage(const message: rawbytestring);
-    procedure showpercentage(percentage: longint);
+    procedure showprogress(progress: longint);
   protected
     procedure execute; override;
   public
@@ -285,21 +285,25 @@ begin
   synchronize(@showstatus);
 end;
 
-procedure tappthread.showpercentage(percentage: longint);
+procedure tappthread.showprogress(progress: longint);
 begin
-  mainform.progressbar.position:= percentage;
+  fprogress := progress;
+  synchronize(@showstatus);
 end;
 
 procedure tappthread.showstatus;
 begin
-  mainform.logmemo.lines.add(fstatustext);
+  //mainform.logmemo.lines.add(fstatustext);
+  mainform.progressbar.position:= fprogress;
 end;
 
 procedure tappthread.execute;
 begin
   app.onshowitem     := @showitem;
   app.onshowmessage1 := @showmessage;
-  app.onshowmessage2 := @showmessage;
+  // app.onshowmessage2 := @showmessage;
+  app.onshowprogress := @showprogress;
+
 
   synchronize(@mainform.start);
   if appcommand = 'list' then
@@ -418,7 +422,7 @@ end;
 procedure Tmainform.start;
 begin
   updatebuttons(false);
-  progressbar.style   := pbstmarquee;
+  // progressbar.style   := pbstmarquee;
   progressbar.visible := true;
 
   if appcommand = 'list' then

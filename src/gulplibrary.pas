@@ -76,9 +76,10 @@ type
 
   { gulp application events }
 
-  tgulpshowitem    = procedure(p: pgulpitem) of object;
-  tgulpshowmessage = procedure(const message: rawbytestring) of object;
-  tgulpterminate   = function: boolean of object;
+  tgulpshowitem     = procedure(p: pgulpitem) of object;
+  tgulpshowmessage  = procedure(const message: rawbytestring) of object;
+  tgulpshowprogress = procedure(progress: longint) of object;
+  tgulpterminate    = function: boolean of object;
 
   { gulp application }
 
@@ -94,9 +95,11 @@ type
     fonshowitem: tgulpshowitem;
     fonshowmessage1: tgulpshowmessage;
     fonshowmessage2: tgulpshowmessage;
+    fonshowprogress: tgulpshowprogress;
     procedure showitem(const item: pgulpitem);
     procedure showmessage1(const message: rawbytestring);
     procedure showmessage2(const message: rawbytestring);
+    procedure showprogress(progress: longint);
   public
     constructor create;
     destructor destroy; override;
@@ -117,6 +120,7 @@ type
     property onshowitem: tgulpshowitem read fonshowitem write fonshowitem;
     property onshowmessage1: tgulpshowmessage read fonshowmessage1 write fonshowmessage1;
     property onshowmessage2: tgulpshowmessage read fonshowmessage2 write fonshowmessage2;
+    property onshowprogress: tgulpshowprogress read fonshowprogress write fonshowprogress;
   end;
 
 { usefull routines }
@@ -801,6 +805,12 @@ begin
     fonshowmessage2(message);
 end;
 
+procedure tgulpapplication.showprogress(progress: longint);
+begin
+  if assigned(fonshowprogress) then
+    fonshowprogress(progress);
+end;
+
 procedure tgulpapplication.sync(const filename: rawbytestring);
 var
   i, j:   longint;
@@ -853,6 +863,8 @@ begin
 
   for i := 0 to scan.count - 1 do
   begin
+    showprogress((100 * i) div scan.count);
+
     j := libfind(list1, scan[i]);
     if j = -1 then
     begin;
@@ -973,6 +985,8 @@ begin
   nul := tnulstream.create;
   for i := 0 to list1.count - 1 do
   begin
+    showprogress((100 * i)div list1.count);
+
     if gfsize in list1[i]^.flags then
     begin
       showmessage2(format(

@@ -36,13 +36,13 @@ var
   scan: array[1..2] of tscanner;
 
 begin
-  writeln('GDiFF v0.0.3 diff utility, copyright (c) 2016 Melchiorre Caruso.');
+  writeln('GDIFF v0.0.3 diff utility, copyright (c) 2016 Melchiorre Caruso.');
   if (paramcount <> 2) or
      (directoryexists(paramstr(1)) = false) or
      (directoryexists(paramstr(2)) = false) then
   begin
     writeln('Usage: gdiff directory1 directory2');
-    writeln('Compare two DiRECTORiES file by file.');
+    writeln('Compare two DIRECTORIES file by file.');
   end else
   begin
 

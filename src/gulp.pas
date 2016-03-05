@@ -109,6 +109,7 @@ type
     app.onshowitem     := @showitem;
     app.onshowmessage1 := @showmessage;
     app.onshowmessage2 := nil;
+    app.onshowprogress := nil;
     try
       s := checkoptions('-s: -r: -p: -l: -c: -f: -u: -m: -i: -e: h ',
         '--synch: --restore: --purge:    --list:    --check:   ' +
