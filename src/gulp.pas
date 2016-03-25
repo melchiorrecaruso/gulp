@@ -109,23 +109,15 @@ type
     app.onshowitem     := @showitem;
     app.onshowmessage1 := @showmessage;
     app.onshowmessage2 := nil;
-    app.onshowprogress := nil;
     try
-      s := checkoptions('-s: -r: -p: -l: -c: -f: -u: -m: -i: -e: h ',
-        '--synch: --restore: --purge:    --list:    --check:   ' +
-        '--fix:   --until:   --method:   --include: --exclude: ' +
-        '--help   --nodelete --forcepath --verbose  ', app.include);
+      s := checkoptions('-s: -r: -p: -l: -c: -f: -u: -i: -e: h         ',
+        '--synch: --restore: --purge:   --list:    --check:    --fix:  ' +
+        '--until: --include: --exclude: --help     --verbose   --only: ' +
+        '--excludeattr: --excludemode:  --nodelete --forcepath         ',
+        app.include);
 
       if s = '' then
       begin
-        if hasoption('-i', '--include') = true then
-        begin
-          s := getoptionvalue('-i', '--include');
-          if s[length(s)] = pathdelim then
-            app.include.add(s + '*')
-          else
-            app.include.add(s);
-        end;
         if hasoption('-e', '--exclude') = true then
         begin
           s := getoptionvalue('-e', '--exclude');
@@ -134,10 +126,30 @@ type
           else
             app.exclude.add(s);
         end;
+        if hasoption('', '--excludeattr') = true then
+        begin
+          app.excludeattr := stringtoattr(getoptionvalue('', '--excludeattr'));
+        end;
+        if hasoption('', '--excludemode') = true then
+        begin
+          app.excludemode := stringtomode(getoptionvalue('', '--excludemode'));
+        end;
+        if hasoption('-i', '--include') = true then
+        begin
+          s := getoptionvalue('-i', '--include');
+          if s[length(s)] = pathdelim then
+            app.include.add(s + '*')
+          else
+            app.include.add(s);
+        end;
+        if hasoption('', '--only') = true then
+        begin
+          app.onlyversion := strtoint(getoptionvalue('', '--only'));
+        end;
         if hasoption('-u', '--until') = true then
         begin
           if getoptionvalue('-u', '--until') = 'last' then
-            app.untilversion := $FFFFFFFF
+            app.untilversion := $ffffffff
           else
             app.untilversion := strtoint(getoptionvalue('-u', '--until'));
         end;

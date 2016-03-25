@@ -67,7 +67,7 @@ type
     offset1:    int64;
     offset2:    int64;
     checksum:   tsha1digest;
-    version:    longint;
+    version:    longword;
   end;
 
   { gulp item list }
@@ -78,28 +78,32 @@ type
 
   tgulpshowitem     = procedure(p: pgulpitem) of object;
   tgulpshowmessage  = procedure(const message: rawbytestring) of object;
-  tgulpshowprogress = procedure(progress: longint) of object;
   tgulpterminate    = function: boolean of object;
 
   { gulp application }
 
   tgulpapplication = class
   private
-    fexclude:trawbytestringlist;
+    fexclude: trawbytestringlist;
+    fexcludeattr: longint;
+    fexcludemode: longint;
     finclude: trawbytestringlist;
     fforcepath: boolean;
     fnodelete: boolean;
+    fonlyversion: longword;
     fstimeutc: tdatetime;
     fterminated: boolean;
     funtilversion: longword;
     fonshowitem: tgulpshowitem;
     fonshowmessage1: tgulpshowmessage;
     fonshowmessage2: tgulpshowmessage;
-    fonshowprogress: tgulpshowprogress;
     procedure showitem(const item: pgulpitem);
     procedure showmessage1(const message: rawbytestring);
     procedure showmessage2(const message: rawbytestring);
-    procedure showprogress(progress: longint);
+    function isexcluded(const item: pgulpitem): boolean; overload;
+    function isincluded(const item: pgulpitem): boolean; overload;
+    function isexcluded(const filename: rawbytestring): boolean; overload;
+    function isincluded(const filename: rawbytestring): boolean; overload;
   public
     constructor create;
     destructor destroy; override;
@@ -112,15 +116,17 @@ type
     procedure reset;
   public
     property exclude: trawbytestringlist read fexclude;
+    property excludeattr: longint read fexcludeattr write fexcludeattr;
+    property excludemode: longint read fexcludemode write fexcludemode;
     property include: trawbytestringlist read finclude;
     property forcepath: boolean read fforcepath write fforcepath;
     property nodelete: boolean read fnodelete write fnodelete;
+    property onlyversion: longword read fonlyversion write fonlyversion;
     property terminated: boolean read fterminated;
     property untilversion: longword read funtilversion write funtilversion;
     property onshowitem: tgulpshowitem read fonshowitem write fonshowitem;
     property onshowmessage1: tgulpshowmessage read fonshowmessage1 write fonshowmessage1;
     property onshowmessage2: tgulpshowmessage read fonshowmessage2 write fonshowmessage2;
-    property onshowprogress: tgulpshowprogress read fonshowprogress write fonshowprogress;
   end;
 
 { usefull routines }
@@ -130,13 +136,14 @@ function attrtostring(const attr: longint): rawbytestring;
 function sizetostring(const size: int64): rawbytestring;
 function timetostring(const t: tdatetime): rawbytestring;
 function modetostring(const mode: longint): rawbytestring;
-function stringtoattr(const s: rawbytestring): longint;
+function stringtoattr(s: rawbytestring): longint;
 function stringtomode(const s: rawbytestring): longint;
 function flagstostring(const f: tgulpflags): rawbytestring;
 
 implementation
 
 uses
+  classes,
   dateutils,
   gulpmessages,
   gulpscanner,
@@ -147,7 +154,7 @@ const
     68,233,72,6,60,107,74,16,223,55,134,75,20,207);
 
   gulpdescription =
-    'GULP v0.3 journaling archiver, copyright (c) 2014-2016 Melchiorre Caruso.'
+    'GULP v0.4 journaling archiver, copyright (c) 2014-2016 Melchiorre Caruso.'
     + lineending +
     'GULP archiver for user-level incremental backups with rollback capability.';
 
@@ -198,24 +205,32 @@ begin
   if attr and fasymlink   <> 0 then result[7] := 'L';
 end;
 
-function stringtoattr(const s: rawbytestring): longint;
+function stringtoattr(s: rawbytestring): longint;
+const
+  a: array[0..6] of char = ('R','H','S','V','D','A','L');
+var
+  i: longint;
 begin
   result := 0;
-  if length(s) = 7 then
-  begin
-    if upcase(s[1]) = 'R' then result := result or fareadonly;
-    if upcase(s[2]) = 'H' then result := result or fahidden;
-    if upcase(s[3]) = 'S' then result := result or fasysfile;
-    if upcase(s[4]) = 'V' then result := result or favolumeid;
-    if upcase(s[5]) = 'D' then result := result or fadirectory;
-    if upcase(s[6]) = 'A' then result := result or faarchive;
-    if upcase(s[7]) = 'L' then result := result or fasymlink;
-  end;
+  for i  := 0 to 6 do
+    if pos(a[i], uppercase(s)) > 0 then
+    begin
+      if a[i] = 'R' then result := result or fareadonly;
+      if a[i] = 'H' then result := result or fahidden;
+      if a[i] = 'S' then result := result or fasysfile;
+      if a[i] = 'V' then result := result or favolumeid;
+      if a[i] = 'D' then result := result or fadirectory;
+      if a[i] = 'A' then result := result or faarchive;
+      if a[i] = 'L' then result := result or fasymlink;
+      delete(s, pos(a[i], uppercase(s)),  1);
+    end;
+
+  if s <> '' then raise exception.createfmt(gereadstream, ['004001']);
 end;
 
 function modetostring(const mode: longint): rawbytestring;
 begin
-  result := '---';
+  result := '';
 {$IFDEF UNIX}
   if mode <> 0 then
     result := octstr(mode, 3);
@@ -458,8 +473,8 @@ begin
     end else
     if (gfsize in p^.flags) then
     begin
-      instream.seek(p^.offset1);
-      outstream := tstream.create(p^.name, fmoutput);
+      instream.seek(p^.offset1, sobeginning);
+      outstream := tfilestream.create(p^.name, fmcreate);
       if assigned(outstream) then
       begin
         check := sha1match(libmove(instream,
@@ -499,19 +514,19 @@ procedure libwrite(outstream: tstream; p: pgulpitem);
 begin
   outstream.write(gulpmarker, sizeof(tsha1digest));
   outstream.write(p^.flags, sizeof(p^.flags));
-  outstream.write(p^.name);
+  outstream.writeansistring(p^.name);
   outstream.write(p^.stimeutc, sizeof(p^.stimeutc));
 
   if gfmtimeutc   in p^.flags then outstream.write(p^.mtimeutc, sizeof(p^.mtimeutc));
   if gfattributes in p^.flags then outstream.write(p^.attributes, sizeof(p^.attributes));
   if gfmode       in p^.flags then outstream.write(p^.mode, sizeof(p^.mode));
   if gfsize       in p^.flags then outstream.write(p^.size, sizeof(p^.size));
-  if gflinkname   in p^.flags then outstream.write(p^.linkname);
+  if gflinkname   in p^.flags then outstream.writeansistring(p^.linkname);
   if gfuserid     in p^.flags then outstream.write(p^.userid, sizeof(p^.userid));
   if gfgroupid    in p^.flags then outstream.write(p^.groupid, sizeof(p^.groupid));
-  if gfusername   in p^.flags then outstream.write(p^.username);
-  if gfgroupname  in p^.flags then outstream.write(p^.groupname);
-  if gfcomment    in p^.flags then outstream.write(p^.comment);
+  if gfusername   in p^.flags then outstream.writeansistring(p^.username);
+  if gfgroupname  in p^.flags then outstream.writeansistring(p^.groupname);
+  if gfcomment    in p^.flags then outstream.writeansistring(p^.comment);
 
   if gfsize in p^.flags then
   begin
@@ -530,7 +545,7 @@ var
 begin
   if list.count > 0 then
   begin
-    size := outstream.seek(outstream.size);
+    size := outstream.seek(outstream.size, sobeginning);
     include(list[list.count - 1]^.flags, gfclose);
     for i := 0 to list.count - 1 do
       libwrite(outstream, list[i]);
@@ -541,7 +556,8 @@ begin
           if gfsize in list[i]^.flags then
           begin
             list[i]^.offset1 := outstream.position;
-            instream := tstream.create(list[i]^.name, fminput);
+            instream := tfilestream.create(list[i]^.name,
+              fmopenread or fmsharedenywrite);
             if assigned(instream) then
             begin
               list[i]^.checksum := libmove(instream, outstream, list[i]^.size);
@@ -549,10 +565,10 @@ begin
             end;
             list[i]^.offset2 := outstream.position;
           end;
-    outstream.seek(size);
+    outstream.seek(size, sobeginning);
     for i := 0 to list.count - 1 do
       libwrite(outstream, list[i]);
-    outstream.seek(outstream.size);
+    outstream.seek(outstream.size, sobeginning);
   end;
 end;
 
@@ -567,19 +583,19 @@ begin
     raise exception.createfmt(gewrongmarker, ['003002']);
 
   instream.read(p^.flags, sizeof(p^.flags));
-  instream.read(p^.name);
+  p^.name := instream.readansistring;
   instream.read(p^.stimeutc, sizeof(p^.stimeutc));
 
   if gfmtimeutc   in p^.flags then instream.read(p^.mtimeutc, sizeof(p^.mtimeutc));
   if gfattributes in p^.flags then instream.read(p^.attributes, sizeof(p^.attributes));
   if gfmode       in p^.flags then instream.read(p^.mode, sizeof(p^.mode));
   if gfsize       in p^.flags then instream.read(p^.size, sizeof(p^.size));
-  if gflinkname   in p^.flags then instream.read(p^.linkname);
+  if gflinkname   in p^.flags then p^.linkname := instream.readansistring;
   if gfuserid     in p^.flags then instream.read(p^.userid, sizeof(p^.userid));
   if gfgroupid    in p^.flags then instream.read(p^.groupid, sizeof(p^.groupid));
-  if gfusername   in p^.flags then instream.read(p^.username);
-  if gfgroupname  in p^.flags then instream.read(p^.groupname);
-  if gfcomment    in p^.flags then instream.read(p^.comment);
+  if gfusername   in p^.flags then p^.username  := instream.readansistring;
+  if gfgroupname  in p^.flags then p^.groupname := instream.readansistring;
+  if gfcomment    in p^.flags then p^.comment   := instream.readansistring;
 
   if gfsize in p^.flags then
   begin
@@ -609,7 +625,7 @@ var
   version: longword = 1;
 begin
   size := instream.size;
-          instream.seek(0);
+          instream.seek(0, sobeginning);
   p    := new(pgulpitem);
   while offset < size do
   begin
@@ -618,7 +634,7 @@ begin
     inc(offset, p^.offset2 - p^.offset1);
     if gfclose in p^.flags then
     begin
-      if instream.seek(offset) <> offset then
+      if instream.seek(offset, sobeginning) <> offset then
         raise exception.createfmt(gereadarchive, ['003008']);
       inc(version);
     end;
@@ -641,7 +657,7 @@ var
   version: longword = 1;
 begin
   size := instream.size;
-          instream.seek(0);
+          instream.seek(0, sobeginning);
   p    := new(pgulpitem);
   while offset < size do
   begin
@@ -650,7 +666,7 @@ begin
     inc(offset, p^.offset2 - p^.offset1);
     if gfclose in p^.flags then
     begin
-      if instream.seek(offset) <> offset then
+      if instream.seek(offset, sobeginning) <> offset then
         raise exception.createfmt(gereadarchive, ['003018']);
       inc(version);
     end;
@@ -779,12 +795,15 @@ end;
 procedure tgulpapplication.reset;
 begin
   fexclude.clear;
+  fexcludeattr  := 0;
+  fexcludemode  := 0;
   finclude.clear;
   fforcepath    := false;
   fnodelete     := false;
+  fonlyversion  := 0;
   fstimeutc     := localtime2universal(now);
   fterminated   := true;
-  funtilversion := $FFFFFFFF;
+  funtilversion := $ffffffff;
 end;
 
 procedure tgulpapplication.showitem(const item: pgulpitem);
@@ -805,12 +824,6 @@ begin
     fonshowmessage2(message);
 end;
 
-procedure tgulpapplication.showprogress(progress: longint);
-begin
-  if assigned(fonshowprogress) then
-    fonshowprogress(progress);
-end;
-
 procedure tgulpapplication.sync(const filename: rawbytestring);
 var
   i, j:   longint;
@@ -824,12 +837,12 @@ begin
   showmessage1(gulpdescription);
   showmessage1(format(gmsync, [filename]));
   if fileexists(filename) = TRUE then
-    stream := createstream(filename, fminout)
+    stream := tfilestream.create(filename, fmopenreadwrite or fmsharedenywrite)
   else
-    stream := createstream(filename, fmoutput);
+    stream := tfilestream.create(filename, fmcreate);
   list1    := tgulplist.create(@compare40);
-  libread(stream, list1, $FFFFFFFF);
-  size := stream.seek(stream.size);
+  libread(stream, list1, $ffffffff);
+  size := stream.seek(stream.size, sobeginning);
 
   scan := tscanner.create;
   for i := finclude.count - 1 downto 0 do
@@ -849,7 +862,7 @@ begin
       fexclude.add(includetrailingpathdelimiter(fexclude[i]) + '*');
   fexclude.add(filename);
   for i := scan.count - 1 downto 0 do
-    if filenamematch(scan[i], fexclude) = true then
+    if isexcluded(scan[i]) then
       scan.delete(i);
 
   list2 := tgulplist.create(@compare42);
@@ -863,8 +876,6 @@ begin
 
   for i := 0 to scan.count - 1 do
   begin
-    showprogress((100 * i) div scan.count);
-
     j := libfind(list1, scan[i]);
     if j = -1 then
     begin;
@@ -902,10 +913,10 @@ begin
   fterminated := false;
   showmessage1(gulpdescription);
   showmessage1(format(gmrestore, [filename]));
-  stream := createstream(filename, fminput);
+  stream := tfilestream.create(filename, fmopenread or fmsharedenywrite);
   list1  := tgulplist.create(@compare40);
   if funtilversion = 0 then
-    funtilversion := $FFFFFFFF;
+    funtilversion := $ffffffff;
   libread(stream, list1, funtilversion);
 
   scan := tscanner.create;
@@ -933,9 +944,7 @@ begin
     for i := scan.count - 1 downto 0 do
     begin
       j := libfind(list1, scan[i]);
-      if (j = -1) or
-         (filenamematch(list1[j]^.name, finclude) = false) or
-         (filenamematch(list1[j]^.name, fexclude) = true) then
+      if (j = -1) or (isincluded(list1[j]) = false) or isexcluded(list1[j]) then
       begin
         showmessage2(format(gmdeleteitem, [scan[i]]));
         if directoryexists(scan[i]) = true then
@@ -948,17 +957,16 @@ begin
   for i := list1.count - 1 downto 0 do
   begin
     p := list1[i];
-    if filenamematch(p^.name, finclude) = true then
-      if filenamematch(p^.name, fexclude) = false then
+    if isincluded(p) and (isexcluded(p) = false) then
+    begin
+      j := scan.find(p^.name);
+      if (j = -1) or (filegettimeutc(scan[j]) <> p^.mtimeutc) then
       begin
-        j := scan.find(p^.name);
-        if (j = -1) or (filegettimeutc(scan[j]) <> p^.mtimeutc) then
-        begin
-          showmessage2(format(gmrestoreitem, [p^.name]));
-          librestore(stream, p);
-          inc(size, p^.size);
-        end;
+        showmessage2(format(gmrestoreitem, [p^.name]));
+        librestore(stream, p);
+        inc(size, p^.size);
       end;
+    end;
   end;
   libclear(list1);
   freeandnil(list1);
@@ -978,20 +986,17 @@ begin
   fterminated := false;
   showmessage1(gulpdescription);
   showmessage1(format(gmcheck, [filename]));
-  stream := createstream(filename, fminput);
+  stream := tfilestream.create(filename, fmopenread or fmsharedenywrite);
   list1  := tgulplist.create(@compare41);
   libread(stream, list1);
 
   nul := tnulstream.create;
   for i := 0 to list1.count - 1 do
   begin
-    showprogress((100 * i)div list1.count);
-
     if gfsize in list1[i]^.flags then
     begin
-      showmessage2(format(
-        gmcheckitem, [list1[i]^.name]));
-      stream.seek(list1[i]^.offset1);
+      showmessage2(format(gmcheckitem, [list1[i]^.name]));
+      stream.seek(list1[i]^.offset1, sobeginning);
       libmove(stream, nul, list1[i]^.offset2 - list1[i]^.offset1);
     end;
   end;
@@ -1013,7 +1018,7 @@ begin
   fterminated := false;
   showmessage1(gulpdescription);
   showmessage1(format(gmfix, [filename]));
-  stream := createstream(filename, fminout);
+  stream := tfilestream.create(filename, fmopenreadwrite or fmsharedenywrite);
 
   p := new(pgulpitem);
   try
@@ -1026,7 +1031,7 @@ begin
       showmessage2(format(gmfixitem, [p^.name]));
       if gfclose in p^.flags then
       begin
-        if stream.seek(offset) <> offset then
+        if stream.seek(offset, sobeginning) <> offset then
           raise exception.createfmt(gereadarchive, ['003020']);
         size := offset;
       end;
@@ -1058,12 +1063,12 @@ begin
   fterminated := false;
   showmessage1(gulpdescription);
   showmessage1(format(gmpurge, [filename]));
-  stream := createstream(filename, fminput);
+  stream := tfilestream.create(filename, fmopenread or fmsharedenywrite);
   list1  := tgulplist.create(@compare40);
-  libread(stream, list1, $FFFFFFFF);
+  libread(stream, list1, $ffffffff);
 
   tmpname := gettempfilename(extractfiledir(filename), '');
-  tmp     := createstream(tmpname, fmoutput);
+  tmp     := tfilestream.create(tmpname, fmcreate);
   if list1.count > 0 then
   begin
     for i := 0 to list1.count - 1 do
@@ -1072,11 +1077,10 @@ begin
     for i := 0 to list1.count - 1 do
     begin
       p := list1[i];
-
       showmessage2(format(gmmoveitem, [p^.name]));
       if gfsize in p^.flags then
       begin
-        stream.seek(p^.offset1);
+        stream.seek(p^.offset1, sobeginning);
         size := p^.offset2 - p^.offset1;
         p^.offset1 := tmp.position;
         tmp.copyfrom(stream, size);
@@ -1084,7 +1088,7 @@ begin
       end;
     end;
 
-    tmp.seek(0);
+    tmp.seek(0, sobeginning);
     for i := 0 to list1.count - 1 do
     begin
       p := list1[i];
@@ -1094,7 +1098,7 @@ begin
         system.exclude(p^.flags,gfclose);
       libwrite(tmp, p);
     end;
-    tmp.seek(tmp.size);
+    tmp.seek(tmp.size, sobeginning);
   end;
   size := stream.size - tmp.size;
 
@@ -1122,16 +1126,21 @@ begin
   fterminated := false;
   showmessage1(gulpdescription);
   showmessage1(format(gmlist, [filename]));
-  stream := createstream(filename, fminput);
-  if funtilversion > 0 then
-  begin
-    list1 := tgulplist.create(@compare40);
-    libread(stream, list1, funtilversion);
-  end else
+  stream := tfilestream.create(filename, fmopenread or fmsharedenywrite);
+  if fonlyversion > 0 then
   begin
     list1 := tgulplist.create(@compare41);
     libread(stream, list1);
-  end;
+  end else
+    if funtilversion > 0 then
+    begin
+      list1 := tgulplist.create(@compare40);
+      libread(stream, list1, funtilversion);
+    end else
+    begin
+      list1 := tgulplist.create(@compare41);
+      libread(stream, list1);
+    end;
 
   for i := finclude.count - 1 downto 0 do
   begin
@@ -1157,12 +1166,17 @@ begin
   begin
     p := list1[i];
     j := max(j, p^.version);
-    if filenamematch(p^.name, finclude) = true then
-      if filenamematch(p^.name, fexclude) = false then
+    if isincluded(p) and (isexcluded(p) = false) then
+      if fonlyversion = 0 then
       begin
         showitem(p);
         inc(c);
-      end;
+      end else
+        if p^.version = fonlyversion then
+        begin
+          showitem(p);
+          inc(c);
+        end;
   end;
   libclear(list1);
   freeandnil(list1);
@@ -1170,6 +1184,30 @@ begin
   showmessage1(format(gmlistfinish, [c]));
   showmessage1(format(gmlistlastversion, [j]));
   fterminated := true;
+end;
+
+function tgulpapplication.isincluded(const filename: rawbytestring): boolean;
+begin
+  result := filenamematch(filename, finclude);
+end;
+
+function tgulpapplication.isincluded(const item: pgulpitem): boolean;
+begin
+  result := filenamematch(item^.name, finclude);
+end;
+
+function tgulpapplication.isexcluded(const item: pgulpitem): boolean;
+begin
+  result := filenamematch(item^.name, fexclude)      or
+            (item^.attributes and fexcludeattr <> 0) or
+            (item^.mode       and fexcludemode <> 0);
+end;
+
+function tgulpapplication.isexcluded(const filename: rawbytestring): boolean;
+begin
+  result := filenamematch(filename, fexclude)                        or
+            (gulpcommon.filegetattr(filename) and fexcludeattr <> 0) or
+            (gulpcommon.filegetmode(filename) and fexcludemode <> 0);
 end;
 
 end.

@@ -42,8 +42,8 @@
       <Unit0>
         <Filename Value="src/gulp.pas"/>
         <IsPartOfProject Value="True"/>
-        <TopLine Value="94"/>
-        <CursorPos X="30" Y="112"/>
+        <TopLine Value="134"/>
+        <CursorPos X="15" Y="147"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit0>
@@ -52,9 +52,9 @@
         <IsPartOfProject Value="True"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="142"/>
-        <CursorPos X="15" Y="150"/>
-        <UsageCount Value="85"/>
+        <TopLine Value="1153"/>
+        <CursorPos X="42" Y="1175"/>
+        <UsageCount Value="112"/>
         <Loaded Value="True"/>
       </Unit1>
       <Unit2>
@@ -63,22 +63,23 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="41"/>
         <CursorPos X="31" Y="70"/>
-        <UsageCount Value="85"/>
+        <UsageCount Value="112"/>
       </Unit2>
       <Unit3>
         <Filename Value="src/gulpcommon.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="51"/>
-        <CursorPos X="10" Y="51"/>
-        <UsageCount Value="85"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="141"/>
+        <CursorPos Y="176"/>
+        <UsageCount Value="112"/>
+        <Loaded Value="True"/>
       </Unit3>
       <Unit4>
         <Filename Value="src/gulpfixes.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
         <CursorPos Y="5"/>
-        <UsageCount Value="85"/>
+        <UsageCount Value="112"/>
       </Unit4>
       <Unit5>
         <Filename Value="src/gulpscanner.pas"/>
@@ -86,7 +87,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="79"/>
         <CursorPos X="59" Y="88"/>
-        <UsageCount Value="85"/>
+        <UsageCount Value="112"/>
       </Unit5>
       <Unit6>
         <Filename Value="src/gulpcommandline.pas"/>
@@ -94,14 +95,15 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="78"/>
         <CursorPos X="12" Y="90"/>
-        <UsageCount Value="85"/>
+        <UsageCount Value="112"/>
       </Unit6>
       <Unit7>
         <Filename Value="src/gulplist.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
-        <CursorPos X="23" Y="28"/>
-        <UsageCount Value="85"/>
+        <TopLine Value="132"/>
+        <CursorPos X="24" Y="145"/>
+        <UsageCount Value="112"/>
       </Unit7>
     </Units>
   </ProjectOptions>
@@ -112,7 +114,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="src"/>
+      <OtherUnitFiles Value="src;../dmc"/>
       <UnitOutputDirectory Value="build/$(TargetCPU)-$(TargetOS)/lib"/>
     </SearchPaths>
     <Parsing>

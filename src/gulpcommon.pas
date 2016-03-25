@@ -59,14 +59,15 @@ uses
 {$IFDEF UNIX}
   baseunix,
 {$ENDIF}
+  dmclibrary,
 {$IFDEF MSWINDOWS}
   windows,
 {$ENDIF}
   gulpfixes;
 
 const
-  HexaDecimals: array [0..15] of char = '0123456789ABCDEF';
-  HexValues: array ['0'..'F'] of byte = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+  hexadecimals: array [0..15] of char = '0123456789ABCDEF';
+  hexvalues: array ['0'..'F'] of byte = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
     0, 0, 0, 0, 0, 0, 0, 10, 11, 12, 13, 14, 15);
 
 function filegettimeutc(var sr: tsearchrec): tdatetime;
@@ -158,7 +159,7 @@ var
   info: stat;
 {$ENDIF}
 begin
-  result := $FFFFFFFF;
+  result := $ffffffff;
 {$IFDEF UNIX}
   if fplstat(filename, info) = 0 then
     result := info.st_uid
@@ -183,7 +184,7 @@ var
   info: stat;
 {$ENDIF}
 begin
-  result := $FFFFFFFF;
+  result := $ffffffff;
 {$IFDEF UNIX}
   if fplstat(filename, info) = 0 then
     result := info.st_gid
@@ -305,6 +306,5 @@ begin
   else
     result := b;
 end;
-
 
 end.

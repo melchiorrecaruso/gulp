@@ -1,0 +1,19 @@
+E: gulp: statically-linked-binary usr/bin/gdiff
+W: gulp: hardening-no-relro usr/bin/gulp
+W: gulp: missing-depends-line
+W: gulp: old-fsf-address-in-copyright-file
+E: gulp: copyright-should-refer-to-common-license-file-for-gpl
+E: gulp: description-starts-with-package-name
+W: gulp: extended-description-line-too-long
+W: gulp: non-standard-dir-perm usr/ 0775 != 0755
+W: gulp: non-standard-dir-perm usr/bin/ 0775 != 0755
+W: gulp: non-standard-dir-perm usr/share/ 0775 != 0755
+W: gulp: non-standard-dir-perm usr/share/doc/ 0775 != 0755
+W: gulp: non-standard-dir-perm usr/share/doc/gulp/ 0775 != 0755
+W: gulp: extra-license-file usr/share/doc/gulp/LICENSE
+W: gulp: non-standard-file-perm usr/share/doc/gulp/changelog.gz 0664 != 0644
+W: gulp: non-standard-file-perm usr/share/doc/gulp/copyright 0664 != 0644
+W: gulp: non-standard-dir-perm usr/share/man/ 0775 != 0755
+W: gulp: non-standard-dir-perm usr/share/man/man1/ 0775 != 0755
+E: gulp: manpage-not-compressed-with-max-compression usr/share/man/man1/gulp.1.gz
+W: gulp: binary-without-manpage usr/bin/gdiff
