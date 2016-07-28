@@ -1,4 +1,4 @@
-{ Description: Directiries scanner unit.
+{ Description: Directories scanner unit.
 
   Copyright (C) 2014-2016 Melchiorre Caruso <melchiorrecaruso@gmail.com>
 
@@ -128,8 +128,7 @@ end;
 
 function tscanner.getitem(index: longint): rawbytestring;
 begin
-  result := flist[
-    index];
+  result := flist[index];
 end;
 
 function tscanner.getcount: longint;
@@ -165,8 +164,7 @@ end;
 function filenamematch(const filename: rawbytestring;
   const filemask: rawbytestring): boolean;
 begin
-  result :=
-    matchpattern(pansichar(filename), pansichar(filemask));
+  result := matchpattern(pansichar(filename), pansichar(filemask));
 end;
 
 function filenamematch(const filename: rawbytestring;
@@ -176,8 +174,7 @@ var
 begin
   result := false;
   for i := 0 to filemasks.count - 1 do
-    if filenamematch(filename, filemasks
-      [i]) = true then
+    if filenamematch(filename, filemasks[i]) = true then
     begin
       result := true;
       break;

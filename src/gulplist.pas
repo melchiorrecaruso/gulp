@@ -25,7 +25,9 @@ unit gulplist;
 
 interface
 
-uses classes, sysutils;
+uses
+  classes,
+  sysutils;
 
 type
   generic tgenericlist<tgenericitem> = class(TObject)
@@ -211,7 +213,7 @@ function trawbytestringlist.find(const s: rawbytestring): longint;
 var
   p: prawbytestringitem;
 begin
-  p      := new(prawbytestringitem);
+  p := new(prawbytestringitem);
   p^.fstring := s;
   p^.fobject := nil;
   result := flist.find(p);

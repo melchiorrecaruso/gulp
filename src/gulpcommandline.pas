@@ -25,7 +25,9 @@ unit gulpcommandline;
 
 interface
 
-uses gulplist, sysutils;
+uses
+  gulplist,
+  sysutils;
 
 function checkoptions(const shortopts, longopts: rawbytestring;
   filemasks: trawbytestringlist): rawbytestring;

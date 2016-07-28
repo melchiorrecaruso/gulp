@@ -135,6 +135,26 @@ Avoid operating on files whose names match filename pattern PATTERN. The option 
 	gulp -l archive.gulp --exclude='*.pas'
 >
 
+#### Exclude attributes (*--excludeattr=ATTR*)
+Avoid operating on files whose attributes include attributes ATTR. 
+
+>**Example** :
+>
+> List all files in archive.gulp but exclude directories and hidden files
+>
+	gulp -l archive.gulp --excludeattr=DH
+>
+
+#### Exclude modes (*--excludemode=MODE*)
+Avoid operating on files whose modes include modes MODE. 
+
+>**Example** :
+>
+> List all files in archive.gulp but exclude executables
+>
+	gulp -l archive.gulp --excludemode=111
+>
+
 #### Force path (*--forcepath*)
 It's recommended store files in archive with relative path names. This option forces GULP to operate on files with absolute path.
 
@@ -156,8 +176,17 @@ With synch command (***-s***) , do not mark files in the archive as deleted when
 >
 > - This makes **GULP** consistent with the behavior of most non-journaling archivers.
 
+#### Only option (--only==VERSION)
+Ignore any part of the archive without same version number VERSION. 
 
-####-u, --until [*version number*]
+>**Example** :
+>
+> - show files added as version 20
+>
+		gulp -l archive.gulp files --until 20
+> 
+
+#### Until option (-u, --until==VERSION)
 Ignore any part of the archive updated after version number. 
 
 >**Example** :

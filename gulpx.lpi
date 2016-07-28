@@ -40,7 +40,6 @@
       <Unit0>
         <Filename Value="src-ux/gulpx.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="1"/>
         <CursorPos X="11" Y="18"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
@@ -52,9 +51,10 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="232"/>
-        <CursorPos X="5" Y="296"/>
-        <FoldState Value=" T3mK0K492B6!"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="234"/>
+        <CursorPos X="3" Y="305"/>
+        <FoldState Value=" T3mL0K512J"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -63,18 +63,17 @@
         <Filename Value="src/gulpcommon.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="31"/>
-        <CursorPos Y="29"/>
-        <UsageCount Value="175"/>
+        <TopLine Value="88"/>
+        <CursorPos X="15" Y="50"/>
+        <UsageCount Value="176"/>
       </Unit2>
       <Unit3>
         <Filename Value="src/gulplibrary.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="2"/>
-        <TopLine Value="971"/>
-        <CursorPos X="36" Y="975"/>
-        <UsageCount Value="175"/>
-        <Loaded Value="True"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="82"/>
+        <CursorPos X="98" Y="92"/>
+        <UsageCount Value="176"/>
       </Unit3>
     </Units>
   </ProjectOptions>

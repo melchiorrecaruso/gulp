@@ -8,7 +8,7 @@
 - New "--verbose" switch. It's show more process info.
 - New "--excludeattr" switch. Avoid operating on files whose attributes include attributes ATTR.
 - New "--excludemode" switch. Avoid operating on files whose modes include modes MODE.
-- New "--only" switch. 
+- New "--only" switch. Operate on files with version number VERSION only (List function).
 
 **Fixed bugs:**
 

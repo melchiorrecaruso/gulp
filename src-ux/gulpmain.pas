@@ -6,9 +6,8 @@ unit gulpmain;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, DividerBevel, ShortPathEdit, ListFilterEdit,
-  Forms, Controls, Graphics, Dialogs, ComCtrls, StdCtrls, Buttons, ExtCtrls,
-  Menus, EditBtn, FileCtrl, ComboEx, Math, gulplibrary, gulplist, Types;
+  classes, sysutils, fileutil, dividerbevel, forms, controls, graphics, dialogs,
+  comctrls, stdctrls, buttons, extctrls, menus, editbtn, gulplibrary, gulplist;
 
 type
   { tliteitem }
@@ -31,7 +30,7 @@ type
 
   tappthread = class(tthread)
   private
-    fstatustext: string;
+    fmessage: string;
     fprogress: longint;
     procedure showstatus;
     procedure showitem(p: pgulpitem);
@@ -141,6 +140,8 @@ type
 
 
     procedure BitBtn2Click(Sender: TObject);
+
+
     procedure openfindKeyPress(Sender: TObject; var Key: char);
     procedure openpathEditingDone(Sender: TObject);
 
@@ -217,7 +218,7 @@ var
   applist2:    tliteitemlist;
   appfolders:  trawbytestringlist;
   appfolder:   rawbytestring;
-
+  historypage: longint;
 
 
 implementation
@@ -281,7 +282,7 @@ end;
 
 procedure tappthread.showmessage(const message: rawbytestring);
 begin
-  fstatustext := message;
+  fmessage := message;
   synchronize(@showstatus);
 end;
 
@@ -293,7 +294,7 @@ end;
 
 procedure tappthread.showstatus;
 begin
-  //mainform.logmemo.lines.add(fstatustext);
+  mainform.logmemo.lines.add(fmessage);
   mainform.progressbar.position:= fprogress;
 end;
 
@@ -301,9 +302,7 @@ procedure tappthread.execute;
 begin
   app.onshowitem     := @showitem;
   app.onshowmessage1 := @showmessage;
-  // app.onshowmessage2 := @showmessage;
-  app.onshowprogress := @showprogress;
-
+  //app.onshowmessage2 := @showmessage;
 
   synchronize(@mainform.start);
   if appcommand = 'list' then
@@ -422,7 +421,7 @@ end;
 procedure Tmainform.start;
 begin
   updatebuttons(false);
-  // progressbar.style   := pbstmarquee;
+  progressbar.style   := pbstmarquee;
   progressbar.visible := true;
 
   if appcommand = 'list' then
@@ -476,6 +475,7 @@ begin
     updatebuttons(true);
     caption := 'Gulp - ' + opendialog.filename;
   end;
+
   progressbar.style   := pbstnormal;
   progressbar.visible := false;
 end;
@@ -490,8 +490,11 @@ begin
   findbtn.enabled := value;
   openpanel1.enabled := value;
   revimg .enabled := value;
-  listrevision .enabled := value;
-  logmemo.enabled := value;
+  listrevision.enabled  := value;
+
+  logmemo.enabled  := true;
+  logmemo.readonly := true;
+
   openpanel2.enabled := value;
   openlistview  .enabled := value;
   openlistview  .showcolumnheaders := value;
@@ -659,11 +662,13 @@ procedure tmainform.findbtnclick(sender: tobject);
 begin
   if openpanel1.height < 10 then
   begin
+    findbtn.flat        := true;
     openpanel1.autosize := true;
     openpanel2.autosize := false;
     openpanel2.height   := 1;
   end else
   begin
+    findbtn.flat        := false;
     openpanel2.autosize := true;
     openpanel1.autosize := false;
     openpanel1.height   := 1;

@@ -292,7 +292,7 @@ function itemgetdigest(p: pgulpitem): tsha1digest;
 var
   context: tsha1context;
 begin
-  sha1init(context);
+  sha1init  (context);
   sha1update(context, p^.flags, sizeof(p^.flags));
   sha1update(context, pointer(p^.name)^, length(p^.name));
   sha1update(context, p^.stimeutc, sizeof(p^.stimeutc));
@@ -407,14 +407,8 @@ end;
 
 function compare42(p1, p2: pgulpitem): longint;
 begin
-{$IFDEF UNIX}
-  result := ansicomparestr(p1^.name, p2^.name);
-{$ELSE}
-{$IFDEF MSWINDOWS}
-  result := ansicomparetext(p1^.name, p2^.name);
-{$ELSE}
-{$ENDIF}
-{$ENDIF}
+  result := compare40(p1, p2);
+
   if result = 0 then
     if (gfdelete in p1^.flags) and (gfadd in p2^.flags) then
       result := -1

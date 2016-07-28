@@ -1,7 +1,7 @@
 object mainform: Tmainform
-  Left = 470
+  Left = 471
   Height = 540
-  Top = 146
+  Top = 149
   Width = 757
   ActiveControl = buttonspanel
   Caption = 'Gulp - A simple journaling archiver'
@@ -2598,6 +2598,9 @@ object mainform: Tmainform
         Width = 757
         Anchors = [akTop, akLeft, akRight, akBottom]
         BorderStyle = bsNone
+        Font.CharSet = 4
+        Font.Name = 'Droid Sans Mono'
+        ParentFont = False
         ReadOnly = True
         ScrollBars = ssAutoBoth
         TabOrder = 0

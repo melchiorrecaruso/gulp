@@ -25,7 +25,8 @@ unit gulpcommon;
 
 interface
 
-uses sysutils;
+uses
+  sysutils;
 
 function filegettimeutc(var sr: tsearchrec): tdatetime; overload;
 function filegetsize(var sr: tsearchrec): int64; overload;
@@ -59,7 +60,6 @@ uses
 {$IFDEF UNIX}
   baseunix,
 {$ENDIF}
-  dmclibrary,
 {$IFDEF MSWINDOWS}
   windows,
 {$ENDIF}
