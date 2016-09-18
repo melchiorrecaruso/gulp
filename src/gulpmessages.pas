@@ -42,6 +42,8 @@ const
   gesetattributes   = 'Unable to set attributes for "%s"';
   gesetdatetime     = 'Unable to set date for "%s"';
   gerestoreitem     = 'Unable to restore item "%s"';
+  gerestorelink     = 'Unable to restore symlink "%s"';
+  gerestoredir      = 'Unable to restore directory "%s"';
   gedeletefile      = 'Unable to delete file "%s"';
   gerenamefile      = 'Unable to rename file "%s"';
 

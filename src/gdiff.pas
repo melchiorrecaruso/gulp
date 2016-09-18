@@ -31,12 +31,25 @@ uses
   sysutils;
 
 var
+  b: boolean;
   i, j: longint;
   s:    rawbytestring;
   scan: array[1..2] of tscanner;
 
+procedure showmessage(const fn1, fn2, msg: rawbytestring; var printed: boolean);
 begin
-  writeln('GDIFF v0.3 diff utility, copyright (c) 2016 Melchiorre Caruso.');
+  if printed = false then
+  begin
+    writeln;
+    writeln(format('"%s" and', [fn1]));
+    writeln(format('"%s" differ', [fn2]));
+    printed := true;
+  end;
+  writeln(msg);
+end;
+
+begin
+  writeln('GDIFF v0.4 diff utility, copyright (c) 2016 Melchiorre Caruso.');
   if (paramcount <> 2) or
      (directoryexists(paramstr(1)) = false) or
      (directoryexists(paramstr(2)) = false) then
@@ -62,48 +75,40 @@ begin
       j := scan[2].find(s);
       if j <> -1 then
       begin
+        b := false;
 
         if (filegetattr(scan[1] [i]) and fadirectory = 0) and
            (filegetattr(scan[2] [j]) and fadirectory = 0) then
           if sha1match(sha1file(scan[1] [i], 4096),
             sha1file(scan[2] [j], 4096)) = false then
-              writeln(format('"%s" "%s" differ', [scan[1] [i], scan[2] [j]]));
+              showmessage(scan[1] [i], scan[2] [j], 'in data', b);
 
         if filegettimeutc(scan[1] [i]) <> filegettimeutc(scan[2] [j]) then
-          writeln(format('"%s" and "%s" differ in time',
-            [scan[1] [i], scan[2] [j]]));
+          showmessage(scan[1] [i], scan[2] [j], 'in time', b);
 
         if filegetsize(scan[1] [i]) <> filegetsize(scan[2] [j]) then
-          writeln(format('"%s" and "%s" differ in size',
-            [scan[1] [i], scan[2] [j]]));
+          showmessage(scan[1] [i], scan[2] [j], 'in size', b);
 
         if filegetattr(scan[1] [i]) <> filegetattr(scan[2] [j]) then
-          writeln(format('"%s" and "%s" differ in attr',
-            [scan[1] [i], scan[2] [j]]));
+          showmessage(scan[1] [i], scan[2] [j], 'in attr', b);
 
         if filegetmode(scan[1] [i]) <> filegetmode(scan[2] [j]) then
-          writeln(format('"%s" and "%s" differ in mode',
-            [scan[1] [i], scan[2] [j]]));
+          showmessage(scan[1] [i], scan[2] [j], 'in mode', b);
 
         if filegetlinkname(scan[1] [i]) <> filegetlinkname(scan[2] [j]) then
-          writeln(format('"%s" and "%s" differ in linkname',
-            [scan[1] [i], scan[2] [j]]));
+          showmessage(scan[1] [i], scan[2] [j], 'in linkname', b);
 
         if filegetuserid(scan[1] [i]) <> filegetuserid(scan[2] [j]) then
-          writeln(format('"%s" and "%s" differ in user id ',
-            [scan[1] [i], scan[2] [j]]));
+          showmessage(scan[1] [i], scan[2] [j], 'in user id', b);
 
         if filegetusername(scan[1] [i]) <> filegetusername(scan[2] [j]) then
-          writeln(format('"%s" and "%s" differ in user name ',
-            [scan[1] [i], scan[2] [j]]));
+          showmessage(scan[1] [i], scan[2] [j], 'in user name', b);
 
         if filegetgroupid(scan[1] [i]) <> filegetgroupid(scan[2] [j]) then
-          writeln(format('"%s" and "%s" differ in group id ',
-            [scan[1] [i], scan[2] [j]]));
+          showmessage(scan[1] [i], scan[2] [j], 'in group id', b);
 
         if filegetgroupname(scan[1] [i]) <> filegetgroupname(scan[2] [j]) then
-          writeln(format('"%s" and "%s" differ in group name ',
-            [scan[1] [i], scan[2] [j]]));
+          showmessage(scan[1] [i], scan[2] [j], 'in group name', b);
 
         scan[2].delete(j);
       end else

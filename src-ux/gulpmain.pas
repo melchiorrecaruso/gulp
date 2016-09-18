@@ -33,7 +33,7 @@ type
     fmessage: string;
     fprogress: longint;
     procedure showstatus;
-    procedure showitem(p: pgulpitem);
+    procedure showitem(p: pointer);
     procedure showmessage(const message: rawbytestring);
     procedure showprogress(progress: longint);
   protected
@@ -264,19 +264,22 @@ begin
   inherited create(createsuspended);
 end;
 
-procedure tappthread.showitem(p: pgulpitem);
+procedure tappthread.showitem(p: pointer);
 var
   item: tliteitem;
 begin
   item         := tliteitem.create;
-  item.name    := extractfilename(p^.name);
-  item.path    := extractfilepath(p^.name);
-  item.timeutc := gulpfixes.universaltime2local(p^.mtimeutc);
-  item.attr    := p^.attributes;
-  item.mode    := p^.mode;
-  item.size    := p^.size;
-  item.version := p^.version;
-  item.visible := false;
+  with tgulpitem(p^) do
+  begin
+    item.name    := extractfilename(name);
+    item.path    := extractfilepath(name);
+    item.timeutc := gulpfixes.universaltime2local(mtimeutc);
+    item.attr    := attributes;
+    item.mode    := mode;
+    item.size    := size;
+    item.version := version;
+    item.visible := false;
+  end;
   applist1.add(item);
 end;
 

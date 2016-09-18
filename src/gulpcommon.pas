@@ -28,31 +28,62 @@ interface
 uses
   sysutils;
 
-function filegettimeutc(var sr: tsearchrec): tdatetime; overload;
-function filegetsize(var sr: tsearchrec): int64; overload;
-function filegetattr(var sr: tsearchrec): longint; overload;
-function filegettimeutc(const filename: rawbytestring): tdatetime; overload;
-function filegetsize(const filename: rawbytestring): int64; overload;
-function filegetattr(const filename: rawbytestring): longint; overload;
-function filegetlinkname(const filename: rawbytestring): rawbytestring;
-function filegetmode(const filename: rawbytestring): longint;
-function filegetuserid(const filename: rawbytestring): longword;
-function filegetusername(const filename: rawbytestring): rawbytestring;
-function filegetgroupid(const filename: rawbytestring): longword;
-function filegetgroupname(const filename: rawbytestring): rawbytestring;
+type
+  { gulp interface events }
 
-function isabsolutepath(const pathname: rawbytestring): boolean;
+   tgulpshowmessage = procedure(const message: rawbytestring) of object;
+   tgulpshowitem    = procedure(p: pointer) of object;
+   tgulpterminate   = function: boolean of object;
 
-function hex(const data; count: longint): rawbytestring;
-function hextodata(const s: rawbytestring; var data; count: longint): boolean;
+  { gulp app interface class }
 
-function setprioritynormal: boolean;
-function setpriorityidle: boolean;
+  tgulpinterface = class
+  private
+    fonshowitem:     tgulpshowitem;
+    fonshowmessage1: tgulpshowmessage;
+    fonshowmessage2: tgulpshowmessage;
+    fonshowwarning:  tgulpshowmessage;
+  protected
+    procedure showitem    (const item: pointer);
+    procedure showmessage1(const message: rawbytestring);
+    procedure showmessage2(const message: rawbytestring);
+    procedure showwarning (const message: rawbytestring);
+  public
+    constructor create;
+    destructor destroy; override;
+    property onshowitem:     tgulpshowitem    read fonshowitem     write fonshowitem;
+    property onshowmessage1: tgulpshowmessage read fonshowmessage1 write fonshowmessage1;
+    property onshowmessage2: tgulpshowmessage read fonshowmessage2 write fonshowmessage2;
+    property onshowwarning:  tgulpshowmessage read fonshowwarning  write fonshowwarning;
+  end;
 
-function max(a, b: longint): longint; inline; overload;
-function min(a, b: longint): longint; inline; overload;
-function max(const a, b: int64): int64; inline; overload;
-function min(const a, b: int64): int64; inline; overload;
+  { common routines }
+
+  function filegettimeutc(var sr: tsearchrec): tdatetime; overload;
+  function filegetsize   (var sr: tsearchrec): int64; overload;
+  function filegetattr   (var sr: tsearchrec): longint; overload;
+  function filegettimeutc  (const filename: rawbytestring): tdatetime; overload;
+  function filegetsize     (const filename: rawbytestring): int64; overload;
+  function filegetattr     (const filename: rawbytestring): longint; overload;
+  function filegetlinkname (const filename: rawbytestring): rawbytestring;
+  function filegetmode     (const filename: rawbytestring): longint;
+  function filegetuserid   (const filename: rawbytestring): longword;
+  function filegetusername (const filename: rawbytestring): rawbytestring;
+  function filegetgroupid  (const filename: rawbytestring): longword;
+  function filegetgroupname(const filename: rawbytestring): rawbytestring;
+
+  function isabsolutepath(const pathname: rawbytestring): boolean;
+
+  function hex(const data; count: longint): rawbytestring;
+  function hextodata(const s: rawbytestring; var data; count: longint): boolean;
+
+  function setprioritynormal: boolean;
+  function setpriorityidle: boolean;
+
+  function max(a, b: longint): longint; inline; overload;
+  function min(a, b: longint): longint; inline; overload;
+  function max(const a, b: int64): int64; inline; overload;
+  function min(const a, b: int64): int64; inline; overload;
 
 implementation
 
@@ -69,6 +100,48 @@ const
   hexadecimals: array [0..15] of char = '0123456789ABCDEF';
   hexvalues: array ['0'..'F'] of byte = (0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
     0, 0, 0, 0, 0, 0, 0, 10, 11, 12, 13, 14, 15);
+
+{ interface class }
+
+constructor tgulpinterface.create;
+begin
+  inherited create;
+  fonshowitem     := nil;
+  fonshowmessage1 := nil;
+  fonshowmessage2 := nil;
+  fonshowwarning  := nil;
+end;
+
+destructor tgulpinterface.destroy;
+begin
+  inherited destroy;
+end;
+
+procedure tgulpinterface.showitem(const item: pointer);
+begin
+  if assigned(fonshowitem) then
+    fonshowitem(item);
+end;
+
+procedure tgulpinterface.showmessage1(const message: rawbytestring);
+begin
+  if assigned(fonshowmessage1) then
+    fonshowmessage1(message);
+end;
+
+procedure tgulpinterface.showmessage2(const message: rawbytestring);
+begin
+  if assigned(fonshowmessage2) then
+    fonshowmessage2(message);
+end;
+
+procedure tgulpinterface.showwarning(const message: rawbytestring);
+begin
+  if assigned(fonshowwarning) then
+    fonshowwarning(message);
+end;
+
+{ common routines }
 
 function filegettimeutc(var sr: tsearchrec): tdatetime;
 begin
@@ -141,11 +214,15 @@ var
 begin
   result := 0;
 {$IFDEF UNIX}
-  if fplstat(filename, info) = 0 then
-    result := info.st_mode
-  else
-  if fpstat(filename, info) = 0 then
-    result := info.st_mode;
+  if (filegetattr(filename) and fasymlink) = fasymlink then
+  begin
+    if fplstat(filename, info) = 0 then
+      result := info.st_mode;
+  end else
+  begin
+    if fpstat(filename, info) = 0 then
+      result := info.st_mode;
+  end;
 {$ELSE}
 {$IFDEF MSWINDOWS}
 {$ELSE}
@@ -161,11 +238,15 @@ var
 begin
   result := $ffffffff;
 {$IFDEF UNIX}
-  if fplstat(filename, info) = 0 then
-    result := info.st_uid
-  else
-  if fpstat(filename, info) = 0 then
-    result := info.st_uid;
+  if (filegetattr(filename) and fasymlink) = fasymlink then
+  begin
+    if fplstat(filename, info) = 0 then
+      result := info.st_uid;
+  end else
+  begin
+    if fpstat(filename, info) = 0 then
+      result := info.st_uid;
+  end;
 {$ELSE}
 {$IFDEF MSWINDOWS}
 {$ELSE}
@@ -186,11 +267,15 @@ var
 begin
   result := $ffffffff;
 {$IFDEF UNIX}
-  if fplstat(filename, info) = 0 then
-    result := info.st_gid
-  else
-  if fpstat(filename, info) = 0 then
-    result := info.st_gid;
+  if (filegetattr(filename) and fasymlink) = fasymlink then
+  begin
+    if fplstat(filename, info) = 0 then
+      result := info.st_gid;
+  end else
+  begin
+    if fpstat(filename, info) = 0 then
+      result := info.st_gid;
+  end;
 {$ELSE}
 {$IFDEF MSWINDOWS}
 {$ELSE}

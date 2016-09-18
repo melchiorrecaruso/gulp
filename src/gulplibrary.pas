@@ -29,6 +29,7 @@ uses
 {$IFDEF UNIX}
   baseunix,
 {$ENDIF}
+  classes,
   gulpcommon,
   gulpfixes,
   gulplist,
@@ -74,15 +75,30 @@ type
 
   tgulplist = specialize tgenericlist<pgulpitem>;
 
-  { gulp application events }
+  { gulp library }
 
-  tgulpshowitem     = procedure(p: pgulpitem) of object;
-  tgulpshowmessage  = procedure(const message: rawbytestring) of object;
-  tgulpterminate    = function: boolean of object;
+  tgulplibrary = class(tgulpinterface)
+  protected
+    constructor create;
+    destructor destroy; override;
+    function  libmove   (instream,  outstream: tstream; size: int64): tsha1digest;
+    procedure librestore(instream:  tstream; p:    pgulpitem);
+    procedure librestore(                    p:    pgulpitem);
+    procedure libwrite  (outstream: tstream; p:    pgulpitem);
+    procedure libwrite  (outstream: tstream; list: tgulplist);
+    function  libread   (instream:  tstream; p:    pgulpitem): pgulpitem;
+    procedure libread   (instream:  tstream; list: tgulplist);
+    procedure libread   (instream:  tstream; list: tgulplist; untilversion: longword);
+    function  libnew1   (const filename: rawbytestring; stimeutc: tdatetime): pgulpitem;
+    function  libnew2   (const filename: rawbytestring; stimeutc: tdatetime): pgulpitem;
+    procedure libappend (list: tgulplist; p: pgulpitem);
+    function  libfind   (list: tgulplist; const filename: rawbytestring): longint;
+    procedure libclear  (list: tgulplist);
+  end;
 
   { gulp application }
 
-  tgulpapplication = class
+  tgulpapplication = class(tgulplibrary)
   private
     fexclude: trawbytestringlist;
     fexcludeattr: longint;
@@ -94,12 +110,6 @@ type
     fstimeutc: tdatetime;
     fterminated: boolean;
     funtilversion: longword;
-    fonshowitem: tgulpshowitem;
-    fonshowmessage1: tgulpshowmessage;
-    fonshowmessage2: tgulpshowmessage;
-    procedure showitem(const item: pgulpitem);
-    procedure showmessage1(const message: rawbytestring);
-    procedure showmessage2(const message: rawbytestring);
     function isexcluded(const item: pgulpitem): boolean; overload;
     function isincluded(const item: pgulpitem): boolean; overload;
     function isexcluded(const filename: rawbytestring): boolean; overload;
@@ -124,9 +134,6 @@ type
     property onlyversion: longword read fonlyversion write fonlyversion;
     property terminated: boolean read fterminated;
     property untilversion: longword read funtilversion write funtilversion;
-    property onshowitem: tgulpshowitem read fonshowitem write fonshowitem;
-    property onshowmessage1: tgulpshowmessage read fonshowmessage1 write fonshowmessage1;
-    property onshowmessage2: tgulpshowmessage read fonshowmessage2 write fonshowmessage2;
   end;
 
 { usefull routines }
@@ -143,7 +150,6 @@ function flagstostring(const f: tgulpflags): rawbytestring;
 implementation
 
 uses
-  classes,
   dateutils,
   gulpmessages,
   gulpscanner,
@@ -372,8 +378,6 @@ begin
   inc(result, sizeof(tsha1digest));
 end;
 
-{ gulp library routines }
-
 function compare40(p1, p2: pgulpitem): longint;
 begin
 {$IFDEF UNIX}
@@ -417,7 +421,19 @@ begin
       result := 1;
 end;
 
-function libmove(instream, outstream: tstream; size: int64): tsha1digest;
+{ gulp library class }
+
+constructor tgulplibrary.create;
+begin
+  inherited create;
+end;
+
+destructor tgulplibrary.destroy;
+begin
+  inherited destroy;
+end;
+
+function tgulplibrary.libmove(instream, outstream: tstream; size: int64): tsha1digest;
 var
   buffer:  array[0..$FFFF] of byte;
   context: tsha1context;
@@ -436,9 +452,8 @@ begin
   sha1final(context, result);
 end;
 
-procedure librestore(instream: tstream; p: pgulpitem);
+procedure tgulplibrary.librestore(instream: tstream; p: pgulpitem);
 var
-  check:     boolean;
   outpath:   rawbytestring;
   outstream: tstream;
 begin
@@ -448,11 +463,12 @@ begin
     if (outpath <> '') and (forcedirectories(outpath) = false) then
       raise exception.createfmt(gecreatepath, [outpath]);
 
-    check := false;
     if (p^.attributes and fasymlink) = fasymlink then
     begin
     {$IFDEF UNIX}
-      check := fpsymlink(pchar(p^.linkname), pchar(p^.name)) = 0;
+      fpunlink(p^.name);
+      if fpsymlink(pchar(p^.linkname), pchar(p^.name)) <> 0 then
+        raise exception.createfmt(gerestorelink, [p^.name]);
     {$ELSE}
     {$IFDEF MSWINDOWS}
     {$ELSE}
@@ -461,9 +477,9 @@ begin
     end else
     if (p^.attributes and fadirectory) = fadirectory then
     begin
-      check := directoryexists(p^.name);
-      if check = false then
-        check := createdir(p^.name);
+      if directoryexists(p^.name) = false then
+        if createdir(p^.name) = false then
+          raise exception.createfmt(gerestoredir, [p^.name]);
     end else
     if (gfsize in p^.flags) then
     begin
@@ -471,40 +487,42 @@ begin
       outstream := tfilestream.create(p^.name, fmcreate);
       if assigned(outstream) then
       begin
-        check := sha1match(libmove(instream,
-          outstream, p^.offset2 - p^.offset1), p^.checksum);
+        if sha1match(libmove(instream, outstream,
+          p^.offset2 - p^.offset1), p^.checksum) = false then
+          raise exception.createfmt(gechecksum, ['003016']);
         outstream.destroy;
       end;
-      if check = false then
-        raise exception.createfmt(gechecksum, ['003016']);
     end;
-
-    if check = true then
-    begin
-      {$IFDEF UNIX}
-      if (gfuserid in p^.flags) or (gfgroupid in p^.flags) then
-        if fpchown(p^.name, p^.userid, p^.groupid) <> 0 then
-          raise exception.createfmt(gesetid, [p^.name]);
-
-      if gfmode in p^.flags then
-        if fpchmod(p^.name, p^.mode) <> 0 then
-          raise exception.createfmt(gesetmode, [p^.name]);
-      {$ELSE}
-      {$IFDEF MSWINDOWS}
-      if filesetattr(p^.name, p^.attributes) <> 0 then
-        raise exception.createfmt(gesetattributes, [p^.name]);
-      {$ELSE}
-      {$ENDIF}
-      {$ENDIF}
-      if filesetdate(p^.name,
-        datetimetofiledate(universaltime2local(p^.mtimeutc))) <> 0 then
-          raise exception.createfmt(gesetdatetime, [p^.name]);
-    end else
-      raise exception.createfmt(gerestoreitem, [p^.name]);
   end;
 end;
 
-procedure libwrite(outstream: tstream; p: pgulpitem);
+procedure tgulplibrary.librestore(p: pgulpitem);
+begin
+{$IFDEF UNIX}
+  if (p^.attributes and fasymlink) = 0 then
+  begin
+    if (gfuserid in p^.flags) or (gfgroupid in p^.flags) then
+      if fpchown(p^.name, p^.userid, p^.groupid) <> 0 then
+        showwarning(format(gesetid, [p^.name]));
+
+    if gfmode in p^.flags then
+      if fpchmod(p^.name, p^.mode) <> 0 then
+        showwarning(format(gesetmode, [p^.name]));
+
+    if filesetdate(p^.name,
+      datetimetofiledate(universaltime2local(p^.mtimeutc))) <> 0 then
+        showwarning(format(gesetdatetime, [p^.name]));
+  end;
+{$ELSE}
+{$IFDEF MSWINDOWS}
+  if filesetattr(p^.name, p^.attributes) <> 0 then
+    showwarning(format(gesetattributes, [p^.name]);
+{$ELSE}
+{$ENDIF}
+{$ENDIF}
+end;
+
+procedure tgulplibrary.libwrite(outstream: tstream; p: pgulpitem);
 begin
   outstream.write(gulpmarker, sizeof(tsha1digest));
   outstream.write(p^.flags, sizeof(p^.flags));
@@ -531,7 +549,7 @@ begin
   outstream.write(itemgetdigest(p), sizeof(tsha1digest));
 end;
 
-procedure libwrite(outstream: tstream; list: tgulplist);
+procedure tgulplibrary.libwrite(outstream: tstream; list: tgulplist);
 var
   i:        longint;
   instream: tstream;
@@ -566,7 +584,7 @@ begin
   end;
 end;
 
-function libread(instream: tstream; p: pgulpitem): pgulpitem;
+function tgulplibrary.libread(instream: tstream; p: pgulpitem): pgulpitem;
 var
   digest: tsha1digest;
 begin
@@ -611,7 +629,7 @@ begin
   dodirseparators(p^.linkname);
 end;
 
-procedure libread(instream: tstream; list: tgulplist);
+procedure tgulplibrary.libread(instream: tstream; list: tgulplist);
 var
   p:       pgulpitem;
   offset:  int64    = 0;
@@ -642,7 +660,7 @@ begin
     raise exception.createfmt(gebrokenarchive, ['003011']);
 end;
 
-procedure libread(instream: tstream; list: tgulplist; untilversion: longword);
+procedure tgulplibrary.libread(instream: tstream; list: tgulplist; untilversion: longword);
 var
   i:       longint;
   p:       pgulpitem;
@@ -689,7 +707,7 @@ begin
     raise exception.createfmt(gebrokenarchive, ['003014']);
 end;
 
-function libnew1(const filename: rawbytestring; stimeutc: tdatetime): pgulpitem;
+function tgulplibrary.libnew1(const filename: rawbytestring; stimeutc: tdatetime): pgulpitem;
 begin
   result           := itemclear(new(pgulpitem));
   result^.flags    := [gfdelete];
@@ -697,7 +715,7 @@ begin
   result^.stimeutc := stimeutc;
 end;
 
-function libnew2(const filename: rawbytestring; stimeutc: tdatetime): pgulpitem;
+function tgulplibrary.libnew2(const filename: rawbytestring; stimeutc: tdatetime): pgulpitem;
 var
   sr: tsearchrec;
 begin
@@ -736,7 +754,7 @@ begin
   sysutils.findclose(sr);
 end;
 
-procedure libappend(list: tgulplist; p: pgulpitem);
+procedure tgulplibrary.libappend(list: tgulplist; p: pgulpitem);
 begin
   if assigned(p) then
   begin
@@ -745,7 +763,7 @@ begin
   end;
 end;
 
-function libfind(list: tgulplist; const filename: rawbytestring): longint;
+function tgulplibrary.libfind(list: tgulplist; const filename: rawbytestring): longint;
 var
   p: pgulpitem;
 begin
@@ -756,7 +774,7 @@ begin
   dispose(p);
 end;
 
-procedure libclear(list: tgulplist);
+procedure tgulplibrary.libclear(list: tgulplist);
 begin
   while list.count > 0 do
   begin
@@ -770,9 +788,6 @@ end;
 constructor tgulpapplication.create;
 begin
   inherited create;
-  fonshowitem     := nil;
-  fonshowmessage1 := nil;
-  fonshowmessage2 := nil;
   fexclude := trawbytestringlist.create;
   finclude := trawbytestringlist.create;
   reset;
@@ -798,24 +813,6 @@ begin
   fstimeutc     := localtime2universal(now);
   fterminated   := true;
   funtilversion := $ffffffff;
-end;
-
-procedure tgulpapplication.showitem(const item: pgulpitem);
-begin
-  if assigned(fonshowitem) then
-    fonshowitem(item);
-end;
-
-procedure tgulpapplication.showmessage1(const message: rawbytestring);
-begin
-  if assigned(fonshowmessage1) then
-    fonshowmessage1(message);
-end;
-
-procedure tgulpapplication.showmessage2(const message: rawbytestring);
-begin
-  if assigned(fonshowmessage2) then
-    fonshowmessage2(message);
 end;
 
 procedure tgulpapplication.sync(const filename: rawbytestring);
@@ -891,6 +888,7 @@ begin
   freeandnil(list2);
   freeandnil(stream);
   freeandnil(scan);
+
   showmessage1(format(gmsyncfinish, [filegetsize(filename) - size]));
   fterminated := true;
 end;
@@ -899,6 +897,7 @@ procedure tgulpapplication.restore(const filename: rawbytestring);
 var
   i, j:   longint;
   list1:  tgulplist;
+  list2:  tgulplist;
   p:      pgulpitem;
   scan:   tscanner;
   size:   int64 = 0;
@@ -909,6 +908,7 @@ begin
   showmessage1(format(gmrestore, [filename]));
   stream := tfilestream.create(filename, fmopenread or fmsharedenywrite);
   list1  := tgulplist.create(@compare40);
+  list2  := tgulplist.create(@compare40);
   if funtilversion = 0 then
     funtilversion := $ffffffff;
   libread(stream, list1, funtilversion);
@@ -948,7 +948,7 @@ begin
       end;
     end;
 
-  for i := list1.count - 1 downto 0 do
+  for i := 0 to list1.count - 1 do
   begin
     p := list1[i];
     if isincluded(p) and (isexcluded(p) = false) then
@@ -959,13 +959,23 @@ begin
         showmessage2(format(gmrestoreitem, [p^.name]));
         librestore(stream, p);
         inc(size, p^.size);
+        list2.add(p);
       end;
     end;
   end;
+
+  while list2.count > 0 do
+  begin
+    librestore(list2[0]);
+    list2.delete(0);
+  end;
+  freeandnil(list2);
+
   libclear(list1);
   freeandnil(list1);
   freeandnil(stream);
   freeandnil(scan);
+
   showmessage1(format(gmrestorefinish, [size]));
   fterminated := true;
 end;
@@ -994,10 +1004,12 @@ begin
       libmove(stream, nul, list1[i]^.offset2 - list1[i]^.offset1);
     end;
   end;
+
   libclear(list1);
   freeandnil(list1);
   freeandnil(stream);
   freeandnil(nul);
+
   showmessage1(format(gmcheckfinish, [filegetsize(filename)]));
   fterminated := true;
 end;
@@ -1040,6 +1052,7 @@ begin
   else
     raise exception.createfmt(gereadarchive, ['003015']);
   freeandnil(stream);
+
   showmessage1(format(gmfixfinish, [offset]));
   fterminated := true;
 end;
@@ -1105,6 +1118,7 @@ begin
   else
   if renamefile(tmpname, filename) = false then
     raise exception.createfmt(gerenamefile, [tmpname]);
+
   showmessage1(format(gmpurgefinish, [size]));
   fterminated := true;
 end;
@@ -1121,6 +1135,7 @@ begin
   showmessage1(gulpdescription);
   showmessage1(format(gmlist, [filename]));
   stream := tfilestream.create(filename, fmopenread or fmsharedenywrite);
+
   if fonlyversion > 0 then
   begin
     list1 := tgulplist.create(@compare41);
@@ -1163,7 +1178,7 @@ begin
     if isincluded(p) and (isexcluded(p) = false) then
       if fonlyversion = 0 then
       begin
-        showitem(p);
+        showitem(tobject(p));
         inc(c);
       end else
         if p^.version = fonlyversion then
@@ -1172,9 +1187,11 @@ begin
           inc(c);
         end;
   end;
+
   libclear(list1);
   freeandnil(list1);
   freeandnil(stream);
+
   showmessage1(format(gmlistfinish, [c]));
   showmessage1(format(gmlistlastversion, [j]));
   fterminated := true;

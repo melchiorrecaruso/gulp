@@ -46,7 +46,7 @@ type
 
   tshellapplication = class
   protected
-    procedure showitem(p: pgulpitem);
+    procedure showitem(p: pointer);
     procedure showmessage(const message: rawbytestring);
     procedure abort;
   public
@@ -74,9 +74,9 @@ type
     writeln(message);
   end;
 
-  procedure tshellapplication.showitem(p: pgulpitem);
+  procedure tshellapplication.showitem(p: pointer);
   begin
-    with p^ do
+    with tgulpitem(p^) do
       if gfadd in flags then
       begin
         if attributes and fadirectory = fadirectory then
@@ -86,7 +86,7 @@ type
             '', name]))
         else
           writeln(format('%4s %3s %3s %7s %19s %12s %s',
-            [versiontostring(p^.version), flagstostring(flags), modetostring(mode),
+            [versiontostring(version), flagstostring(flags), modetostring(mode),
             attrtostring(attributes), timetostring(universaltime2local(mtimeutc)),
             sizetostring(size), name]));
       end else
@@ -109,6 +109,8 @@ type
     app.onshowitem     := @showitem;
     app.onshowmessage1 := @showmessage;
     app.onshowmessage2 := nil;
+    app.onshowwarning  := @showmessage;
+
     try
       s := checkoptions('-s: -r: -p: -l: -c: -f: -u: -i: -e: h         ',
         '--synch: --restore: --purge:   --list:    --check:    --fix:  ' +

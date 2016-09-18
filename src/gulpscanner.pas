@@ -92,7 +92,7 @@ begin
       begin
         flist.add(path + sr.name);
         if recursive then
-          if sr.attr and (fasymlink and favolumeid) = 0 then
+          if sr.attr and (fasymlink or favolumeid) = 0 then
             scan(path + includetrailingpathdelimiter(sr.name) + mask, true);
       end;
     end else

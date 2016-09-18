@@ -52,7 +52,7 @@ SYNOPSIS
 
 	gulp [-] s --synch | r --restore | p --purge | l --list |
 	    	 c --check | f --fix [options ...] [ files ...]
-```                  
+```
 
 ##Main function mode
                                            
@@ -112,7 +112,7 @@ List "files" within the archive, or list the entire archive contents if "files" 
 >**Example** :
 >
 > List all files in archive.gulp
->			
+>
 	gulp -l archive.gulp
 >
 
@@ -213,7 +213,7 @@ A **GULP** archive is a sequence of timestamped updates, each listing the files 
 	- Slice N
 ```
 #### Slice content:
-``` sh	 
+``` sh
 	- Marker          (20 bytes)
 	- Header      1
 	- Checksum    1   (20 bytes) 
@@ -224,7 +224,7 @@ A **GULP** archive is a sequence of timestamped updates, each listing the files 
 	- Marker          (20 bytes)
 	- Header      N
 	- Checksum    N   (20 bytes)
-	- Stored data 1   
+	- Stored data 1
 	- Stored data 2
 	- ...
 	- Stored data N
@@ -234,7 +234,7 @@ A **GULP** archive is a sequence of timestamped updates, each listing the files 
 ``` sh
 	- Flags        longword        ( 4 bytes)
 	- Name         rawbytestring 
- 	- sTime (UTC)  double          ( 8 bytes)  	  
+ 	- sTime (UTC)  double          ( 8 bytes)
  	- mTime (UTC)  double          ( 8 bytes)  if bit 04 in Flags
 	- Attributes   longint         ( 4 bytes)  if bit 05 in Flags
 	- Mode         longint         ( 4 bytes)  if bit 06 in Flags
@@ -247,7 +247,7 @@ A **GULP** archive is a sequence of timestamped updates, each listing the files 
 	- Comment      rawbytestring               if bit 13 in Flags
 	- Offset1      int64                       if bit 07 in Flags
 	- Offset2      int64                       if bit 07 in Flags
-	- Checksum     array of bytes  (20 bytes)  if bit 07 in Flags   
+	- Checksum     array of bytes  (20 bytes)  if bit 07 in Flags
 ```
 
 >
