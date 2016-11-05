@@ -481,7 +481,6 @@ begin
         if createdir(p^.name) = false then
           raise exception.createfmt(gerestoredir, [p^.name]);
     end else
-    if (gfsize in p^.flags) then
     begin
       instream.seek(p^.offset1, sobeginning);
       outstream := tfilestream.create(p^.name, fmcreate);
@@ -493,33 +492,37 @@ begin
         outstream.destroy;
       end;
     end;
-  end;
+  end else
+    showwarning(format(geunsupported, [p^.name]));
 end;
 
 procedure tgulplibrary.librestore(p: pgulpitem);
 begin
-{$IFDEF UNIX}
-  if (p^.attributes and fasymlink) = 0 then
+  if p^.attributes and (gulpnotsupported) = 0 then
   begin
-    if (gfuserid in p^.flags) or (gfgroupid in p^.flags) then
-      if fpchown(p^.name, p^.userid, p^.groupid) <> 0 then
-        showwarning(format(gesetid, [p^.name]));
+    {$IFDEF UNIX}
+    if (p^.attributes and fasymlink) = 0 then
+    begin
+      if (gfuserid in p^.flags) or (gfgroupid in p^.flags) then
+        if fpchown(p^.name, p^.userid, p^.groupid) <> 0 then
+          showwarning(format(gesetid, [p^.name]));
 
-    if gfmode in p^.flags then
-      if fpchmod(p^.name, p^.mode) <> 0 then
-        showwarning(format(gesetmode, [p^.name]));
+      if gfmode in p^.flags then
+        if fpchmod(p^.name, p^.mode) <> 0 then
+          showwarning(format(gesetmode, [p^.name]));
 
-    if filesetdate(p^.name,
-      datetimetofiledate(universaltime2local(p^.mtimeutc))) <> 0 then
-        showwarning(format(gesetdatetime, [p^.name]));
+      if filesetdate(p^.name,
+        datetimetofiledate(universaltime2local(p^.mtimeutc))) <> 0 then
+          showwarning(format(gesetdatetime, [p^.name]));
+    end;
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
+    if filesetattr(p^.name, p^.attributes) <> 0 then
+      showwarning(format(gesetattributes, [p^.name]);
+  {$ELSE}
+  {$ENDIF}
+  {$ENDIF}
   end;
-{$ELSE}
-{$IFDEF MSWINDOWS}
-  if filesetattr(p^.name, p^.attributes) <> 0 then
-    showwarning(format(gesetattributes, [p^.name]);
-{$ELSE}
-{$ENDIF}
-{$ENDIF}
 end;
 
 procedure tgulplibrary.libwrite(outstream: tstream; p: pgulpitem);
@@ -564,6 +567,7 @@ begin
 
     for i := 0 to list.count - 1 do
       if list[i]^.attributes and (gulpnotsupported) = 0 then
+      begin
         if list[i]^.attributes and (fasymlink or fadirectory) = 0 then
           if gfsize in list[i]^.flags then
           begin
@@ -577,6 +581,9 @@ begin
             end;
             list[i]^.offset2 := outstream.position;
           end;
+      end else
+        showwarning(format(geunsupported, [list[i]^.name]));
+
     outstream.seek(size, sobeginning);
     for i := 0 to list.count - 1 do
       libwrite(outstream, list[i]);

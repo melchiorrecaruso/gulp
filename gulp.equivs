@@ -1,0 +1,34 @@
+### Commented entries have reasonable defaults.
+### Uncomment to edit them.
+# Source: <source package name; defaults to package name>
+Section: utils
+Priority: optional
+Standards-Version: 3.9.2
+
+Package: gulp
+Version: 0.4
+Maintainer: Melchorre Caruso <melchiorrecaruso@gmail.com>
+Homepage: https://github.com/melchiorrecaruso/gulp
+# Pre-Depends: <comma-separated list of packages>
+Depends: 
+# Recommends: <comma-separated list of packages>
+# Suggests:   <comma-separated list of packages>
+# Provides:   <comma-separated list of packages>
+# Replaces:   <comma-separated list of packages>
+Architecture: amd64
+# Multi-Arch: <one of: foreign|same|allowed>
+Copyright: docs/LICENSE
+Changelog: docs/CHANGELOG
+Readme:    docs/README
+# Extra-Files:         
+Files: gulp      /usr/bin
+       gulpx     /usr/bin
+       gdiff     /usr/bin
+       gulp.1.gz /usr/share/man/man1
+
+Description: A simple journaling archiver. 
+ GULP is a free and open source incremental, journaling command-line archiver 
+ for Windows and Linux. Journaling means that the archive is append-only. 
+ When you add files or directories to the archive, both the old and new versions 
+ are saved. You can recover old versions by specifying version number.
+

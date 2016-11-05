@@ -86,17 +86,11 @@ begin
         if filegettimeutc(scan[1] [i]) <> filegettimeutc(scan[2] [j]) then
           showmessage(scan[1] [i], scan[2] [j], 'in time', b);
 
-        if filegetsize(scan[1] [i]) <> filegetsize(scan[2] [j]) then
-          showmessage(scan[1] [i], scan[2] [j], 'in size', b);
-
-        if filegetattr(scan[1] [i]) <> filegetattr(scan[2] [j]) then
-          showmessage(scan[1] [i], scan[2] [j], 'in attr', b);
-
         if filegetmode(scan[1] [i]) <> filegetmode(scan[2] [j]) then
           showmessage(scan[1] [i], scan[2] [j], 'in mode', b);
 
-        if filegetlinkname(scan[1] [i]) <> filegetlinkname(scan[2] [j]) then
-          showmessage(scan[1] [i], scan[2] [j], 'in linkname', b);
+        if filegetattr(scan[1] [i]) <> filegetattr(scan[2] [j]) then
+          showmessage(scan[1] [i], scan[2] [j], 'in attr', b);
 
         if filegetuserid(scan[1] [i]) <> filegetuserid(scan[2] [j]) then
           showmessage(scan[1] [i], scan[2] [j], 'in user id', b);
@@ -108,7 +102,13 @@ begin
           showmessage(scan[1] [i], scan[2] [j], 'in group id', b);
 
         if filegetgroupname(scan[1] [i]) <> filegetgroupname(scan[2] [j]) then
-          showmessage(scan[1] [i], scan[2] [j], 'in group name', b);
+          showmessage(scan[1] [i], scan[2] [j], 'in group name', b);        
+
+        if filegetsize(scan[1] [i]) <> filegetsize(scan[2] [j]) then
+          showmessage(scan[1] [i], scan[2] [j], 'in size', b);
+
+        if filegetlinkname(scan[1] [i]) <> filegetlinkname(scan[2] [j]) then
+          showmessage(scan[1] [i], scan[2] [j], 'in linkname', b);
 
         scan[2].delete(j);
       end else

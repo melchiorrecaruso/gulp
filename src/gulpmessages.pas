@@ -46,6 +46,7 @@ const
   gerestoredir      = 'Unable to restore directory "%s"';
   gedeletefile      = 'Unable to delete file "%s"';
   gerenamefile      = 'Unable to rename file "%s"';
+  geunsupported     = 'Unsupported type for "%s"';
 
   gmdeleteitem      = 'Delete "%s"';
 
