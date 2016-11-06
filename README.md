@@ -235,27 +235,27 @@ A **GULP** archive is a sequence of timestamped updates, each listing the files 
 	- Flags        longword        ( 4 bytes)
 	- Name         rawbytestring 
  	- sTime (UTC)  double          ( 8 bytes)
- 	- mTime (UTC)  double          ( 8 bytes)  if bit 04 in Flags
-	- Attributes   longint         ( 4 bytes)  if bit 05 in Flags
-	- Mode         longint         ( 4 bytes)  if bit 06 in Flags
-	- Size         int64           ( 8 bytes)  if bit 07 in Flags
-	- Link Name    rawbytestring               if bit 08 in Flags
-	- User ID      longint         ( 4 bytes)  if bit 09 in Flags
-	- Group ID     longint         ( 4 bytes)  if bit 10 in Flags
-	- User Name    rawbytestring               if bit 11 in Flags
-	- Group Name   rawbytestring               if bit 12 in Flags
-	- Comment      rawbytestring               if bit 13 in Flags
-	- Offset1      int64                       if bit 07 in Flags
-	- Offset2      int64                       if bit 07 in Flags
-	- Checksum     array of bytes  (20 bytes)  if bit 07 in Flags
+ 	- mTime (UTC)  double          ( 8 bytes)
+	- Attributes   longint         ( 4 bytes)
+	- Mode         longint         ( 4 bytes)
+	- Size         int64           ( 8 bytes)
+	- Link Name    rawbytestring
+	- User ID      longint         ( 4 bytes)
+	- Group ID     longint         ( 4 bytes)
+	- User Name    rawbytestring
+	- Group Name   rawbytestring
+	- Comment      rawbytestring
+	- Offset1      int64           ( 8 bytes)
+	- Offset2      int64           ( 8 bytes)
+	- Checksum     array of bytes  (20 bytes)
 ```
 
 >
 > **Note:** 
 > 
-> - bit 01 is reserved for mark header added to archive;
-> - bit 02 is reserved for mark header deleted from archive;
-> - bit 03 is reserved for mark last header in current slice.
+> - bit 1 in Flags is used to mark header added to archive;
+> - bit 2 in Flags is used to mark header deleted from archive;
+> - bit 3 in Flags is used to mark last header in current slice.
 >
 
 </br>

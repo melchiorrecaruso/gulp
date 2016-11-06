@@ -1,12 +1,13 @@
 gulp (0.4) unstable; urgency=medium
      	    
-  * new "--verbose" switch. It's show more process info.
+  * new "--verbose" switch. It's show more process info;
   * new "--excludeattr" switch. Avoid operating on files whose attributes 
-    include attributes ATTR.
+    include attributes ATTR;
   * new "--excludemode" switch. Avoid operating on files whose modes 
-    include modes MODE.
+    include modes MODE;
   * new "--only" switch. Operate on files with version number VERSION 
-    only (List function).
+    only (List function);
+  * changed file format.
  	    
  -- melchiorre caruso <melchiorrecruso@gmail.com>  Sat, 05 Nov 2016 00:00:00 +0100
 
