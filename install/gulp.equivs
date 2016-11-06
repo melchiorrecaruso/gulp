@@ -17,9 +17,9 @@ Depends:
 # Replaces:   <comma-separated list of packages>
 Architecture: amd64
 # Multi-Arch: <one of: foreign|same|allowed>
-Copyright: docs/LICENSE
-Changelog: docs/CHANGELOG
-Readme:    docs/README
+Copyright: LICENSE
+Changelog: CHANGELOG
+Readme:    README
 # Extra-Files:         
 Files: gulp      /usr/bin
        gulpx     /usr/bin
