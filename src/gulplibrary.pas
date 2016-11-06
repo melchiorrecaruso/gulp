@@ -450,11 +450,20 @@ begin
   end else
   begin
     instream.seek(p^.offset1, sobeginning);
-    outstream := tfilestream.create(p^.name, fmcreate);
-    if sha1match(libmove(instream, outstream,
-      p^.offset2 - p^.offset1), p^.checksum) = false then
-      raise exception.createfmt(gechecksum, ['003016']);
-    outstream.destroy;
+    try
+      outstream := tfilestream.create(p^.name, fmcreate);
+    except
+      showwarning(format(geopenstream, [p^.name]));
+      outstream := nil;
+    end;
+
+    if assigned(outstream) then
+    begin
+      if sha1match(libmove(instream, outstream,
+        p^.offset2 - p^.offset1), p^.checksum) = false then
+        raise exception.createfmt(gechecksum, ['003016']);
+      outstream.destroy;
+    end;
   end;
 end;
 
@@ -530,10 +539,19 @@ begin
       end else
       begin
         list[i]^.offset1 := outstream.position;
-        instream := tfilestream.create(
-          list[i]^.name, fmopenread or fmsharedenywrite);
-        list[i]^.checksum := libmove(instream, outstream, list[i]^.size);
-        instream.destroy;
+        try
+          instream := tfilestream.create(
+            list[i]^.name, fmopenread or fmsharedenywrite);
+        except
+          showwarning(format(geopenstream, [list[i]^.name]));
+          instream := nil;
+        end;
+
+        if assigned(instream) then
+        begin
+          list[i]^.checksum := libmove(instream, outstream, list[i]^.size);
+          instream.destroy;
+        end;
         list[i]^.offset2 := outstream.position;
       end;
 
@@ -890,7 +908,7 @@ begin
       begin
         showmessage2(format(gmrestoreitem, [p^.name]));
         librestore(stream, p);
-        inc(size, p^.size);
+        inc(size, p^.offset2 - p^.offset1);
         list2.add(p);
       end;
     end;
@@ -929,9 +947,9 @@ begin
   nul := tnulstream.create;
   for i := 0 to list1.count - 1 do
   begin
-    if list1[i]^.size > 0 then
+    showmessage2(format(gmcheckitem, [list1[i]^.name]));
+    if (list1[i]^.offset2 > list1[i]^.offset1) then
     begin
-      showmessage2(format(gmcheckitem, [list1[i]^.name]));
       stream.seek(list1[i]^.offset1, sobeginning);
       libmove(stream, nul, list1[i]^.offset2 - list1[i]^.offset1);
     end;
@@ -1016,7 +1034,7 @@ begin
     for i := 0 to list1.count - 1 do
     begin
       p := list1[i];
-      if p^.size > 0 then
+      if (p^.offset2 > p^.offset1) then
       begin
         showmessage2(format(gmmoveitem, [p^.name]));
         stream.seek(p^.offset1, sobeginning);

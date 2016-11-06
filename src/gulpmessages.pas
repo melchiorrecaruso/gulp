@@ -33,6 +33,7 @@ const
   geabsolutepath    = 'Absolute path, try with the "--forcepath" option (%s)';
 
   gereadarchive     = 'Stream is not a valid archive (%s)';
+  geopenstream      = 'Unable to open stream (%s)';
   gereadstream      = 'Unable to read stream (%s)';
   geduplicates      = 'Duplicates non allowed (%s)';
 
