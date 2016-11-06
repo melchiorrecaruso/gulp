@@ -29,6 +29,9 @@ uses
   gulplist,
   sysutils;
 
+const
+  gulpnotsupported = fasysfile or favolumeid;
+
 type
   tscanner = class(TObject)
   private
@@ -92,7 +95,7 @@ begin
       begin
         flist.add(path + sr.name);
         if recursive then
-          if sr.attr and (fasymlink or favolumeid) = 0 then
+          if (sr.attr and gulpnotsupported) = 0 then
             scan(path + includetrailingpathdelimiter(sr.name) + mask, true);
       end;
     end else

@@ -1,9 +1,9 @@
 #!/bin/sh
 echo "*** BUILD GULP DEBIAN PACKCAGE ***"
 
-lazbuild -q -q gulp.lpi
-lazbuild -q -q gulpx.lpi
-lazbuild -q -q gdiff.lpi
+lazbuild -B -q -q gulp.lpi
+lazbuild -B -q -q gulpx.lpi
+lazbuild -B -q -q gdiff.lpi
 
 gzip -9 -k -n docs/gulp.man
 

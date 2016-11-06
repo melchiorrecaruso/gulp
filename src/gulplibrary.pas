@@ -79,8 +79,6 @@ type
 
   tgulplibrary = class(tgulpinterface)
   protected
-    constructor create;
-    destructor destroy; override;
     function  libmove   (instream,  outstream: tstream; size: int64): tsha1digest;
     procedure librestore(instream:  tstream; p:    pgulpitem);
     procedure librestore(                    p:    pgulpitem);
@@ -94,6 +92,9 @@ type
     procedure libappend (list: tgulplist; p: pgulpitem);
     function  libfind   (list: tgulplist; const filename: rawbytestring): longint;
     procedure libclear  (list: tgulplist);
+  public
+    constructor create;
+    destructor destroy; override;
   end;
 
   { gulp application }
@@ -163,8 +164,6 @@ const
     'GULP v0.4 journaling archiver, copyright (c) 2014-2016 Melchiorre Caruso.'
     + lineending +
     'GULP archiver for user-level incremental backups with rollback capability.';
-
-  gulpnotsupported = fasysfile or favolumeid;
 
 { usefull routines }
 
@@ -457,7 +456,7 @@ var
   outpath:   rawbytestring;
   outstream: tstream;
 begin
-  if p^.attributes and (gulpnotsupported) = 0 then
+  if (p^.attributes and gulpnotsupported) = 0 then
   begin
     outpath := extractfiledir(p^.name);
     if (outpath <> '') and (forcedirectories(outpath) = false) then
