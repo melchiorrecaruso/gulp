@@ -37,7 +37,8 @@ const
   geduplicates      = 'Duplicates non allowed (%s)';
 
   gecreatepath      = 'Unable to create path "%s"';
-  gesetid           = 'Unable to set user/group id for "%s"';
+  gesetuserid       = 'Unable to set userid for "%s"';
+  gesetgroupid      = 'Unable to set groupid for "%s"';
   gesetmode         = 'Unable to set mode for "%s"';
   gesetattributes   = 'Unable to set attributes for "%s"';
   gesetdatetime     = 'Unable to set date for "%s"';

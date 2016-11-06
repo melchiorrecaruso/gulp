@@ -60,16 +60,26 @@ type
   { common routines }
 
   function filegettimeutc(var sr: tsearchrec): tdatetime; overload;
-  function filegetsize   (var sr: tsearchrec): int64; overload;
-  function filegetattr   (var sr: tsearchrec): longint; overload;
-  function filegettimeutc  (const filename: rawbytestring): tdatetime; overload;
-  function filegetsize     (const filename: rawbytestring): int64; overload;
-  function filegetattr     (const filename: rawbytestring): longint; overload;
-  function filegetlinkname (const filename: rawbytestring): rawbytestring;
-  function filegetmode     (const filename: rawbytestring): longint;
-  function filegetuserid   (const filename: rawbytestring): longword;
-  function filegetusername (const filename: rawbytestring): rawbytestring;
+  function filegettimeutc(const filename: rawbytestring): tdatetime; overload;
+  function filesettimeutc(const filename: rawbytestring; timeutc: tdatetime): longint;
+
+  function filegetattributes(const filename: rawbytestring): longint; overload;
+  function filegetattributes(var sr: tsearchrec): longint; overload;
+  function filesetattributes(const filename: rawbytestring; attr: longint): longint;
+
+  function filegetsize(var sr: tsearchrec): int64; overload;
+  function filegetsize(const filename: rawbytestring): int64; overload;
+
+  function filegetlinkname(const filename: rawbytestring): rawbytestring;
+  function filegetmode    (const filename: rawbytestring): longint;
+  function filesetmode    (const filename: rawbytestring; mode: longint): longint;
+
+  function filegetuserid  (const filename: rawbytestring): longword;
+  function filesetuserid  (const filename: rawbytestring;  userid: longword): longint;
+  function filegetusername(const filename: rawbytestring): rawbytestring;
+
   function filegetgroupid  (const filename: rawbytestring): longword;
+  function filesetgroupid  (const filename: rawbytestring; groupid: longword): longint;
   function filegetgroupname(const filename: rawbytestring): rawbytestring;
 
   function isabsolutepath(const pathname: rawbytestring): boolean;
@@ -88,12 +98,12 @@ type
 implementation
 
 uses
-{$IFDEF UNIX}
+  {$IFDEF UNIX}
   baseunix,
-{$ENDIF}
-{$IFDEF MSWINDOWS}
+  {$ENDIF}
+  {$IFDEF MSWINDOWS}
   windows,
-{$ENDIF}
+  {$ENDIF}
   gulpfixes;
 
 const
@@ -159,11 +169,28 @@ begin
   sysutils.findclose(sr);
 end;
 
+function filesettimeutc(const filename: rawbytestring; timeutc: tdatetime): longint;
+begin
+  {$IFDEF UNIX}
+  if (filegetattributes(filename) and fasymlink) = 0 then
+    result := filesetdate(filename, datetimetofiledate(universaltime2local(timeutc)))
+  else
+    result := -1;
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
+  result := filesetdate(filename, datetimetofiledate(universaltime2local(timeutc)));
+  {$ELSE}
+  result := filesetdate(filename, datetimetofiledate(universaltime2local(timeutc)));
+  {$ENDIF}
+  {$ENDIF}
+end;
+
 function filegetsize(var sr: tsearchrec): int64;
 begin
-  result := 0;
   if sr.attr and (fadirectory or favolumeid or fasymlink) = 0 then
-    result := sr.size;
+    result := sr.size
+  else
+    result := 0;
 end;
 
 function filegetsize(const filename: rawbytestring): int64;
@@ -177,33 +204,38 @@ begin
   sysutils.findclose(sr);
 end;
 
-function filegetattr(var sr: tsearchrec): longint;
+function filegetattributes(var sr: tsearchrec): longint;
 begin
   result := sr.attr;
 end;
 
-function filegetattr(const filename: rawbytestring): longint;
+function filegetattributes(const filename: rawbytestring): longint;
 var
   sr: tsearchrec;
 begin
   result := 0;
   if sysutils.findfirst(filename, fareadonly or fahidden or fasysfile or
     favolumeid or fadirectory or faarchive or fasymlink or faanyfile, sr) = 0 then
-      result := gulpcommon.filegetattr(sr);
+      result := gulpcommon.filegetattributes(sr);
   sysutils.findclose(sr);
+end;
+
+function filesetattributes(const filename: rawbytestring; attr: longint): longint;
+begin
+  result := filesetattr(filename, attr);
 end;
 
 function filegetlinkname(const filename: rawbytestring): rawbytestring;
 begin
   result := '';
-{$IFDEF UNIX}
-  if filegetattr(filename) and fasymlink = fasymlink then
+  {$IFDEF UNIX}
+  if (filegetattributes(filename) and fasymlink) = fasymlink then
     result := fpreadlink(filename);
-{$ELSE}
-{$IFDEF MSWINDOWS}
-{$ELSE}
-{$ENDIF}
-{$ENDIF}
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
+  {$ELSE}
+  {$ENDIF}
+  {$ENDIF}
 end;
 
 function filegetmode(const filename: rawbytestring): longint;
@@ -213,7 +245,7 @@ var
 {$ENDIF}
 begin
   result := 0;
-{$IFDEF UNIX}
+  {$IFDEF UNIX}
   if (filegetattr(filename) and fasymlink) = fasymlink then
   begin
     if fplstat(filename, info) = 0 then
@@ -223,11 +255,24 @@ begin
     if fpstat(filename, info) = 0 then
       result := info.st_mode;
   end;
-{$ELSE}
-{$IFDEF MSWINDOWS}
-{$ELSE}
-{$ENDIF}
-{$ENDIF}
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
+  {$ELSE}
+  {$ENDIF}
+  {$ENDIF}
+end;
+
+function filesetmode(const filename: rawbytestring; mode: longint): longint;
+begin
+  result := -1;
+  {$IFDEF UNIX}
+  if mode <> 0 then
+    result := fpchmod(filename, mode);
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
+  {$ELSE}
+  {$ENDIF}
+  {$ENDIF}
 end;
 
 function filegetuserid(const filename: rawbytestring): longword;
@@ -237,7 +282,7 @@ var
 {$ENDIF}
 begin
   result := $ffffffff;
-{$IFDEF UNIX}
+  {$IFDEF UNIX}
   if (filegetattr(filename) and fasymlink) = fasymlink then
   begin
     if fplstat(filename, info) = 0 then
@@ -247,11 +292,24 @@ begin
     if fpstat(filename, info) = 0 then
       result := info.st_uid;
   end;
-{$ELSE}
-{$IFDEF MSWINDOWS}
-{$ELSE}
-{$ENDIF}
-{$ENDIF}
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
+  {$ELSE}
+  {$ENDIF}
+  {$ENDIF}
+end;
+
+function filesetuserid(const filename: rawbytestring; userid: longword): longint;
+begin
+  result := -1;
+  {$IFDEF UNIX}
+  if userid <> $ffffffff then
+    result := fpchown(filename, userid, filegetgroupid(filename));
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
+  {$ELSE}
+  {$ENDIF}
+  {$ENDIF}
 end;
 
 function filegetusername(const filename: rawbytestring): rawbytestring;
@@ -266,7 +324,7 @@ var
 {$ENDIF}
 begin
   result := $ffffffff;
-{$IFDEF UNIX}
+  {$IFDEF UNIX}
   if (filegetattr(filename) and fasymlink) = fasymlink then
   begin
     if fplstat(filename, info) = 0 then
@@ -276,11 +334,24 @@ begin
     if fpstat(filename, info) = 0 then
       result := info.st_gid;
   end;
-{$ELSE}
-{$IFDEF MSWINDOWS}
-{$ELSE}
-{$ENDIF}
-{$ENDIF}
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
+  {$ELSE}
+  {$ENDIF}
+  {$ENDIF}
+end;
+
+function filesetgroupid(const filename: rawbytestring; groupid: longword): longint;
+begin
+  result := -1;
+  {$IFDEF UNIX}
+  if groupid <> $ffffffff then
+    result := fpchown(filename, filegetuserid(filename), groupid);
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
+  {$ELSE}
+  {$ENDIF}
+  {$ENDIF}
 end;
 
 function filegetgroupname(const filename: rawbytestring): rawbytestring;
@@ -290,15 +361,15 @@ end;
 
 function isabsolutepath(const pathname: rawbytestring): boolean;
 begin
-{$IFDEF UNIX}
+  {$IFDEF UNIX}
   result := ((length(pathname) > 0) and (pathname[1] in ['/','\']));
-{$ELSE}
-{$IFDEF MSWINDOWS}
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
   result := ((length(pathname) > 0) and (pathname[1] in ['/','\'])) or
             ((length(pathname) > 1) and (pathname[2] = ':'));
-{$ELSE}
-{$ENDIF}
-{$ENDIF}
+  {$ELSE}
+  {$ENDIF}
+  {$ENDIF}
 end;
 
 function hex(const data; count: longint): rawbytestring;
@@ -338,26 +409,26 @@ end;
 
 function setpriorityidle: boolean;
 begin
-{$IFDEF UNIX}
+  {$IFDEF UNIX}
   result := fpnice(5) = 0;
-{$ELSE}
-{$IFDEF MSWINDOWS}
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
   result := setpriorityclass(getcurrentprocess, idle_priority_class);
-{$ELSE}
-{$ENDIF}
-{$ENDIF}
+  {$ELSE}
+  {$ENDIF}
+  {$ENDIF}
 end;
 
 function setprioritynormal: boolean;
 begin
-{$IFDEF UNIX}
+  {$IFDEF UNIX}
   result := fpnice(10) = 0;
-{$ELSE}
-{$IFDEF MSWINDOWS}
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
   result := setpriorityclass(getcurrentprocess, normal_priority_class);
-{$ELSE}
-{$ENDIF}
-{$ENDIF}
+  {$ELSE}
+  {$ENDIF}
+  {$ENDIF}
 end;
 
 function max(a, b: longint): longint; inline;

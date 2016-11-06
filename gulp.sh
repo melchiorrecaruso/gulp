@@ -24,7 +24,7 @@ equivs-build gulp.equivs
 
 cd ..
 
-mv build/gulp_0.4_amd64.deb     releases/test_gulp_0.4_amd64.deb
+mv build/gulp_0.4_amd64.deb     gulp_0.4_amd64.deb
 
 rm -f -r build
 

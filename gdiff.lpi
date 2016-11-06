@@ -33,7 +33,8 @@
         <Filename Value="src/gdiff.pas"/>
         <IsPartOfProject Value="True"/>
         <IsVisibleTab Value="True"/>
-        <CursorPos X="12" Y="9"/>
+        <TopLine Value="32"/>
+        <CursorPos X="41" Y="43"/>
         <UsageCount Value="54"/>
         <Loaded Value="True"/>
       </Unit0>
