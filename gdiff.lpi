@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="9"/>
+    <Version Value="10"/>
     <General>
       <Flags>
         <SaveOnlyProjectUnits Value="True"/>
@@ -33,8 +33,8 @@
         <Filename Value="src/gdiff.pas"/>
         <IsPartOfProject Value="True"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="32"/>
-        <CursorPos X="41" Y="43"/>
+        <TopLine Value="69"/>
+        <CursorPos X="62" Y="93"/>
         <UsageCount Value="54"/>
         <Loaded Value="True"/>
       </Unit0>

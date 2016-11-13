@@ -26,6 +26,7 @@ program gdiff;
 
 uses
   gulpcommon,
+  gulpmessages,
   gulpscanner,
   sha1,
   sysutils;
@@ -34,6 +35,8 @@ var
   i, j: longint;
   s:    rawbytestring;
   scan: array[1..2] of tscanner;
+  dig1: TSHA1Digest;
+  dig2: TSHA1Digest;
 
 procedure showmessage(const fn1, fn2, msg: rawbytestring);
 begin
@@ -72,36 +75,34 @@ begin
       begin
         if (filegetattr(scan[1] [i]) and fadirectory = 0) and
            (filegetattr(scan[2] [j]) and fadirectory = 0) then
-          if sha1match(sha1file(scan[1] [i], 4096),
-            sha1file(scan[2] [j], 4096)) = false then
-              showmessage(scan[1] [i], scan[2] [j], 'in data');
+        begin
 
-        if filegettimeutc(scan[1] [i]) <> filegettimeutc(scan[2] [j]) then
-          showmessage(scan[1] [i], scan[2] [j], 'in time');
+          try
+            dig1 := sha1file(scan[1] [i], 4096);
+          except
+            writeln(format(gereadstream, [scan[1] [i]]));
+          end;
 
-        if filegetmode(scan[1] [i]) <> filegetmode(scan[2] [j]) then
-          showmessage(scan[1] [i], scan[2] [j], 'in mode');
+          try
+            dig2 := sha1file(scan[2] [j], 4096);
+          except
+            writeln(format(gereadstream, [scan[2] [j]]));
+          end;
 
-        if filegetattr(scan[1] [i]) <> filegetattr(scan[2] [j]) then
-          showmessage(scan[1] [i], scan[2] [j], 'in attr');
+          if sha1match(dig1, dig2) = false then
+            showmessage(scan[1] [i], scan[2] [j], 'in data');
+        end;
 
-        if filegetuserid(scan[1] [i]) <> filegetuserid(scan[2] [j]) then
-          showmessage(scan[1] [i], scan[2] [j], 'in user id');
 
-        if filegetusername(scan[1] [i]) <> filegetusername(scan[2] [j]) then
-          showmessage(scan[1] [i], scan[2] [j], 'in user name');
-
-        if filegetgroupid(scan[1] [i]) <> filegetgroupid(scan[2] [j]) then
-          showmessage(scan[1] [i], scan[2] [j], 'in group id');
-
-        if filegetgroupname(scan[1] [i]) <> filegetgroupname(scan[2] [j]) then
-          showmessage(scan[1] [i], scan[2] [j], 'in group name');
-
-        if filegetsize(scan[1] [i]) <> filegetsize(scan[2] [j]) then
-          showmessage(scan[1] [i], scan[2] [j], 'in size');
-
-        if filegetlinkname(scan[1] [i]) <> filegetlinkname(scan[2] [j]) then
-          showmessage(scan[1] [i], scan[2] [j], 'in linkname');
+        if getfiletimeutc  (scan[1] [i]) <> getfiletimeutc  (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in time');
+        if getfilemode     (scan[1] [i]) <> getfilemode     (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in mode');
+        if getfileattr     (scan[1] [i]) <> getfileattr     (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in attr');
+        if getfileuserid   (scan[1] [i]) <> getfileuserid   (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in user id');
+        if getfileusername (scan[1] [i]) <> getfileusername (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in user name');
+        if getfilegroupid  (scan[1] [i]) <> getfilegroupid  (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in group id');
+        if getfilegroupname(scan[1] [i]) <> getfilegroupname(scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in group name');
+        if getfilesize     (scan[1] [i]) <> getfilesize     (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in size');
+        if getsymlink      (scan[1] [i]) <> getsymlink      (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in linkname');
 
         scan[2].delete(j);
       end else

@@ -173,11 +173,8 @@ end;
 
 function flagstostring(const f: tgulpflags): rawbytestring;
 begin
-  if (gfadd in f) and (gfdelete in f) then
-    result := 'UPD'
-  else
   if (gfadd in f) then
-    result := 'ADD'
+    result := 'UPD'
   else
   if (gfdelete in f) then
     result := 'DEL'
@@ -235,29 +232,31 @@ end;
 function modetostring(const mode: longint): rawbytestring;
 begin
   result := '';
-  {$IFDEF UNIX}
+  {$IFDEF LINUX}
   if mode <> 0 then
     result := octstr(mode, 3);
   {$ELSE}
   {$IFDEF MSWINDOWS}
   {$ELSE}
+  ...
   {$ENDIF}
   {$ENDIF}
 end;
 
 function stringtomode(const s: rawbytestring): longint;
-{$IFDEF UNIX}
+{$IFDEF LINUX}
 var
   i: longint;
 {$ENDIF}
 begin
   result := 0;
-  {$IFDEF UNIX}
+  {$IFDEF LINUX}
   for i := 1 to length(s) do
     result := result * 8 + strtoint(copy(s, i, 1));
   {$ELSE}
   {$IFDEF MSWINDOWS}
   {$ELSE}
+  ...
   {$ENDIF}
   {$ENDIF}
 end;
@@ -349,12 +348,13 @@ end;
 
 function compare40(p1, p2: pgulpitem): longint;
 begin
-  {$IFDEF UNIX}
+  {$IFDEF LINUX}
   result := ansicomparestr(p1^.name, p2^.name);
   {$ELSE}
   {$IFDEF MSWINDOWS}
   result := ansicomparetext(p1^.name, p2^.name);
   {$ELSE}
+  ...
   {$ENDIF}
   {$ENDIF}
 end;
@@ -430,11 +430,10 @@ begin
   if (outpath <> '') and (forcedirectories(outpath) = false) then
     raise exception.createfmt(gecreatepath, [outpath]);
 
-  if (p^.attributes and fasymlink) = fasymlink then
+  if p^.attributes and fasymlink = fasymlink then
   begin
     {$IFDEF UNIX}
-    fpunlink(p^.name);
-    if fpsymlink(pchar(p^.linkname), pchar(p^.name)) <> 0 then
+    if setsymlink(p^.name, p^.linkname) <> 0 then
       raise exception.createfmt(gerestorelink, [p^.name]);
     {$ELSE}
     {$IFDEF MSWINDOWS}
@@ -469,28 +468,26 @@ end;
 
 procedure tgulplibrary.librestore(p: pgulpitem);
 begin
-  {$IFDEF UNIX}
-  if (p^.attributes and fasymlink) = 0 then
-  begin
-    if filesetuserid(p^.name, p^.userid) <> 0 then
-      showwarning(format(gesetuserid, [p^.name]));
+  {$IFDEF LINUX}
+  if setfileuserid(p^.name, p^.userid) <> 0 then
+    showwarning(format(gesetuserid, [p^.name]));
 
-    if filesetgroupid(p^.name, p^.groupid) <> 0 then
-      showwarning(format(gesetgroupid, [p^.name]));
+  if setfilegroupid(p^.name, p^.groupid) <> 0 then
+    showwarning(format(gesetgroupid, [p^.name]));
 
-    if filesetmode(p^.name, p^.mode) <> 0 then
-      showwarning(format(gesetmode, [p^.name]));
-
-    if filesettimeutc(p^.name, p^.mtimeutc) <> 0 then
-        showwarning(format(gesetdatetime, [p^.name]));
-  end;
+  if setfilemode(p^.name, p^.mode) <> 0 then
+    showwarning(format(gesetmode, [p^.name]));
   {$ELSE}
   {$IFDEF MSWINDOWS}
-  if filesetattributes(p^.name, p^.attributes) <> 0 then
-    showwarning(format(gesetattributes, [p^.name]);
+  if setfileattr(p^.name, p^.attributes) <> 0 then
+    showwarning(format(gesetattributes, [p^.name]));
   {$ELSE}
+  ...
   {$ENDIF}
   {$ENDIF}
+
+  if setfiletimeutc(p^.name, p^.mtimeutc) <> 0 then
+    showwarning(format(gesetdatetime, [p^.name]));
 end;
 
 procedure tgulplibrary.libwrite(outstream: tstream; p: pgulpitem);
@@ -529,11 +526,11 @@ begin
       libwrite(outstream, list[i]);
 
     for i := 0 to list.count - 1 do
-      if (list[i]^.attributes and fasymlink) = fasymlink then
+      if list[i]^.attributes and fasymlink = fasymlink then
       begin
         // nothing to do
       end else
-      if (list[i]^.attributes and fadirectory) = fadirectory then
+      if list[i]^.attributes and fadirectory = fadirectory then
       begin
          // nothing to do
       end else
@@ -593,8 +590,11 @@ begin
   instream.read(p^.offset2, sizeof(p^.offset2));
   instream.read(p^.checksum, sizeof(tsha1digest));
 
-  if ((gfdelete in p^.flags) = false) and ((gfadd in p^.flags) = false) then
-    raise exception.createfmt(gebrokenarchive, ['003003']);
+  if (([] = p^.flags)) or (([gfclose] = p^.flags)) then
+    raise exception.createfmt(gewrongflag, ['004001']);
+  if ((gfdelete in p^.flags)) and ((gfadd in p^.flags)) then
+    raise exception.createfmt(gewrongflag, ['003003']);
+
   if ((p^.offset1 = 0) or (p^.offset2 = 0)) and (p^.size <> 0) then
     raise exception.createfmt(gebrokenarchive, ['003004']);
   if instream.read(digest, sizeof(tsha1digest)) <> sizeof(tsha1digest) then
@@ -662,7 +662,8 @@ begin
 
     if p^.version <= untilversion then
     begin
-      if gfdelete in p^.flags then
+
+      if (gfadd in p^.flags) or (gfdelete in p^.flags) then
       begin
         i := list.find(p);
         if i <> -1 then
@@ -671,12 +672,14 @@ begin
           list.delete(i);
         end;
       end;
-      if gfadd in p^.flags then
+
+      if (gfadd in p^.flags) then
       begin
         if list.add(p) = -1 then
-          raise exception.createfmt(geduplicates, ['003010']);
+         raise exception.createfmt(geduplicates, ['003010']);
         p := new(pgulpitem);
       end;
+
     end;
   end;
   dispose(p);
@@ -698,13 +701,13 @@ begin
   result^.flags       := [gfadd];
   result^.name        := filename;
   result^.stimeutc    := stimeutc;
-  result^.mtimeutc    := filegettimeutc   (filename);
-  result^.size        := filegetsize      (filename);
-  result^.attributes  := filegetattributes(filename);
-  result^.mode        := filegetmode      (filename);
-  result^.linkname    := filegetlinkname  (filename);
-  result^.userid      := filegetuserid    (filename);
-  result^.groupid     := filegetgroupid   (filename);
+  result^.mtimeutc    := getfiletimeutc(filename);
+  result^.size        := getfilesize   (filename);
+  result^.attributes  := getfileattr   (filename);
+  result^.mode        := getfilemode   (filename);
+  result^.linkname    := getsymlink    (filename);
+  result^.userid      := getfileuserid (filename);
+  result^.groupid     := getfilegroupid(filename);
 end;
 
 procedure tgulplibrary.libappend(list: tgulplist; p: pgulpitem);
@@ -718,7 +721,7 @@ var
   p: pgulpitem;
 begin
   p        := itemclear(new(pgulpitem));
-  p^.flags := [gfadd];
+  p^.flags := [gfdelete];
   p^.name  := filename;
   result   := list.find(p);
   dispose(p);
@@ -823,10 +826,9 @@ begin
       showmessage2(format(gmsyncitem, [scan[i]]));
       libappend(list2, libnew2(scan[i], fstimeutc));
     end else
-    if filegettimeutc(scan[i]) <> list1[j]^.mtimeutc then
+    if getfiletimeutc(scan[i]) <> list1[j]^.mtimeutc then
     begin
       showmessage2(format(gmsyncitem, [scan[i]]));
-      libappend(list2, libnew1(scan[i], fstimeutc));
       libappend(list2, libnew2(scan[i], fstimeutc));
     end;
   end;
@@ -839,7 +841,7 @@ begin
   freeandnil(stream);
   freeandnil(scan);
 
-  showmessage1(format(gmsyncfinish, [filegetsize(filename) - size]));
+  showmessage1(format(gmsyncfinish, [getfilesize(filename) - size]));
   fterminated := true;
 end;
 
@@ -904,7 +906,7 @@ begin
     if isincluded(p) and (isexcluded(p) = false) then
     begin
       j := scan.find(p^.name);
-      if (j = -1) or (filegettimeutc(scan[j]) <> p^.mtimeutc) then
+      if (j = -1) or (getfiletimeutc(scan[j]) <> p^.mtimeutc) then
       begin
         showmessage2(format(gmrestoreitem, [p^.name]));
         librestore(stream, p);
@@ -960,7 +962,7 @@ begin
   freeandnil(stream);
   freeandnil(nul);
 
-  showmessage1(format(gmcheckfinish, [filegetsize(filename)]));
+  showmessage1(format(gmcheckfinish, [getfilesize(filename)]));
   fterminated := true;
 end;
 
@@ -1168,8 +1170,8 @@ end;
 function tgulpapplication.isexcluded(const filename: rawbytestring): boolean;
 begin
   result := filenamematch(filename, fexclude)                   or
-            (filegetattributes(filename) and fexcludeattr <> 0) or
-            (filegetmode      (filename) and fexcludemode <> 0);
+            (getfileattr(filename) and fexcludeattr <> 0) or
+            (getfilemode(filename) and fexcludemode <> 0);
 end;
 
 end.

@@ -26,20 +26,21 @@ unit gulpmessages;
 interface
 
 const
-  gebrokenarchive   = 'Archive is broken, try with the "fix" command (%s)';
-  gewrongmarker     = 'Wrong marker value (%s)';
-  gewrongflag       = 'Wrong flag value (%s)';
-  gechecksum        = 'Mismatched checksum (%s)';
-  geabsolutepath    = 'Absolute path, try with the "--forcepath" option (%s)';
+  gebrokenarchive   = 'Archive is broken, try with the "fix" command "%s"';
+  gewrongmarker     = 'Wrong marker value "%s"';
+  gewrongflag       = 'Wrong flag value "%s"';
+  gechecksum        = 'Mismatched checksum "%s"';
+  geabsolutepath    = 'Absolute path, try with the "--forcepath" option "%s"';
 
-  gereadarchive     = 'Stream is not a valid archive (%s)';
-  geopenstream      = 'Unable to open stream (%s)';
-  gereadstream      = 'Unable to read stream (%s)';
-  geduplicates      = 'Duplicates non allowed (%s)';
+  gereadarchive     = 'Stream is not a valid archive "%s"';
+  geopenstream      = 'Unable to open stream "%s"';
+  gereadstream      = 'Unable to read stream "%s"';
+  geduplicates      = 'Duplicates non allowed "%s"';
 
   gecreatepath      = 'Unable to create path "%s"';
   gesetuserid       = 'Unable to set userid for "%s"';
   gesetgroupid      = 'Unable to set groupid for "%s"';
+
   gesetmode         = 'Unable to set mode for "%s"';
   gesetattributes   = 'Unable to set attributes for "%s"';
   gesetdatetime     = 'Unable to set date for "%s"';
