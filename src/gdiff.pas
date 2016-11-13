@@ -94,15 +94,15 @@ begin
         end;
 
 
-        if getfiletimeutc  (scan[1] [i]) <> getfiletimeutc  (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in time');
-        if getfilemode     (scan[1] [i]) <> getfilemode     (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in mode');
-        if getfileattr     (scan[1] [i]) <> getfileattr     (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in attr');
-        if getfileuserid   (scan[1] [i]) <> getfileuserid   (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in user id');
-        if getfileusername (scan[1] [i]) <> getfileusername (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in user name');
-        if getfilegroupid  (scan[1] [i]) <> getfilegroupid  (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in group id');
-        if getfilegroupname(scan[1] [i]) <> getfilegroupname(scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in group name');
-        if getfilesize     (scan[1] [i]) <> getfilesize     (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in size');
-        if getsymlink      (scan[1] [i]) <> getsymlink      (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in linkname');
+        if _getfiletimeutc  (scan[1] [i]) <> _getfiletimeutc  (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in time');
+        if _getfilemode     (scan[1] [i]) <> _getfilemode     (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in mode');
+        if _getfileattr     (scan[1] [i]) <> _getfileattr     (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in attr');
+        if _getfileuserid   (scan[1] [i]) <> _getfileuserid   (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in user id');
+        if _getfileusername (scan[1] [i]) <> _getfileusername (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in user name');
+        if _getfilegroupid  (scan[1] [i]) <> _getfilegroupid  (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in group id');
+        if _getfilegroupname(scan[1] [i]) <> _getfilegroupname(scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in group name');
+        if _getfilesize     (scan[1] [i]) <> _getfilesize     (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in size');
+        if _getsymlink      (scan[1] [i]) <> _getsymlink      (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in linkname');
 
         scan[2].delete(j);
       end else

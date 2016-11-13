@@ -479,14 +479,14 @@ begin
     showwarning(format(gesetmode, [p^.name]));
   {$ELSE}
   {$IFDEF MSWINDOWS}
-  if setfileattr(p^.name, p^.attributes) <> 0 then
+  if _setfileattr(p^.name, p^.attributes) <> 0 then
     showwarning(format(gesetattributes, [p^.name]));
   {$ELSE}
   ...
   {$ENDIF}
   {$ENDIF}
 
-  if setfiletimeutc(p^.name, p^.mtimeutc) <> 0 then
+  if _setfiletimeutc(p^.name, p^.mtimeutc) <> 0 then
     showwarning(format(gesetdatetime, [p^.name]));
 end;
 
@@ -701,13 +701,13 @@ begin
   result^.flags       := [gfadd];
   result^.name        := filename;
   result^.stimeutc    := stimeutc;
-  result^.mtimeutc    := getfiletimeutc(filename);
-  result^.size        := getfilesize   (filename);
-  result^.attributes  := getfileattr   (filename);
-  result^.mode        := getfilemode   (filename);
-  result^.linkname    := getsymlink    (filename);
-  result^.userid      := getfileuserid (filename);
-  result^.groupid     := getfilegroupid(filename);
+  result^.mtimeutc    := _getfiletimeutc(filename);
+  result^.size        := _getfilesize   (filename);
+  result^.attributes  := _getfileattr   (filename);
+  result^.mode        := _getfilemode   (filename);
+  result^.linkname    := _getsymlink    (filename);
+  result^.userid      := _getfileuserid (filename);
+  result^.groupid     := _getfilegroupid(filename);
 end;
 
 procedure tgulplibrary.libappend(list: tgulplist; p: pgulpitem);
@@ -826,7 +826,7 @@ begin
       showmessage2(format(gmsyncitem, [scan[i]]));
       libappend(list2, libnew2(scan[i], fstimeutc));
     end else
-    if getfiletimeutc(scan[i]) <> list1[j]^.mtimeutc then
+    if _getfiletimeutc(scan[i]) <> list1[j]^.mtimeutc then
     begin
       showmessage2(format(gmsyncitem, [scan[i]]));
       libappend(list2, libnew2(scan[i], fstimeutc));
@@ -841,7 +841,7 @@ begin
   freeandnil(stream);
   freeandnil(scan);
 
-  showmessage1(format(gmsyncfinish, [getfilesize(filename) - size]));
+  showmessage1(format(gmsyncfinish, [_getfilesize(filename) - size]));
   fterminated := true;
 end;
 
@@ -906,7 +906,7 @@ begin
     if isincluded(p) and (isexcluded(p) = false) then
     begin
       j := scan.find(p^.name);
-      if (j = -1) or (getfiletimeutc(scan[j]) <> p^.mtimeutc) then
+      if (j = -1) or (_getfiletimeutc(scan[j]) <> p^.mtimeutc) then
       begin
         showmessage2(format(gmrestoreitem, [p^.name]));
         librestore(stream, p);
@@ -962,7 +962,7 @@ begin
   freeandnil(stream);
   freeandnil(nul);
 
-  showmessage1(format(gmcheckfinish, [getfilesize(filename)]));
+  showmessage1(format(gmcheckfinish, [_getfilesize(filename)]));
   fterminated := true;
 end;
 
@@ -1170,8 +1170,8 @@ end;
 function tgulpapplication.isexcluded(const filename: rawbytestring): boolean;
 begin
   result := filenamematch(filename, fexclude)                   or
-            (getfileattr(filename) and fexcludeattr <> 0) or
-            (getfilemode(filename) and fexcludemode <> 0);
+            (_getfileattr(filename) and fexcludeattr <> 0) or
+            (_getfilemode(filename) and fexcludemode <> 0);
 end;
 
 end.
