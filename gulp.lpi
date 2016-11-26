@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="9"/>
+    <Version Value="10"/>
     <General>
       <Flags>
         <SaveOnlyProjectUnits Value="True"/>
@@ -16,6 +16,10 @@
       <MainUnit Value="0"/>
       <Title Value="Gulp"/>
       <UseAppBundle Value="False"/>
+      <XPManifest>
+        <TextName Value="CompanyName.ProductName.AppName"/>
+        <TextDesc Value="Your application description."/>
+      </XPManifest>
     </General>
     <i18n>
       <EnableI18N LFM="False"/>
@@ -115,8 +119,8 @@ override_dh_auto_install:
       <Unit0>
         <Filename Value="src/gulp.pas"/>
         <IsPartOfProject Value="True"/>
-        <TopLine Value="60"/>
-        <CursorPos X="15" Y="80"/>
+        <TopLine Value="114"/>
+        <CursorPos X="30" Y="133"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit0>
@@ -125,9 +129,9 @@ override_dh_auto_install:
         <IsPartOfProject Value="True"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="4"/>
-        <TopLine Value="1141"/>
-        <CursorPos X="15" Y="1174"/>
-        <UsageCount Value="165"/>
+        <TopLine Value="135"/>
+        <CursorPos X="56" Y="149"/>
+        <UsageCount Value="185"/>
         <Loaded Value="True"/>
       </Unit1>
       <Unit2>
@@ -136,16 +140,16 @@ override_dh_auto_install:
         <EditorIndex Value="3"/>
         <TopLine Value="22"/>
         <CursorPos X="14" Y="31"/>
-        <UsageCount Value="165"/>
+        <UsageCount Value="185"/>
         <Loaded Value="True"/>
       </Unit2>
       <Unit3>
         <Filename Value="src/gulpcommon.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="5"/>
-        <TopLine Value="208"/>
-        <CursorPos X="18" Y="236"/>
-        <UsageCount Value="165"/>
+        <TopLine Value="22"/>
+        <CursorPos Y="31"/>
+        <UsageCount Value="185"/>
         <Loaded Value="True"/>
       </Unit3>
       <Unit4>
@@ -153,16 +157,16 @@ override_dh_auto_install:
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="6"/>
         <CursorPos X="59" Y="39"/>
-        <UsageCount Value="165"/>
+        <UsageCount Value="185"/>
         <Loaded Value="True"/>
       </Unit4>
       <Unit5>
         <Filename Value="src/gulpscanner.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="2"/>
-        <TopLine Value="10"/>
+        <TopLine Value="82"/>
         <CursorPos X="30" Y="17"/>
-        <UsageCount Value="165"/>
+        <UsageCount Value="185"/>
         <Loaded Value="True"/>
       </Unit5>
       <Unit6>
@@ -170,7 +174,7 @@ override_dh_auto_install:
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="1"/>
         <CursorPos X="18" Y="24"/>
-        <UsageCount Value="165"/>
+        <UsageCount Value="185"/>
         <Loaded Value="True"/>
       </Unit6>
       <Unit7>
@@ -179,7 +183,7 @@ override_dh_auto_install:
         <EditorIndex Value="-1"/>
         <TopLine Value="108"/>
         <CursorPos X="3" Y="112"/>
-        <UsageCount Value="165"/>
+        <UsageCount Value="185"/>
       </Unit7>
     </Units>
   </ProjectOptions>

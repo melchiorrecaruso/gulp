@@ -79,18 +79,18 @@ type
     with tgulpitem(p^) do
       if gfadd in flags then
       begin
-        if attributes and fadirectory = fadirectory then
+        if attr and fadirectory = fadirectory then
           writeln(format('%4s %3s %3s %7s %19s %12s %s',
             [versiontostring(version), flagstostring(flags),modetostring(mode),
-            attrtostring(attributes), timetostring(universaltime2local(mtimeutc)),
+            attrtostring(attr), timetostring(universaltime2local(mtime)),
             '', name]))
         else
           writeln(format('%4s %3s %3s %7s %19s %12s %s',
             [versiontostring(version), flagstostring(flags), modetostring(mode),
-            attrtostring(attributes), timetostring(universaltime2local(mtimeutc)),
+            attrtostring(attr), timetostring(universaltime2local(mtime)),
             sizetostring(size), name]));
       end else
-      if attributes and fadirectory = fadirectory then
+      if attr and fadirectory = fadirectory then
         writeln(format('%4s %3s %3s %7s %19s %12s %s',
           [versiontostring(version), flagstostring(flags), '', '', '', '', name]))
       else

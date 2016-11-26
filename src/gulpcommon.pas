@@ -176,7 +176,7 @@ end;
 function _setfiletimeutc(const filename: rawbytestring; timeutc: tdatetime): longint;
 begin
   {$IFDEF LINUX}
-  if getfileattr(filename) and fasymlink = 0 then
+  if _getfileattr(filename) and fasymlink = 0 then
     result := filesetdate(filename, datetimetofiledate(universaltime2local(timeutc)))
   else
     result := 0;
@@ -271,7 +271,7 @@ var
 {$ENDIF}
 begin
   {$IFDEF LINUX}
-  if getfileattr(filename) and fasymlink = fasymlink then
+  if _getfileattr(filename) and fasymlink = fasymlink then
   begin
     if fplstat(filename, info) = 0 then
       result := info.st_mode;
@@ -290,7 +290,7 @@ end;
 function _setfilemode(const filename: rawbytestring; mode: longword): longint;
 begin
   {$IFDEF LINUX}
-  if getfileattr(filename) and fasymlink = 0 then
+  if _getfileattr(filename) and fasymlink = 0 then
     result := fpchmod(filename, mode)
   else
     result := 0;
@@ -310,7 +310,7 @@ var
 {$ENDIF}
 begin
   {$IFDEF LINUX}
-  if getfileattr(filename) and fasymlink = fasymlink then
+  if _getfileattr(filename) and fasymlink = fasymlink then
   begin
     if fplstat(filename, info) = 0 then
       result := info.st_uid;
@@ -333,7 +333,7 @@ var
 {$ENDIF}
 begin
   {$IFDEF LINUX}
-  if getfileattr(filename) and fasymlink = fasymlink then
+  if _getfileattr(filename) and fasymlink = fasymlink then
   begin
     if fplstat(filename, info) = 0 then
       result := info.st_gid;
@@ -357,12 +357,12 @@ var
 begin
   {$IFDEF LINUX}
   systempath := tosinglebytefilesystemencodedfilename(filename);
-  if getfileattr(filename) and fasymlink = 0 then
+  if _getfileattr(filename) and fasymlink = 0 then
     result := do_syscall(syscall_nr_chown,
-      tsysparam(pchar(systempath)), tsysparam(userid), tsysparam(getfilegroupid(filename)))
+      tsysparam(pchar(systempath)), tsysparam(userid), tsysparam(_getfilegroupid(filename)))
   else
     result := do_syscall(syscall_nr_lchown,
-      tsysparam(pchar(systempath)), tsysparam(userid), tsysparam(getfilegroupid(filename)));
+      tsysparam(pchar(systempath)), tsysparam(userid), tsysparam(_getfilegroupid(filename)));
   {$ELSE}
   {$IFDEF MSWINDOWS}
   result := 0;
@@ -380,12 +380,12 @@ var
 begin
   {$IFDEF LINUX}
   systempath := tosinglebytefilesystemencodedfilename(filename);
-  if getfileattr(filename) and fasymlink = 0 then
+  if _getfileattr(filename) and fasymlink = 0 then
     result := do_syscall(syscall_nr_chown,
-      tsysparam(pchar(systempath)), tsysparam(getfileuserid(filename)), tsysparam(groupid))
+      tsysparam(pchar(systempath)), tsysparam(_getfileuserid(filename)), tsysparam(groupid))
   else
     result := do_syscall(syscall_nr_lchown,
-      tsysparam(pchar(systempath)), tsysparam(getfileuserid(filename)), tsysparam(groupid));
+      tsysparam(pchar(systempath)), tsysparam(_getfileuserid(filename)), tsysparam(groupid));
   {$ELSE}
   {$IFDEF MSWINDOWS}
   result := 0;

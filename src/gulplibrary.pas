@@ -26,7 +26,7 @@ unit gulplibrary;
 interface
 
 uses
-  {$IFDEF UNIX}
+  {$IFDEF LINUX}
   baseunix,
   {$ENDIF}
   classes,
@@ -40,22 +40,20 @@ uses
   sysutils;
 
 type
-  { gulp item flags }
+  { gulp flags }
 
-  tgulpflag = (gfadd, gfdelete, gfclose);
+  tgulpflag  = (gfadd, gfdelete, gfclose);
 
   tgulpflags = set of tgulpflag;
 
   { gulp item }
 
-  pgulpitem  = ^tgulpitem;
-
   tgulpitem = record
     flags:      tgulpflags;
     name:       rawbytestring;
-    stimeutc:   tdatetime;
-    mtimeutc:   tdatetime;
-    attributes: longint;
+    mtime:      tdatetime;
+    stime:      tdatetime;
+    attr:       longint;
     mode:       longint;
     size:       int64;
     linkname:   rawbytestring;
@@ -69,6 +67,8 @@ type
     checksum:   tsha1digest;
     version:    longword;
   end;
+
+  pgulpitem  = ^tgulpitem;
 
   { gulp item list }
 
@@ -143,9 +143,10 @@ function attrtostring(const attr: longint): rawbytestring;
 function sizetostring(const size: int64): rawbytestring;
 function timetostring(const t: tdatetime): rawbytestring;
 function modetostring(const mode: longint): rawbytestring;
+function flagstostring(const f: tgulpflags): rawbytestring;
+
 function stringtoattr(s: rawbytestring): longint;
 function stringtomode(const s: rawbytestring): longint;
-function flagstostring(const f: tgulpflags): rawbytestring;
 
 implementation
 
@@ -171,29 +172,6 @@ begin
   result := inttostr(version);
 end;
 
-function flagstostring(const f: tgulpflags): rawbytestring;
-begin
-  if (gfadd in f) then
-    result := 'UPD'
-  else
-  if (gfdelete in f) then
-    result := 'DEL'
-  else
-    raise exception.createfmt(gewrongflag, ['003006']);
-end;
-
-function timetostring(const t: tdatetime): rawbytestring;
-begin
-  result := formatdatetime(
-    defaultformatsettings.longdateformat + ' ' +
-    defaultformatsettings.longtimeformat, t);
-end;
-
-function sizetostring(const size: int64): rawbytestring;
-begin
-  result := format('%u', [size]);
-end;
-
 function attrtostring(const attr: longint): rawbytestring;
 begin
   result := '-------';
@@ -204,6 +182,40 @@ begin
   if attr and fadirectory <> 0 then result[5] := 'D';
   if attr and faarchive   <> 0 then result[6] := 'A';
   if attr and fasymlink   <> 0 then result[7] := 'L';
+end;
+
+function sizetostring(const size: int64): rawbytestring;
+begin
+  result := format('%u', [size]);
+end;
+
+function timetostring(const t: tdatetime): rawbytestring;
+begin
+  result := formatdatetime(
+    defaultformatsettings.longdateformat + ' ' +
+    defaultformatsettings.longtimeformat, t);
+end;
+
+function modetostring(const mode: longint): rawbytestring;
+begin
+  {$IFDEF LINUX}
+  result := octstr(mode, 3);
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
+  result := '';
+  {$ELSE}
+  ...
+  {$ENDIF}
+  {$ENDIF}
+end;
+
+function flagstostring(const f: tgulpflags): rawbytestring;
+begin
+  if (gfadd in f) then
+    result := 'ADD'
+  else
+  if (gfdelete in f) then
+    result := 'DEL';
 end;
 
 function stringtoattr(s: rawbytestring): longint;
@@ -227,20 +239,6 @@ begin
     end;
 
   if s <> '' then raise exception.createfmt(gereadstream, ['004001']);
-end;
-
-function modetostring(const mode: longint): rawbytestring;
-begin
-  result := '';
-  {$IFDEF LINUX}
-  if mode <> 0 then
-    result := octstr(mode, 3);
-  {$ELSE}
-  {$IFDEF MSWINDOWS}
-  {$ELSE}
-  ...
-  {$ENDIF}
-  {$ENDIF}
 end;
 
 function stringtomode(const s: rawbytestring): longint;
@@ -270,25 +268,24 @@ end;
 
 function itemclear(p: pgulpitem): pgulpitem;
 begin
-  p^.flags      := [];
-  p^.name       := '';
-  p^.stimeutc   := 0.0;
-  p^.mtimeutc   := 0.0;
-  p^.attributes := 0;
-  p^.mode       := 0;
-  p^.size       := 0;
-  p^.linkname   := '';
-  p^.userid     := 0;
-  p^.groupid    := 0;
-  p^.username   := '';
-  p^.groupname  := '';
-  p^.comment    := '';
-  p^.offset1    := 0;
-  p^.offset2    := 0;
-  fillchar(p^.checksum,
-    sizeof(tsha1digest), 0);
-  p^.version    := 0;
-  result        := p;
+  p^.flags       := [];
+  p^.name        := '';
+  p^.mtime       := 0.0;
+  p^.stime       := 0.0;
+  p^.attr        := 0;
+  p^.mode        := 0;
+  p^.size        := 0;
+  p^.linkname    := '';
+  p^.userid      := 0;
+  p^.groupid     := 0;
+  p^.username    := '';
+  p^.groupname   := '';
+  p^.comment     := '';
+  p^.offset1     := 0;
+  p^.offset2     := 0;
+  fillchar(p^.checksum, sizeof(tsha1digest), 0);
+  p^.version     := 0;
+  result         := p;
 end;
 
 function itemgetdigest(p: pgulpitem): tsha1digest;
@@ -297,23 +294,26 @@ var
 begin
   sha1init  (context);
   sha1update(context, p^.flags, sizeof(p^.flags));
-  sha1update(context, pointer(p^.name)^, length(p^.name));
-  sha1update(context, p^.stimeutc, sizeof(p^.stimeutc));
 
-  sha1update(context, p^.mtimeutc, sizeof(p^.mtimeutc));
-  sha1update(context, p^.attributes, sizeof(p^.attributes));
-  sha1update(context, p^.mode, sizeof(p^.mode));
-  sha1update(context, p^.size, sizeof(p^.size));
+  sha1update(context, pointer(p^.name)^, length(p^.name));
+
+  sha1update(context, p^.mtime, sizeof(p^.mtime));
+  sha1update(context, p^.stime, sizeof(p^.stime));
+  sha1update(context, p^.attr,  sizeof(p^.attr));
+  sha1update(context, p^.mode,  sizeof(p^.mode));
+  sha1update(context, p^.size,  sizeof(p^.size));
+
   sha1update(context, pointer(p^.linkname)^, length(p^.linkname));
-  sha1update(context, p^.userid, sizeof(p^.userid));
+
+  sha1update(context, p^.userid,  sizeof(p^.userid));
   sha1update(context, p^.groupid, sizeof(p^.groupid));
 
-  sha1update(context, pointer(p^.username)^, length(p^.username));
+  sha1update(context, pointer(p^.username)^,  length(p^.username));
   sha1update(context, pointer(p^.groupname)^, length(p^.groupname));
-  sha1update(context, pointer(p^.comment)^, length(p^.comment));
+  sha1update(context, pointer(p^.comment)^,   length(p^.comment));
 
-  sha1update(context, p^.offset1, sizeof(p^.offset1));
-  sha1update(context, p^.offset2, sizeof(p^.offset2));
+  sha1update(context, p^.offset1,  sizeof(p^.offset1));
+  sha1update(context, p^.offset2,  sizeof(p^.offset2));
   sha1update(context, p^.checksum, sizeof(p^.checksum));
 
   sha1final (context, result);
@@ -323,15 +323,17 @@ function itemgetsize(p: pgulpitem): int64;
 begin
   result :=   sizeof(tsha1digest);
   inc(result, sizeof(p^.flags));
-  inc(result, sizeof(longint) + length(p^.name));
-  inc(result, sizeof(p^.stimeutc));
 
-  inc(result, sizeof(p^.mtimeutc));
-  inc(result, sizeof(p^.attributes));
+  inc(result, sizeof(longint) + length(p^.name));
+
+  inc(result, sizeof(p^.mtime));
+  inc(result, sizeof(p^.stime));
+  inc(result, sizeof(p^.attr));
   inc(result, sizeof(p^.mode));
   inc(result, sizeof(p^.size));
 
   inc(result, sizeof(longint) + length(p^.linkname));
+
   inc(result, sizeof(p^.userid));
   inc(result, sizeof(p^.groupid));
 
@@ -425,28 +427,8 @@ procedure tgulplibrary.librestore(instream: tstream; p: pgulpitem);
 var
   outpath:   rawbytestring;
   outstream: tstream;
-begin
-  outpath := extractfiledir(p^.name);
-  if (outpath <> '') and (forcedirectories(outpath) = false) then
-    raise exception.createfmt(gecreatepath, [outpath]);
 
-  if p^.attributes and fasymlink = fasymlink then
-  begin
-    {$IFDEF UNIX}
-    if setsymlink(p^.name, p^.linkname) <> 0 then
-      raise exception.createfmt(gerestorelink, [p^.name]);
-    {$ELSE}
-    {$IFDEF MSWINDOWS}
-    {$ELSE}
-    {$ENDIF}
-    {$ENDIF}
-  end else
-  if (p^.attributes and fadirectory) = fadirectory then
-  begin
-    if directoryexists(p^.name) = false then
-      if createdir(p^.name) = false then
-        raise exception.createfmt(gerestoredir, [p^.name]);
-  end else
+  procedure librestorefile(instream: tstream; p: pgulpitem); inline;
   begin
     instream.seek(p^.offset1, sobeginning);
     try
@@ -464,41 +446,64 @@ begin
       outstream.destroy;
     end;
   end;
+
+begin
+  outpath := extractfiledir(p^.name);
+  if (outpath <> '') and (forcedirectories(outpath) = false) then
+    raise exception.createfmt(gecreatepath, [outpath]);
+
+  if fadirectory and p^.attr > 0 then
+  begin
+    if directoryexists(p^.name) = false then
+      if createdir(p^.name) = false then
+        raise exception.createfmt(gerestoredir, [p^.name]);
+  end else
+  if fasymlink and p^.attr > 0 then
+  begin
+    {$IFDEF LINUX}
+    if _setsymlink(p^.name, p^.linkname) <> 0 then
+      raise exception.createfmt(gerestorelink, [p^.name]);
+    {$ELSE}
+    {$IFDEF MSWINDOWS}
+    librestorefile(instream, p);
+    {$ELSE}
+    ...
+    {$ENDIF}
+    {$ENDIF}
+  end else
+    librestorefile(instream, p);
 end;
 
 procedure tgulplibrary.librestore(p: pgulpitem);
 begin
+  if _setfiletimeutc(p^.name, p^.mtime) <> 0 then
+    showwarning(format(gesetdatetime, [p^.name]));
   {$IFDEF LINUX}
-  if setfileuserid(p^.name, p^.userid) <> 0 then
+  if _setfileuserid(p^.name, p^.userid) <> 0 then
     showwarning(format(gesetuserid, [p^.name]));
 
-  if setfilegroupid(p^.name, p^.groupid) <> 0 then
+  if _setfilegroupid(p^.name, p^.groupid) <> 0 then
     showwarning(format(gesetgroupid, [p^.name]));
 
-  if setfilemode(p^.name, p^.mode) <> 0 then
+  if _setfilemode(p^.name, p^.mode) <> 0 then
     showwarning(format(gesetmode, [p^.name]));
   {$ELSE}
   {$IFDEF MSWINDOWS}
-  if _setfileattr(p^.name, p^.attributes) <> 0 then
+  if _setfileattr(p^.name, p^.attr) <> 0 then
     showwarning(format(gesetattributes, [p^.name]));
   {$ELSE}
   ...
   {$ENDIF}
   {$ENDIF}
-
-  if _setfiletimeutc(p^.name, p^.mtimeutc) <> 0 then
-    showwarning(format(gesetdatetime, [p^.name]));
 end;
 
 procedure tgulplibrary.libwrite(outstream: tstream; p: pgulpitem);
 begin
   outstream.write(gulpmarker, sizeof(tsha1digest));
-  outstream.write(p^.flags, sizeof(p^.flags));
   outstream.writeansistring(p^.name);
-  outstream.write(p^.stimeutc, sizeof(p^.stimeutc));
-  outstream.write(p^.mtimeutc, sizeof(p^.mtimeutc));
-  outstream.write(p^.attributes, sizeof(p^.attributes));
-  outstream.write(p^.mode, sizeof(p^.mode));
+  outstream.write(p^.flags, sizeof(p^.flags));
+  outstream.write(p^.mtime, sizeof(p^.mtime));
+  outstream.write(p^.stime, sizeof(p^.stime));
   outstream.write(p^.size, sizeof(p^.size));
   outstream.writeansistring(p^.linkname);
   outstream.write(p^.userid, sizeof(p^.userid));
@@ -526,11 +531,11 @@ begin
       libwrite(outstream, list[i]);
 
     for i := 0 to list.count - 1 do
-      if list[i]^.attributes and fasymlink = fasymlink then
+      if fasymlink and list[i]^.attr > 0 then
       begin
         // nothing to do
       end else
-      if list[i]^.attributes and fadirectory = fadirectory then
+      if fadirectory and list[i]^.attr > 0 then
       begin
          // nothing to do
       end else
@@ -571,13 +576,10 @@ begin
   if itemcheckmarker(digest) = false then
     raise exception.createfmt(gewrongmarker, ['003002']);
 
-  instream.read(p^.flags, sizeof(p^.flags));
   p^.name := instream.readansistring;
-  instream.read(p^.stimeutc, sizeof(p^.stimeutc));
-
-  instream.read(p^.mtimeutc, sizeof(p^.mtimeutc));
-  instream.read(p^.attributes, sizeof(p^.attributes));
-  instream.read(p^.mode, sizeof(p^.mode));
+  instream.read(p^.flags, sizeof(p^.flags));
+  instream.read(p^.mtime, sizeof(p^.mtime));
+  instream.read(p^.stime, sizeof(p^.stime));
   instream.read(p^.size, sizeof(p^.size));
   p^.linkname := instream.readansistring;
   instream.read(p^.userid, sizeof(p^.userid));
@@ -663,7 +665,7 @@ begin
     if p^.version <= untilversion then
     begin
 
-      if (gfadd in p^.flags) or (gfdelete in p^.flags) then
+      if (gfdelete in p^.flags) then
       begin
         i := list.find(p);
         if i <> -1 then
@@ -671,14 +673,13 @@ begin
           dispose(list[i]);
           list.delete(i);
         end;
-      end;
-
-      if (gfadd in p^.flags) then
-      begin
-        if list.add(p) = -1 then
-         raise exception.createfmt(geduplicates, ['003010']);
-        p := new(pgulpitem);
-      end;
+      end else
+        if (gfadd in p^.flags) then
+        begin
+          if list.add(p) = -1 then
+           raise exception.createfmt(geduplicates, ['003010']);
+           p := new(pgulpitem);
+        end;
 
     end;
   end;
@@ -689,25 +690,25 @@ end;
 
 function tgulplibrary.libnew1(const filename: rawbytestring; stimeutc: tdatetime): pgulpitem;
 begin
-  result           := itemclear(new(pgulpitem));
-  result^.flags    := [gfdelete];
-  result^.name     := filename;
-  result^.stimeutc := stimeutc;
+  result        := itemclear(new(pgulpitem));
+  result^.name  := filename;
+  result^.flags := [gfdelete];
+  result^.stime := stimeutc;
 end;
 
 function tgulplibrary.libnew2(const filename: rawbytestring; stimeutc: tdatetime): pgulpitem;
 begin
-  result              := itemclear(new(pgulpitem));
-  result^.flags       := [gfadd];
-  result^.name        := filename;
-  result^.stimeutc    := stimeutc;
-  result^.mtimeutc    := _getfiletimeutc(filename);
-  result^.size        := _getfilesize   (filename);
-  result^.attributes  := _getfileattr   (filename);
-  result^.mode        := _getfilemode   (filename);
-  result^.linkname    := _getsymlink    (filename);
-  result^.userid      := _getfileuserid (filename);
-  result^.groupid     := _getfilegroupid(filename);
+  result           := itemclear(new(pgulpitem));
+  result^.flags    := [gfadd];
+  result^.name     := filename;
+  result^.stime    := stimeutc;
+  result^.mtime    := _getfiletimeutc(filename);
+  result^.size     := _getfilesize   (filename);
+  result^.attr     := _getfileattr   (filename);
+  result^.mode     := _getfilemode   (filename);
+  result^.linkname := _getsymlink    (filename);
+  result^.userid   := _getfileuserid (filename);
+  result^.groupid  := _getfilegroupid(filename);
 end;
 
 procedure tgulplibrary.libappend(list: tgulplist; p: pgulpitem);
@@ -826,7 +827,7 @@ begin
       showmessage2(format(gmsyncitem, [scan[i]]));
       libappend(list2, libnew2(scan[i], fstimeutc));
     end else
-    if _getfiletimeutc(scan[i]) <> list1[j]^.mtimeutc then
+    if _getfiletimeutc(scan[i]) <> list1[j]^.mtime then
     begin
       showmessage2(format(gmsyncitem, [scan[i]]));
       libappend(list2, libnew2(scan[i], fstimeutc));
@@ -871,7 +872,7 @@ begin
   begin
     j := libfind(list1, finclude[i]);
     if j <> -1 then
-      if list1[j]^.attributes and fadirectory = fadirectory then
+      if list1[j]^.attr and fadirectory = fadirectory then
         finclude.add(includetrailingpathdelimiter(finclude[i]) + '*');
   end;
   if finclude.count = 0 then
@@ -881,7 +882,7 @@ begin
   begin
     j := libfind(list1, fexclude[i]);
     if j <> -1 then
-      if list1[j]^.attributes and fadirectory = fadirectory then
+      if list1[j]^.attr and fadirectory = fadirectory then
         fexclude.add(includetrailingpathdelimiter(fexclude[i]) + '*');
   end;
   fexclude.add(filename);
@@ -906,7 +907,7 @@ begin
     if isincluded(p) and (isexcluded(p) = false) then
     begin
       j := scan.find(p^.name);
-      if (j = -1) or (_getfiletimeutc(scan[j]) <> p^.mtimeutc) then
+      if (j = -1) or (_getfiletimeutc(scan[j]) <> p^.mtime) then
       begin
         showmessage2(format(gmrestoreitem, [p^.name]));
         librestore(stream, p);
@@ -1108,7 +1109,7 @@ begin
   begin
     j := libfind(list1, finclude[i]);
     if j <> -1 then
-      if list1[j]^.attributes and fadirectory = fadirectory then
+      if list1[j]^.attr and fadirectory = fadirectory then
         finclude.add(includetrailingpathdelimiter(finclude[i]) + '*');
   end;
   if finclude.count = 0 then
@@ -1118,7 +1119,7 @@ begin
   begin
     j := libfind(list1, fexclude[i]);
     if j <> -1 then
-      if list1[j]^.attributes and fadirectory = fadirectory then
+      if list1[j]^.attr and fadirectory = fadirectory then
         fexclude.add(includetrailingpathdelimiter(fexclude[i]) + '*');
   end;
 
@@ -1163,8 +1164,8 @@ end;
 function tgulpapplication.isexcluded(const item: pgulpitem): boolean;
 begin
   result := filenamematch(item^.name, fexclude)      or
-            (item^.attributes and fexcludeattr <> 0) or
-            (item^.mode       and fexcludemode <> 0);
+            (item^.attr and fexcludeattr <> 0) or
+            (item^.mode and fexcludemode <> 0);
 end;
 
 function tgulpapplication.isexcluded(const filename: rawbytestring): boolean;
