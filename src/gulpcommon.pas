@@ -198,7 +198,7 @@ function _getfileattr(const filename: rawbytestring): longint;
 var
   sr: tsearchrec;
 begin
-  result := 0;
+  result := -1;
   if sysutils.findfirst(filename, fareadonly or fahidden or fasysfile or
     favolumeid or fadirectory or faarchive or fasymlink or faanyfile, sr) = 0 then
       result := _getfileattr(sr);
@@ -253,7 +253,6 @@ end;
 function _setsymlink(const filename, linkname: rawbytestring): longint;
 begin
   {$IFDEF LINUX}
-  fpunlink(filename);
   result := fpsymlink(pchar(linkname), pchar(filename));
   {$ELSE}
   {$IFDEF MSWINDOWS}

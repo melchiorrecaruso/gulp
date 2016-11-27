@@ -273,8 +273,8 @@ begin
   begin
     item.name    := extractfilename(name);
     item.path    := extractfilepath(name);
-    item.timeutc := gulpfixes.universaltime2local(mtimeutc);
-    item.attr    := attributes;
+    item.timeutc := gulpfixes.universaltime2local(mtime);
+    item.attr    := attr;
     item.mode    := mode;
     item.size    := size;
     item.version := version;

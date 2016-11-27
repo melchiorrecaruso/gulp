@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="9"/>
+    <Version Value="10"/>
     <General>
       <Flags>
         <SaveOnlyProjectUnits Value="True"/>
@@ -10,13 +10,14 @@
       <AutoCreateForms Value="False"/>
       <Title Value="gulpx"/>
       <UseXPManifest Value="True"/>
+      <XPManifest>
+        <TextName Value="CompanyName.ProductName.AppName"/>
+        <TextDesc Value="Your application description."/>
+      </XPManifest>
     </General>
     <i18n>
       <EnableI18N LFM="False"/>
     </i18n>
-    <VersionInfo>
-      <StringTable ProductVersion=""/>
-    </VersionInfo>
     <BuildModes Count="1" Active="Default">
       <Item1 Name="Default" Default="True"/>
     </BuildModes>
@@ -53,7 +54,7 @@
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
         <TopLine Value="237"/>
-        <CursorPos X="21" Y="281"/>
+        <CursorPos X="25" Y="277"/>
         <FoldState Value=" T3mL0K11312a"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>

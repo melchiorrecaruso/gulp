@@ -26,6 +26,7 @@ program gdiff;
 
 uses
   gulpcommon,
+  gulplibrary,
   gulpmessages,
   gulpscanner,
   sha1,
@@ -37,14 +38,6 @@ var
   scan: array[1..2] of tscanner;
   dig1: TSHA1Digest;
   dig2: TSHA1Digest;
-
-procedure showmessage(const fn1, fn2, msg: rawbytestring);
-begin
-  writeln;
-  writeln(format('"%s" and ',   [fn1]));
-  writeln(format('"%s" ',       [fn2]));
-  writeln(format(' differ %s ', [msg]));
-end;
 
 begin
   writeln('GDIFF v0.4 diff utility, copyright (c) 2016 Melchiorre Caruso.');
@@ -66,43 +59,99 @@ begin
 
     for i := 0 to scan[1].count - 1 do
     begin
-      s := scan[1] [i];
+      s := scan[1][i];
       delete(s, 1, length(includetrailingpathdelimiter(paramstr(1))));
       s := includetrailingpathdelimiter(paramstr(2)) + s;
 
       j := scan[2].find(s);
       if j <> -1 then
       begin
-        if (filegetattr(scan[1] [i]) and fadirectory = 0) and
-           (filegetattr(scan[2] [j]) and fadirectory = 0) then
+        if (filegetattr(scan[1][i]) and fadirectory = 0) and
+           (filegetattr(scan[2][j]) and fadirectory = 0) then
         begin
 
           try
-            dig1 := sha1file(scan[1] [i], 4096);
+            dig1 := sha1file(scan[1][i], 4096);
           except
-            writeln(format(gereadstream, [scan[1] [i]]));
+            writeln(format(gereadstream, [scan[1][i]]));
           end;
 
           try
-            dig2 := sha1file(scan[2] [j], 4096);
+            dig2 := sha1file(scan[2][j], 4096);
           except
-            writeln(format(gereadstream, [scan[2] [j]]));
+            writeln(format(gereadstream, [scan[2][j]]));
           end;
 
           if sha1match(dig1, dig2) = false then
-            showmessage(scan[1] [i], scan[2] [j], 'in data');
+          begin
+            writeln;
+            writeln(format('(DATA) "%s', [scan[1][i]]));
+            writeln(format('(DATA) "%s', [scan[2][j]]));
+          end;
         end;
 
+        if _getfiletimeutc(scan[1][i]) <> _getfiletimeutc(scan[2][j]) then
+        begin
+          writeln;
+          writeln(format('(MTIME %s) "%s"', [timetostring(_getfiletimeutc(scan[1][i])), scan[1][i]]));
+          writeln(format('(MTIME %s) "%s"', [timetostring(_getfiletimeutc(scan[2][j])), scan[2][j]]));
+        end;
 
-        if _getfiletimeutc  (scan[1] [i]) <> _getfiletimeutc  (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in time');
-        if _getfilemode     (scan[1] [i]) <> _getfilemode     (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in mode');
-        if _getfileattr     (scan[1] [i]) <> _getfileattr     (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in attr');
-        if _getfileuserid   (scan[1] [i]) <> _getfileuserid   (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in user id');
-        if _getfileusername (scan[1] [i]) <> _getfileusername (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in user name');
-        if _getfilegroupid  (scan[1] [i]) <> _getfilegroupid  (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in group id');
-        if _getfilegroupname(scan[1] [i]) <> _getfilegroupname(scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in group name');
-        if _getfilesize     (scan[1] [i]) <> _getfilesize     (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in size');
-        if _getsymlink      (scan[1] [i]) <> _getsymlink      (scan[2] [j]) then showmessage(scan[1] [i], scan[2] [j], 'in linkname');
+        if _getfilemode(scan[1][i]) <> _getfilemode(scan[2][j]) then
+        begin
+          writeln;
+          writeln(format('(MODE %s) "%s"', [modetostring(_getfilemode(scan[1][i])), scan[1][i]]));
+          writeln(format('(MODE %s) "%s"', [modetostring(_getfilemode(scan[2][j])), scan[2][j]]));
+        end;
+
+        if _getfileattr(scan[1][i]) <> _getfileattr(scan[2][j]) then
+        begin
+          writeln;
+          writeln(format('(ATTR %s) "%s"', [attrtostring(_getfileattr(scan[1][i])), scan[1][i]]));
+          writeln(format('(ATTR %s) "%s"', [attrtostring(_getfileattr(scan[2][j])), scan[2][j]]));
+        end;
+
+        if _getfileuserid(scan[1][i]) <> _getfileuserid(scan[2][j]) then
+        begin
+          writeln;
+          writeln(format('(USER ID %s) "%s"', [inttostr(_getfileuserid(scan[1][i])), scan[1][i]]));
+          writeln(format('(USER ID %s) "%s"', [inttostr(_getfileuserid(scan[2][j])), scan[2][j]]));
+        end;
+
+        if _getfileusername(scan[1][i]) <> _getfileusername(scan[2][j]) then
+        begin
+          writeln;
+          writeln(format('(USER NAME %s) "%s"', [_getfileusername(scan[1][i]), scan[1][i]]));
+          writeln(format('(USER NAME %s) "%s"', [_getfileusername(scan[2][j]), scan[2][j]]));
+        end;
+
+        if _getfilegroupid(scan[1][i]) <> _getfilegroupid(scan[2][j]) then
+        begin
+          writeln;
+          writeln(format('(GROUP ID %s) "%s"', [inttostr(_getfilegroupid(scan[1][i])), scan[1][i]]));
+          writeln(format('(GROUP ID %s) "%s"', [inttostr(_getfilegroupid(scan[2][j])), scan[2][j]]));
+        end;
+
+        if _getfilegroupname(scan[1][i]) <> _getfilegroupname(scan[2][j]) then
+        begin
+          writeln;
+          writeln(format('(GROUP NAME %s) "%s"', [_getfilegroupname(scan[1][i]), scan[1][i]]));
+          writeln(format('(GROUP NAME %s) "%s"', [_getfilegroupname(scan[2][j]), scan[2][j]]));
+        end;
+
+        if _getfilesize(scan[1][i]) <> _getfilesize(scan[2][j]) then
+        begin
+          writeln;
+          writeln(format('(SIZE %s) "%s"', [sizetostring(_getfilesize(scan[1][i])), scan[1][i]]));
+          writeln(format('(SIZE %s) "%s"', [sizetostring(_getfilesize(scan[2][j])), scan[2][j]]));
+        end;
+
+        if _getsymlink(scan[1][i]) <> _getsymlink(scan[2][j]) then
+        begin
+          writeln;
+          writeln(format('(LINKNAME %s) "%s"', [_getsymlink(scan[1][i]), scan[1][i]]));
+          writeln(format('(LINKNAME %s) "%s"', [_getsymlink(scan[2][j]), scan[2][j]]));
+        end;
 
         scan[2].delete(j);
       end else

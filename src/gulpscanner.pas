@@ -26,6 +26,10 @@ unit gulpscanner;
 interface
 
 uses
+  {$IFDEF LINUX}
+  baseunix,
+  {$ENDIF}
+  gulpcommon,
   gulplist,
   sysutils;
 
@@ -56,6 +60,11 @@ function filenamematch(const filename: rawbytestring;
 
 function filenamematch(const filename: rawbytestring;
   filemasks: trawbytestringlist): boolean; overload;
+
+function deletelink(const linkname: rawbytestring): boolean;
+function deletefile(const filename: rawbytestring): boolean;
+function deletedir (const dirname:  rawbytestring): boolean;
+function deleteany (const name:     rawbytestring): boolean;
 
 implementation
 
@@ -89,18 +98,23 @@ begin
     favolumeid or fadirectory or faarchive or fasymlink or faanyfile, sr);
   while err = 0 do
   begin
-    if sr.attr and fadirectory = fadirectory then
+    if sr.attr and gulpnotsupported = 0 then
     begin
-      if (sr.name <> '.') and (sr.name <> '..') then
+
+      if (sr.attr and fadirectory > 0) and
+         (sr.attr and fasymlink   = 0) and
+         (sr.name <> '..')             and
+         (sr.name <> '.')              then
       begin
         flist.add(path + sr.name);
         if recursive then
-          if (sr.attr and gulpnotsupported) = 0 then
-            scan(path + includetrailingpathdelimiter(sr.name) + mask, true);
-      end;
-    end else
-    if filenamematch(path + sr.name, filemask) then
-      flist.add(path + sr.name);
+          scan(path + includetrailingpathdelimiter(sr.name) + mask, true);
+
+      end else
+        if filenamematch(path + sr.name, filemask) then
+          flist.add(path + sr.name);
+
+    end;
     err := findnext(sr);
   end;
   sysutils.findclose(sr);
@@ -182,6 +196,62 @@ begin
       result := true;
       break;
     end;
+end;
+
+function deletelink(const linkname: rawbytestring): boolean;
+begin
+  {$IFDEF LINUX}
+  result := fpunlink(linkname) = 0;
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
+  result := sysutils.deletefile(linkname);
+  {$ELSE}
+  ...
+  {$ENDIF}
+  {$ENDIF}
+end;
+
+function deletefile(const filename: rawbytestring): boolean;
+begin
+  result := sysutils.deletefile(filename);
+end;
+
+function deletedir(const dirname: rawbytestring): boolean;
+var
+  a, i: longint;
+  s:    tscanner;
+begin
+  s := tscanner.create;
+  s.add(dirname);
+
+  for i := s.count -1 downto 0 do
+  begin
+    a := _getfileattr(s[i]);
+    if a and fasymlink > 0 then
+      deletelink(s[i])
+    else
+    if a and fadirectory > 0 then
+      deletedir(s[i])
+    else
+      deletefile(s[i]);
+  end;
+  s.destroy;
+
+  result := removedir(dirname);
+end;
+
+function deleteany(const name: rawbytestring) : boolean;
+var
+  a: longint;
+begin
+  a := _getfileattr(name);
+  if a and fasymlink > 0 then
+    result := deletelink(name)
+  else
+  if a and fadirectory > 0 then
+    result := deletedir(name)
+  else
+    result := deletefile(name);
 end;
 
 end.

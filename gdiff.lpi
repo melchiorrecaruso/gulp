@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="9"/>
+    <Version Value="10"/>
     <General>
       <Flags>
         <SaveOnlyProjectUnits Value="True"/>
@@ -13,6 +13,10 @@
       <MainUnit Value="0"/>
       <Title Value="gdiff"/>
       <UseAppBundle Value="False"/>
+      <XPManifest>
+        <TextName Value="CompanyName.ProductName.AppName"/>
+        <TextDesc Value="Your application description."/>
+      </XPManifest>
     </General>
     <i18n>
       <EnableI18N LFM="False"/>
@@ -33,9 +37,9 @@
         <Filename Value="src/gdiff.pas"/>
         <IsPartOfProject Value="True"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="79"/>
-        <CursorPos X="47" Y="97"/>
-        <UsageCount Value="54"/>
+        <TopLine Value="128"/>
+        <CursorPos X="42" Y="149"/>
+        <UsageCount Value="58"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
@@ -45,16 +49,16 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="21"/>
+        <UsageCount Value="25"/>
       </Unit1>
       <Unit2>
         <Filename Value="src/gulpcommon.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="-1"/>
-        <WindowIndex Value="-1"/>
-        <TopLine Value="-1"/>
-        <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="21"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="291"/>
+        <CursorPos X="26" Y="157"/>
+        <UsageCount Value="25"/>
+        <Loaded Value="True"/>
       </Unit2>
       <Unit3>
         <Filename Value="src/gulpcommandline.pas"/>
@@ -63,7 +67,7 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="21"/>
+        <UsageCount Value="25"/>
       </Unit3>
       <Unit4>
         <Filename Value="src/gulpscanner.pas"/>
@@ -72,7 +76,7 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="21"/>
+        <UsageCount Value="25"/>
       </Unit4>
       <Unit5>
         <Filename Value="src/gulplist.pas"/>
@@ -81,7 +85,7 @@
         <WindowIndex Value="-1"/>
         <TopLine Value="-1"/>
         <CursorPos X="-1" Y="-1"/>
-        <UsageCount Value="21"/>
+        <UsageCount Value="25"/>
       </Unit5>
     </Units>
   </ProjectOptions>
