@@ -79,7 +79,7 @@ type
     with tgulpitem(p^) do
       if gfadd in flags then
       begin
-        if attr and fadirectory = fadirectory then
+        if fileisdirectory(attr) then
           writeln(format('%4s %3s %3s %7s %19s %12s %s',
             [versiontostring(version), flagstostring(flags),modetostring(mode),
             attrtostring(attr), timetostring(universaltime2local(mtime)),
@@ -90,7 +90,7 @@ type
             attrtostring(attr), timetostring(universaltime2local(mtime)),
             sizetostring(size), name]));
       end else
-      if attr and fadirectory = fadirectory then
+      if fileisdirectory(attr) then
         writeln(format('%4s %3s %3s %7s %19s %12s %s',
           [versiontostring(version), flagstostring(flags), '', '', '', '', name]))
       else

@@ -73,17 +73,25 @@ type
   function _getsymlink(const filename: rawbytestring): rawbytestring;
   function _setsymlink(const filename, linkname: rawbytestring): longint;
 
-  function _getfilemode(const filename: rawbytestring): longword;
-  function _setfilemode(const filename: rawbytestring; mode: longword): longint;
+  function _getfilemode(const filename: rawbytestring): longint;
+  function _setfilemode(const filename: rawbytestring; mode: longint): longint;
 
-  function _getfileuserid(const filename: rawbytestring): longword;
-  function _getfilegroupid(const filename: rawbytestring): longword;
+  function _getfileuserid(const filename: rawbytestring): longint;
+  function _getfilegroupid(const filename: rawbytestring): longint;
 
-  function _setfileuserid(const filename: rawbytestring; userid: longword): longint;
-  function _setfilegroupid(const filename: rawbytestring; groupid: longword): longint;
+  function _setfileuserid(const filename: rawbytestring; userid: longint): longint;
+  function _setfilegroupid(const filename: rawbytestring; groupid: longint): longint;
 
   function _getfileusername (const filename: rawbytestring): rawbytestring;
   function _getfilegroupname(const filename: rawbytestring): rawbytestring;
+
+  function fileissymlink  (attr: longint): boolean;
+  function fileisdirectory(attr: longint): boolean;
+  function fileisregular  (attr: longint): boolean;
+
+  function fileissymlink  (const filename: rawbytestring): boolean;
+  function fileisdirectory(const filename: rawbytestring): boolean;
+  function fileisregular  (const filename: rawbytestring): boolean;
 
   function isabsolutepath(const pathname: rawbytestring): boolean;
 
@@ -166,7 +174,7 @@ function _getfiletimeutc(const filename: rawbytestring): tdatetime;
 var
   sr: tsearchrec;
 begin
-  result := 0.0;
+  result := -1;
   if sysutils.findfirst(filename, fareadonly or fahidden or fasysfile or
     favolumeid or fadirectory or faarchive or fasymlink or faanyfile,sr) = 0 then
       result := _getfiletimeutc(sr);
@@ -175,18 +183,20 @@ end;
 
 function _setfiletimeutc(const filename: rawbytestring; timeutc: tdatetime): longint;
 begin
-  {$IFDEF LINUX}
-  if _getfileattr(filename) and fasymlink = 0 then
+  result := -1;
+  if timeutc <> -1 then
+  begin
+    {$IFDEF LINUX}
+    if fileissymlink(_getfileattr(filename)) = false then
+      result := filesetdate(filename, datetimetofiledate(universaltime2local(timeutc)));
+    {$ELSE}
+    {$IFDEF MSWINDOWS}
     result := filesetdate(filename, datetimetofiledate(universaltime2local(timeutc)))
-  else
-    result := -1;
-  {$ELSE}
-  {$IFDEF MSWINDOWS}
-  result := filesetdate(filename, datetimetofiledate(universaltime2local(timeutc)))
-  {$ELSE}
-  ...
-  {$ENDIF}
-  {$ENDIF}
+    {$ELSE}
+    ...
+    {$ENDIF}
+    {$ENDIF}
+  end;
 end;
 
 function _getfileattr(var sr: tsearchrec): longint;
@@ -207,30 +217,30 @@ end;
 
 function _setfileattr(const filename: rawbytestring; attr: longint): longint;
 begin
-  {$IFDEF LINUX}
   result := -1;
-  {$ELSE}
-  {$IFDEF MSWINDOWS}
-  result := filesetattr(filename, attr);
-  {$ELSE}
-  ...
-  {$ENDIF}
-  {$ENDIF}
+  if attr <> -1 then
+  begin
+    {$IFDEF LINUX}
+    {$ELSE}
+    {$IFDEF MSWINDOWS}
+    result := filesetattr(filename, attr);
+    {$ELSE}
+    ...
+    {$ENDIF}
+    {$ENDIF}
+  end;
 end;
 
 function _getfilesize(var sr: tsearchrec): int64;
 begin
-  if sr.attr and (fadirectory or favolumeid or fasymlink) = 0 then
-    result := sr.size
-  else
-    result := 0;
+  result := sr.size
 end;
 
 function _getfilesize(const filename: rawbytestring): int64;
 var
   sr: tsearchrec;
 begin
-  result := 0;
+  result := -1;
   if sysutils.findfirst(filename, fareadonly or fahidden or fasysfile or
     favolumeid or fadirectory or faarchive or fasymlink or faanyfile, sr) = 0 then
       result := _getfilesize(sr);
@@ -263,14 +273,15 @@ begin
   {$ENDIF}
 end;
 
-function _getfilemode(const filename: rawbytestring): longword;
+function _getfilemode(const filename: rawbytestring): longint;
 {$IFDEF LINUX}
 var
   info: stat;
 {$ENDIF}
 begin
+  result := -1;
   {$IFDEF LINUX}
-  if _getfileattr(filename) and fasymlink > 0 then
+  if fileissymlink(filename) then
   begin
     if fplstat(filename, info) = 0 then
       result := info.st_mode;
@@ -279,37 +290,35 @@ begin
       result := info.st_mode;
   {$ELSE}
   {$IFDEF MSWINDOWS}
-  result := 0;
   {$ELSE}
   ...
   {$ENDIF}
   {$ENDIF}
 end;
 
-function _setfilemode(const filename: rawbytestring; mode: longword): longint;
+function _setfilemode(const filename: rawbytestring; mode: longint): longint;
 begin
+  result := -1;
   {$IFDEF LINUX}
-  if _getfileattr(filename) and fasymlink = 0 then
-    result := fpchmod(filename, mode)
-  else
-    result := -1;
+  if fileissymlink(filename) = false then
+    result := fpchmod(filename, mode);
   {$ELSE}
   {$IFDEF MSWINDOWS}
-  result := -1;
   {$ELSE}
   ...
   {$ENDIF}
   {$ENDIF}
 end;
 
-function _getfileuserid(const filename: rawbytestring): longword;
+function _getfileuserid(const filename: rawbytestring): longint;
 {$IFDEF LINUX}
 var
   info: stat;
 {$ENDIF}
 begin
+  result := -1;
   {$IFDEF LINUX}
-  if _getfileattr(filename) and fasymlink > 0 then
+  if fileissymlink(filename) then
   begin
     if fplstat(filename, info) = 0 then
       result := info.st_uid;
@@ -318,21 +327,21 @@ begin
       result := info.st_uid;
   {$ELSE}
   {$IFDEF MSWINDOWS}
-  result := -1;
   {$ELSE}
   ...
   {$ENDIF}
   {$ENDIF}
 end;
 
-function _getfilegroupid(const filename: rawbytestring): longword;
+function _getfilegroupid(const filename: rawbytestring): longint;
 {$IFDEF LINUX}
 var
   info: stat;
 {$ENDIF}
 begin
+  result := -1;
   {$IFDEF LINUX}
-  if _getfileattr(filename) and fasymlink > 0 then
+  if fileissymlink(filename) then
   begin
     if fplstat(filename, info) = 0 then
       result := info.st_gid;
@@ -341,57 +350,62 @@ begin
       result := info.st_gid;
   {$ELSE}
   {$IFDEF MSWINDOWS}
-  result := 0;
   {$ELSE}
   ...
   {$ENDIF}
   {$ENDIF}
 end;
 
-function _setfileuserid(const filename: rawbytestring; userid: longword): longint;
+function _setfileuserid(const filename: rawbytestring; userid: longint): longint;
 {$IFDEF LINUX}
 var
   systempath: rawbytestring;
 {$ENDIF}
 begin
-  {$IFDEF LINUX}
-  systempath := tosinglebytefilesystemencodedfilename(filename);
-  if _getfileattr(filename) and fasymlink = 0 then
-    result := do_syscall(syscall_nr_chown,
-      tsysparam(pchar(systempath)), tsysparam(userid), tsysparam(_getfilegroupid(filename)))
-  else
-    result := do_syscall(syscall_nr_lchown,
-      tsysparam(pchar(systempath)), tsysparam(userid), tsysparam(_getfilegroupid(filename)));
-  {$ELSE}
-  {$IFDEF MSWINDOWS}
   result := -1;
-  {$ELSE}
-  ...
-  {$ENDIF}
-  {$ENDIF}
+  if userid <> -1 then
+  begin
+    {$IFDEF LINUX}
+    systempath := tosinglebytefilesystemencodedfilename(filename);
+    if fileissymlink(filename) = false then
+      result := do_syscall(syscall_nr_chown,
+        tsysparam(pchar(systempath)), tsysparam(userid), tsysparam(_getfilegroupid(filename)))
+    else
+      result := do_syscall(syscall_nr_lchown,
+        tsysparam(pchar(systempath)), tsysparam(userid), tsysparam(_getfilegroupid(filename)));
+    {$ELSE}
+    {$IFDEF MSWINDOWS}
+    {$ELSE}
+    ...
+    {$ENDIF}
+    {$ENDIF}
+  end;
 end;
 
-function _setfilegroupid(const filename: rawbytestring; groupid: longword): longint;
+function _setfilegroupid(const filename: rawbytestring; groupid: longint): longint;
 {$IFDEF LINUX}
 var
   systempath: rawbytestring;
 {$ENDIF}
 begin
-  {$IFDEF LINUX}
-  systempath := tosinglebytefilesystemencodedfilename(filename);
-  if _getfileattr(filename) and fasymlink = 0 then
-    result := do_syscall(syscall_nr_chown,
-      tsysparam(pchar(systempath)), tsysparam(_getfileuserid(filename)), tsysparam(groupid))
-  else
-    result := do_syscall(syscall_nr_lchown,
-      tsysparam(pchar(systempath)), tsysparam(_getfileuserid(filename)), tsysparam(groupid));
-  {$ELSE}
-  {$IFDEF MSWINDOWS}
   result := -1;
-  {$ELSE}
-  ...
-  {$ENDIF}
-  {$ENDIF}
+  if groupid <> -1 then
+  begin
+    {$IFDEF LINUX}
+    systempath := tosinglebytefilesystemencodedfilename(filename);
+    if fileissymlink(filename) = false then
+      result := do_syscall(syscall_nr_chown,
+        tsysparam(pchar(systempath)), tsysparam(_getfileuserid(filename)), tsysparam(groupid))
+    else
+      result := do_syscall(syscall_nr_lchown,
+        tsysparam(pchar(systempath)), tsysparam(_getfileuserid(filename)), tsysparam(groupid));
+    {$ELSE}
+    {$IFDEF MSWINDOWS}
+    {$ELSE}
+    ...
+    {$ENDIF}
+    {$ENDIF}
+  end;
 end;
 
 function _getfileusername(const filename: rawbytestring): rawbytestring;
@@ -404,9 +418,53 @@ begin
   result := '';
 end;
 
+function fileissymlink(attr: longint): boolean;
+begin
+  result := attr <> -1;
+  if result then
+    result := attr and fasymlink > 0;
+end;
+
+function fileisdirectory(attr: longint): boolean;
+begin
+  result := attr <> -1;
+  if result then
+  begin
+    result := fileissymlink(attr) = false;
+    if result then
+      result := attr and fadirectory > 0
+  end;
+end;
+
+function fileisregular(attr: longint): boolean;
+begin
+  result := attr <> -1;
+  if result then
+  begin
+    result := fileissymlink(attr) = false;
+    if result then
+      result := fileisdirectory(attr) = false;
+  end;
+end;
+
+function fileissymlink(const filename: rawbytestring): boolean;
+begin
+  result := fileissymlink(_getfileattr(filename));
+end;
+
+function fileisdirectory(const filename: rawbytestring): boolean;
+begin
+  result := fileisdirectory(_getfileattr(filename));
+end;
+
+function fileisregular(const filename: rawbytestring): boolean;
+begin
+  result := fileisregular(_getfileattr(filename));
+end;
+
 function isabsolutepath(const pathname: rawbytestring): boolean;
 begin
-  {$IFDEF UNIX}
+  {$IFDEF LINUX}
   result := ((length(pathname) > 0) and (pathname[1] in ['/','\']));
   {$ELSE}
   {$IFDEF MSWINDOWS}
@@ -454,7 +512,7 @@ end;
 
 function setpriorityidle: boolean;
 begin
-  {$IFDEF UNIX}
+  {$IFDEF LINUX}
   result := fpnice(5) = 0;
   {$ELSE}
   {$IFDEF MSWINDOWS}
@@ -466,7 +524,7 @@ end;
 
 function setprioritynormal: boolean;
 begin
-  {$IFDEF UNIX}
+  {$IFDEF LINUX}
   result := fpnice(10) = 0;
   {$ELSE}
   {$IFDEF MSWINDOWS}

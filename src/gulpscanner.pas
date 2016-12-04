@@ -123,8 +123,8 @@ end;
 
 procedure tscanner.add(const filemask: rawbytestring);
 begin
-  if filemask = '' then
-    exit;
+  if filemask = '' then exit;
+
   if directoryexists(filemask) then
     flist.add(filemask)
   else
@@ -219,7 +219,8 @@ end;
 
 function deletedir(const dirname: rawbytestring): boolean;
 var
-  a, i: longint;
+  attr: longint;
+  i:    longint;
   s:    tscanner;
 begin
   s := tscanner.create;
@@ -227,13 +228,14 @@ begin
 
   for i := s.count -1 downto 0 do
   begin
-    a := _getfileattr(s[i]);
-    if a and fasymlink > 0 then
+    attr := _getfileattr(s[i]);
+    if fileissymlink(attr) then
       deletelink(s[i])
     else
-    if a and fadirectory > 0 then
+    if fileisdirectory(attr) then
       removedir(s[i])
     else
+    if fileisregular(attr) then
       deletefile(s[i]);
   end;
   s.destroy;
@@ -243,16 +245,19 @@ end;
 
 function deleteany(const name: rawbytestring) : boolean;
 var
-  a: longint;
+  attr: longint;
 begin
-  a := _getfileattr(name);
-  if a and fasymlink > 0 then
+  attr := _getfileattr(name);
+  if fileissymlink(attr) then
     result := deletelink(name)
   else
-  if a and fadirectory > 0 then
+  if fileisdirectory(attr) then
     result := deletedir(name)
   else
-    result := deletefile(name);
+  if fileisregular(attr) then
+    result := deletefile(name)
+  else
+    result := false;
 end;
 
 end.

@@ -53,19 +53,19 @@ type
     flags:      tgulpflags;
     mtime:      tdatetime;
     stime:      tdatetime;
-    attr:       longword;
-    mode:       longword;
+    attr:       longint;
+    mode:       longint;
     size:       int64;
     linkname:   rawbytestring;
-    userid:     longword;
-    groupid:    longword;
+    userid:     longint;
+    groupid:    longint;
     username:   rawbytestring;
     groupname:  rawbytestring;
     comment:    rawbytestring;
     offset1:    int64;
     offset2:    int64;
     checksum:   tsha1digest;
-    version:    longword;
+    version:    longint;
   end;
 
   pgulpitem  = ^tgulpitem;
@@ -138,15 +138,15 @@ type
 
 { usefull routines }
 
-function versiontostring(const version: longword): rawbytestring;
-function attrtostring   (const attr: longword): rawbytestring;
+function versiontostring(const version: longint): rawbytestring;
+function attrtostring   (const attr: longint): rawbytestring;
 function sizetostring   (const size: int64): rawbytestring;
 function timetostring   (const t: tdatetime): rawbytestring;
-function modetostring   (const mode: longword): rawbytestring;
+function modetostring   (const mode: longint): rawbytestring;
 function flagstostring  (const f: tgulpflags): rawbytestring;
 
-function stringtoattr(s: rawbytestring): longword;
-function stringtomode(const s: rawbytestring): longword;
+function stringtoattr(s: rawbytestring): longint;
+function stringtomode(const s: rawbytestring): longint;
 
 implementation
 
@@ -167,39 +167,55 @@ const
 
 { usefull routines }
 
-function versiontostring(const version: longword): rawbytestring;
+function versiontostring(const version: longint): rawbytestring;
 begin
-  result := inttostr(version);
+  if version <> -1 then
+    result := inttostr(version)
+  else
+    result := '???';
 end;
 
-function attrtostring(const attr: longword): rawbytestring;
+function attrtostring(const attr: longint): rawbytestring;
 begin
-  result := '-------';
-  if attr and fareadonly  <> 0 then result[1] := 'R';
-  if attr and fahidden    <> 0 then result[2] := 'H';
-  if attr and fasysfile   <> 0 then result[3] := 'S';
-  if attr and favolumeid  <> 0 then result[4] := 'V';
-  if attr and fadirectory <> 0 then result[5] := 'D';
-  if attr and faarchive   <> 0 then result[6] := 'A';
-  if attr and fasymlink   <> 0 then result[7] := 'L';
+  if attr <> -1 then
+  begin
+    result := '-------';
+    if attr and fareadonly  <> 0 then result[1] := 'R';
+    if attr and fahidden    <> 0 then result[2] := 'H';
+    if attr and fasysfile   <> 0 then result[3] := 'S';
+    if attr and favolumeid  <> 0 then result[4] := 'V';
+    if attr and fadirectory <> 0 then result[5] := 'D';
+    if attr and faarchive   <> 0 then result[6] := 'A';
+    if attr and fasymlink   <> 0 then result[7] := 'L';
+  end else
+    result := '???';
 end;
 
 function sizetostring(const size: int64): rawbytestring;
 begin
-  result := format('%u', [size]);
+  if size <> -1 then
+    result := format('%u', [size])
+  else
+    result := '???';
 end;
 
 function timetostring(const t: tdatetime): rawbytestring;
 begin
-  result := formatdatetime(
-    defaultformatsettings.longdateformat + ' ' +
-    defaultformatsettings.longtimeformat, t);
+  if t <> -1 then
+    result := formatdatetime(
+      defaultformatsettings.longdateformat + ' ' +
+      defaultformatsettings.longtimeformat, t)
+  else
+    result := '???';
 end;
 
-function modetostring(const mode: longword): rawbytestring;
+function modetostring(const mode: longint): rawbytestring;
 begin
   {$IFDEF LINUX}
-  result := octstr(mode, 3);
+  if mode <> -1 then
+    result := octstr(mode, 3)
+  else
+    result := '???';
   {$ELSE}
   {$IFDEF MSWINDOWS}
   result := '';
@@ -215,10 +231,12 @@ begin
     result := 'ADD'
   else
   if (gfdelete in f) then
-    result := 'DEL';
+    result := 'DEL'
+  else
+    result := '???';
 end;
 
-function stringtoattr(s: rawbytestring): longword;
+function stringtoattr(s: rawbytestring): longint;
 const
   a: array[0..6] of char = ('R','H','S','V','D','A','L');
 var
@@ -238,10 +256,11 @@ begin
       delete(s, pos(a[i], uppercase(s)),  1);
     end;
 
-  if s <> '' then raise exception.createfmt(gereadstream, ['004001']);
+  if s <> '' then
+    raise exception.createfmt(gereadstream, ['004001']);
 end;
 
-function stringtomode(const s: rawbytestring): longword;
+function stringtomode(const s: rawbytestring): longint;
 {$IFDEF LINUX}
 var
   i: longint;
@@ -268,24 +287,24 @@ end;
 
 function itemclear(p: pgulpitem): pgulpitem;
 begin
-  p^.name        := '';
-  p^.flags       := [];
-  p^.mtime       := 0.0;
-  p^.stime       := 0.0;
-  p^.attr        := 0;
-  p^.mode        := 0;
-  p^.size        := 0;
-  p^.linkname    := '';
-  p^.userid      := 0;
-  p^.groupid     := 0;
-  p^.username    := '';
-  p^.groupname   := '';
-  p^.comment     := '';
-  p^.offset1     := 0;
-  p^.offset2     := 0;
+  p^.name      := '';
+  p^.flags     := [];
+  p^.mtime     := 0.0;
+  p^.stime     := 0.0;
+  p^.attr      := 0;
+  p^.mode      := 0;
+  p^.size      := 0;
+  p^.linkname  := '';
+  p^.userid    := 0;
+  p^.groupid   := 0;
+  p^.username  := '';
+  p^.groupname := '';
+  p^.comment   := '';
+  p^.offset1   := 0;
+  p^.offset2   := 0;
   fillchar(p^.checksum, sizeof(tsha1digest), 0);
-  p^.version     := 0;
-  result         := p;
+  p^.version   := 0;
+  result       := p;
 end;
 
 function itemgetdigest(p: pgulpitem): tsha1digest;
@@ -451,7 +470,7 @@ begin
   if (outpath <> '') and (forcedirectories(outpath) = false) then
     raise exception.createfmt(gecreatepath, [outpath]);
 
-  if fasymlink and p^.attr > 0 then
+  if fileissymlink(p^.attr) then
   begin
     {$IFDEF LINUX}
     gulpscanner.deleteany(p^.name);
@@ -466,12 +485,12 @@ begin
     {$ENDIF}
     {$ENDIF}
   end else
-  if fadirectory and p^.attr > 0 then
+  if fileisdirectory(p^.attr) then
   begin
-    if fasymlink and _getfileattr(p^.name) > 0 then
+    if fileissymlink(p^.name) then
       gulpscanner.deleteany(p^.name);
 
-    if fadirectory and _getfileattr(p^.name) = 0 then
+    if fileisdirectory(p^.name) = false then
     begin
       gulpscanner.deleteany(p^.name);
       if createdir(p^.name) = false then
@@ -564,16 +583,15 @@ begin
   if list.count > 0 then
   begin
     size := outstream.seek(outstream.size, sobeginning);
-    include(list[list.count - 1]^.flags, gfclose);
     for i := 0 to list.count - 1 do
       libwrite(outstream, list[i]);
 
     for i := 0 to list.count - 1 do
-      if fasymlink and list[i]^.attr > 0 then
+      if fileissymlink(list[i]^.attr) then
       begin
         list[i]^.linkname := _getsymlink(list[i]^.name);
       end else
-      if fadirectory and list[i]^.attr > 0 then
+      if fileisdirectory(list[i]^.attr) then
       begin
          // nothing to do
       end else
@@ -595,6 +613,7 @@ begin
         list[i]^.offset2 := outstream.position;
       end;
 
+    include(list[list.count - 1]^.flags, gfclose);
     outstream.seek(size, sobeginning);
     for i := 0 to list.count - 1 do
       libwrite(outstream, list[i]);
@@ -641,8 +660,8 @@ begin
   if ((gfdelete in p^.flags)) and ((gfadd in p^.flags)) then
     raise exception.createfmt(gewrongflag, ['003003']);
 
-  if ((p^.offset1 = 0) or (p^.offset2 = 0)) and (p^.size <> 0) then
-    raise exception.createfmt(gebrokenarchive, ['003004']);
+  //if (p^.offset2 - p^.offset1 <> p^.size) then
+  //  raise exception.createfmt(gebrokenarchive, ['003004']);
   if instream.read(digest, sizeof(tsha1digest)) <> sizeof(tsha1digest) then
     raise exception.createfmt(gebrokenarchive, ['003005']);
   if sha1match(digest, itemgetdigest(p)) = false then
@@ -919,7 +938,7 @@ begin
   begin
     j := libfind(list1, finclude[i]);
     if j <> -1 then
-      if list1[j]^.attr and fadirectory = fadirectory then
+      if fileisdirectory(list1[j]^.attr) then
         finclude.add(includetrailingpathdelimiter(finclude[i]) + '*');
   end;
   if finclude.count = 0 then
@@ -929,7 +948,7 @@ begin
   begin
     j := libfind(list1, fexclude[i]);
     if j <> -1 then
-      if list1[j]^.attr and fadirectory = fadirectory then
+      if fileisdirectory(list1[j]^.attr) then
         fexclude.add(includetrailingpathdelimiter(fexclude[i]) + '*');
   end;
   fexclude.add(filename);
@@ -1153,7 +1172,7 @@ begin
   begin
     j := libfind(list1, finclude[i]);
     if j <> -1 then
-      if list1[j]^.attr and fadirectory = fadirectory then
+      if fileisdirectory(list1[j]^.attr) then
         finclude.add(includetrailingpathdelimiter(finclude[i]) + '*');
   end;
   if finclude.count = 0 then
@@ -1163,7 +1182,7 @@ begin
   begin
     j := libfind(list1, fexclude[i]);
     if j <> -1 then
-      if list1[j]^.attr and fadirectory = fadirectory then
+      if fileisdirectory(list1[j]^.attr) then
         fexclude.add(includetrailingpathdelimiter(fexclude[i]) + '*');
   end;
 
