@@ -179,7 +179,7 @@ begin
   if _getfileattr(filename) and fasymlink = 0 then
     result := filesetdate(filename, datetimetofiledate(universaltime2local(timeutc)))
   else
-    result := 0;
+    result := -1;
   {$ELSE}
   {$IFDEF MSWINDOWS}
   result := filesetdate(filename, datetimetofiledate(universaltime2local(timeutc)))
@@ -256,7 +256,7 @@ begin
   result := fpsymlink(pchar(linkname), pchar(filename));
   {$ELSE}
   {$IFDEF MSWINDOWS}
-  result := 0;
+  result := -1;
   {$ELSE}
   ...
   {$ENDIF}
@@ -270,7 +270,7 @@ var
 {$ENDIF}
 begin
   {$IFDEF LINUX}
-  if _getfileattr(filename) and fasymlink = fasymlink then
+  if _getfileattr(filename) and fasymlink > 0 then
   begin
     if fplstat(filename, info) = 0 then
       result := info.st_mode;
@@ -292,10 +292,10 @@ begin
   if _getfileattr(filename) and fasymlink = 0 then
     result := fpchmod(filename, mode)
   else
-    result := 0;
+    result := -1;
   {$ELSE}
   {$IFDEF MSWINDOWS}
-  result := 0;
+  result := -1;
   {$ELSE}
   ...
   {$ENDIF}
@@ -309,7 +309,7 @@ var
 {$ENDIF}
 begin
   {$IFDEF LINUX}
-  if _getfileattr(filename) and fasymlink = fasymlink then
+  if _getfileattr(filename) and fasymlink > 0 then
   begin
     if fplstat(filename, info) = 0 then
       result := info.st_uid;
@@ -332,7 +332,7 @@ var
 {$ENDIF}
 begin
   {$IFDEF LINUX}
-  if _getfileattr(filename) and fasymlink = fasymlink then
+  if _getfileattr(filename) and fasymlink > 0 then
   begin
     if fplstat(filename, info) = 0 then
       result := info.st_gid;
@@ -364,7 +364,7 @@ begin
       tsysparam(pchar(systempath)), tsysparam(userid), tsysparam(_getfilegroupid(filename)));
   {$ELSE}
   {$IFDEF MSWINDOWS}
-  result := 0;
+  result := -1;
   {$ELSE}
   ...
   {$ENDIF}
@@ -387,7 +387,7 @@ begin
       tsysparam(pchar(systempath)), tsysparam(_getfileuserid(filename)), tsysparam(groupid));
   {$ELSE}
   {$IFDEF MSWINDOWS}
-  result := 0;
+  result := -1;
   {$ELSE}
   ...
   {$ENDIF}

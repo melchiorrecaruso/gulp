@@ -101,14 +101,15 @@ begin
     if sr.attr and gulpnotsupported = 0 then
     begin
 
-      if (sr.attr and fadirectory > 0) and
-         (sr.attr and fasymlink   = 0) and
-         (sr.name <> '..')             and
-         (sr.name <> '.')              then
+      if sr.attr and fadirectory > 0 then
       begin
-        flist.add(path + sr.name);
-        if recursive then
-          scan(path + includetrailingpathdelimiter(sr.name) + mask, true);
+        if (sr.name <> '..') and (sr.name <> '.') then
+        begin
+          flist.add(path + sr.name);
+
+          if (sr.attr and fasymlink = 0) and recursive then
+            scan(path + includetrailingpathdelimiter(sr.name) + mask, true);
+        end;
 
       end else
         if filenamematch(path + sr.name, filemask) then
@@ -231,7 +232,7 @@ begin
       deletelink(s[i])
     else
     if a and fadirectory > 0 then
-      deletedir(s[i])
+      removedir(s[i])
     else
       deletefile(s[i]);
   end;

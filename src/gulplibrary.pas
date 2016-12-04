@@ -456,7 +456,7 @@ begin
     {$IFDEF LINUX}
     gulpscanner.deleteany(p^.name);
     if _setsymlink(p^.name, p^.linkname) <> 0 then
-      raise exception.createfmt(gerestorelink, [p^.name]);
+      showwarning(format(gerestorelink, [p^.name]));
     {$ELSE}
     {$IFDEF MSWINDOWS}
     gulpscanner.deleteany(p^.name);
@@ -475,8 +475,23 @@ begin
     begin
       gulpscanner.deleteany(p^.name);
       if createdir(p^.name) = false then
-        raise exception.createfmt(gerestoredir, [p^.name]);
+        showwarning(format(gerestoredir, [p^.name]));
+    end else
+    begin
+      {$IFDEF LINUX}
+      if _setfilemode(p^.name, s_irwxo or s_irwxg or s_irwxu) <> 0 then
+        showwarning(format(gesetmode, [p^.name]));
+      {$ELSE}
+      {$IFDEF MSWINDOWS}
+      if _setfileattr(p^.name, result and (fahidden or fasysfile or
+        favolumeid or fadirectory or faarchive or fasymlink)) = -1 then
+        showwarning(format(gesetmode, [p^.name]));
+      {$ELSE}
+      ...
+      {$ENDIF}
+      {$ENDIF}
     end;
+
   end else
   begin
     gulpscanner.deleteany(p^.name);
@@ -493,18 +508,22 @@ begin
   if _setfilegroupid(p^.name, p^.groupid) <> 0 then
     showwarning(format(gesetgroupid, [p^.name]));
 
+  if _setfiletimeutc(p^.name, p^.mtime) <> 0 then
+    showwarning(format(gesetdatetime, [p^.name]));
+
   if _setfilemode(p^.name, p^.mode) <> 0 then
     showwarning(format(gesetmode, [p^.name]));
   {$ELSE}
   {$IFDEF MSWINDOWS}
   if _setfileattr(p^.name, p^.attrs) <> 0 then
     showwarning(format(gesetattributes, [p^.name]));
+
+  if _setfiletimeutc(p^.name, p^.mtime) <> 0 then
+    showwarning(format(gesetdatetime, [p^.name]));
   {$ELSE}
   ...
   {$ENDIF}
   {$ENDIF}
-  if _setfiletimeutc(p^.name, p^.mtime) <> 0 then
-    showwarning(format(gesetdatetime, [p^.name]));
 end;
 
 procedure tgulplibrary.libwrite(outstream: tstream; p: pgulpitem);
