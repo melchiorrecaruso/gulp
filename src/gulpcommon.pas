@@ -233,7 +233,10 @@ end;
 
 function _getfilesize(var sr: tsearchrec): int64;
 begin
-  result := sr.size
+  if sr.attr and (fadirectory) = 0 then
+    result := sr.size
+  else
+    result := 0;
 end;
 
 function _getfilesize(const filename: rawbytestring): int64;

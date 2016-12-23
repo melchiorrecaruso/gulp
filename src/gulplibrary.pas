@@ -64,7 +64,8 @@ type
     comment:    rawbytestring;
     offset1:    int64;
     offset2:    int64;
-    checksum:   tsha1digest;
+    checksum1:  tsha1digest;
+    checksum2:  tsha1digest;
     version:    longint;
   end;
 
@@ -302,7 +303,8 @@ begin
   p^.comment   := '';
   p^.offset1   := 0;
   p^.offset2   := 0;
-  fillchar(p^.checksum, sizeof(tsha1digest), 0);
+  fillchar(p^.checksum1, sizeof(tsha1digest), 0);
+  fillchar(p^.checksum2, sizeof(tsha1digest), 0);
   p^.version   := 0;
   result       := p;
 end;
@@ -330,9 +332,8 @@ begin
   sha1update(context, pointer(p^.groupname)^, length(p^.groupname));
   sha1update(context, pointer(p^.comment)^,   length(p^.comment));
 
-  sha1update(context, p^.offset1,  sizeof(p^.offset1));
-  sha1update(context, p^.offset2,  sizeof(p^.offset2));
-  sha1update(context, p^.checksum, sizeof(p^.checksum));
+  sha1update(context, p^.offset1, sizeof(p^.offset1));
+  sha1update(context, p^.offset2, sizeof(p^.offset2));
 
   sha1final (context, result);
 end;
@@ -362,7 +363,6 @@ begin
   inc(result, sizeof(p^.offset1));
   inc(result, sizeof(p^.offset2));
   inc(result, sizeof(tsha1digest));
-
   inc(result, sizeof(tsha1digest));
 end;
 
@@ -459,7 +459,7 @@ var
     if assigned(outstream) then
     begin
       if sha1match(libmove(instream, outstream,
-        p^.offset2 - p^.offset1), p^.checksum) = false then
+        p^.offset2 - p^.offset1), p^.checksum2) = false then
         raise exception.createfmt(gechecksum, ['003016']);
       outstream.destroy;
     end;
@@ -567,11 +567,10 @@ begin
   outstream.writeansistring(p^.groupname);
   outstream.writeansistring(p^.comment);
 
-  outstream.write(p^.offset1, sizeof(p^.offset1));
-  outstream.write(p^.offset2, sizeof(p^.offset2));
-
-  outstream.write(p^.checksum,      sizeof(tsha1digest));
-  outstream.write(itemgetdigest(p), sizeof(tsha1digest));
+  outstream.write(p^.offset1,   sizeof(p^.offset1));
+  outstream.write(p^.offset2,   sizeof(p^.offset2));
+  outstream.write(p^.checksum1, sizeof(tsha1digest));
+  outstream.write(p^.checksum2, sizeof(tsha1digest));
 end;
 
 procedure tgulplibrary.libwrite(outstream: tstream; list: tgulplist);
@@ -607,30 +606,33 @@ begin
 
         if assigned(instream) then
         begin
-          list[i]^.checksum := libmove(instream, outstream, list[i]^.size);
+          list[i]^.checksum2 := libmove(instream, outstream, list[i]^.size);
           instream.destroy;
         end;
         list[i]^.offset2 := outstream.position;
       end;
 
-    include(list[list.count - 1]^.flags, gfclose);
     outstream.seek(size, sobeginning);
+    include(list[list.count - 1]^.flags, gfclose);
     for i := 0 to list.count - 1 do
+    begin
+      list[i]^.checksum1 := itemgetdigest(list[i]);
       libwrite(outstream, list[i]);
+    end;
     outstream.seek(outstream.size, sobeginning);
   end;
 end;
 
 function tgulplibrary.libread(instream: tstream; p: pgulpitem): pgulpitem;
 var
-  digest: tsha1digest;
+  marker: tsha1digest;
 begin
   result := itemclear(p);
 
-  if instream.read(digest, sizeof(tsha1digest)) <> sizeof(tsha1digest) then
+  if instream.read(marker, sizeof(tsha1digest)) <> sizeof(tsha1digest) then
     raise exception.createfmt(gebrokenarchive, ['003001']);
 
-  if itemcheckmarker(digest) = false then
+  if itemcheckmarker(marker) = false then
     raise exception.createfmt(gewrongmarker, ['003002']);
 
   p^.name := instream.readansistring;
@@ -651,9 +653,10 @@ begin
   p^.groupname := instream.readansistring;
   p^.comment   := instream.readansistring;
 
-  instream.read(p^.offset1, sizeof(p^.offset1));
-  instream.read(p^.offset2, sizeof(p^.offset2));
-  instream.read(p^.checksum, sizeof(tsha1digest));
+  instream.read(p^.offset1,   sizeof(p^.offset1));
+  instream.read(p^.offset2,   sizeof(p^.offset2));
+  instream.read(p^.checksum1, sizeof(tsha1digest));
+  instream.read(p^.checksum2, sizeof(tsha1digest));
 
   if (([] = p^.flags)) or (([gfclose] = p^.flags)) then
     raise exception.createfmt(gewrongflag, ['004001']);
@@ -662,13 +665,11 @@ begin
 
   //if (p^.offset2 - p^.offset1 <> p^.size) then
   //  raise exception.createfmt(gebrokenarchive, ['003004']);
-  if instream.read(digest, sizeof(tsha1digest)) <> sizeof(tsha1digest) then
-    raise exception.createfmt(gebrokenarchive, ['003005']);
-  if sha1match(digest, itemgetdigest(p)) = false then
+  if sha1match(p^.checksum1, itemgetdigest(p)) = false then
     raise exception.createfmt(gebrokenarchive, ['003007']);
 
-  dodirseparators(p^.name);
   dodirseparators(p^.linkname);
+  dodirseparators(p^.name);
 end;
 
 procedure tgulplibrary.libread(instream: tstream; list: tgulplist);

@@ -268,7 +268,7 @@ procedure tappthread.showitem(p: pointer);
 var
   item: tliteitem;
 begin
-  item         := tliteitem.create;
+  item := tliteitem.create;
   with tgulpitem(p^) do
   begin
     item.name    := extractfilename(name);
@@ -513,15 +513,16 @@ begin
     item.caption := t.name;
     if t.attr and fadirectory = 0 then
     begin
-      item.imageindex := 3;
-      item.stateindex := 3;
+      item.imageindex := 1;
+      item.stateindex := 1;
       item.subitems.add(sizetostring(t.size));
     end else
     begin
 
-      item.imageindex := 1;
-      item.stateindex := 1;
-      item.subitems.add('-');
+      item.imageindex := 3;
+      item.stateindex := 3;
+      // item.subitems.add('-');
+      item.subitems.add(sizetostring(t.size));
     end;
     item.subitems.add(timetostring(t.timeutc));
     item.subitems.add(attrtostring(t.attr));
@@ -576,10 +577,6 @@ var
 begin
   if appfolders.find(openpath.text) <> -1 then
   begin
-
-    //if (openpanel1.height < 10) = false then
-    //  findbtn.click;
-
     appfolder := openpath.text;
     openlistview.items.beginupdate;
     openlistview.items.clear;
