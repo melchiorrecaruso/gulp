@@ -502,9 +502,8 @@ begin
         showwarning(format(gesetmode, [p^.name]));
       {$ELSE}
       {$IFDEF MSWINDOWS}
-      if _setfileattr(p^.name, result and (fahidden or fasysfile or
-        favolumeid or fadirectory or faarchive or fasymlink)) = -1 then
-        showwarning(format(gesetmode, [p^.name]));
+      if _setfileattr(p^.name, p^.attr ) <> 0 then
+        showwarning(format(gesetattributes, [p^.name]));
       {$ELSE}
       ...
       {$ENDIF}
@@ -534,7 +533,7 @@ begin
     showwarning(format(gesetmode, [p^.name]));
   {$ELSE}
   {$IFDEF MSWINDOWS}
-  if _setfileattr(p^.name, p^.attrs) <> 0 then
+  if _setfileattr(p^.name, p^.attr) <> 0 then
     showwarning(format(gesetattributes, [p^.name]));
 
   if _setfiletimeutc(p^.name, p^.mtime) <> 0 then

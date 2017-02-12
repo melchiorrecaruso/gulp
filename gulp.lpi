@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="10"/>
+    <Version Value="9"/>
     <General>
       <Flags>
         <SaveOnlyProjectUnits Value="True"/>
@@ -16,10 +16,6 @@
       <MainUnit Value="0"/>
       <Title Value="Gulp"/>
       <UseAppBundle Value="False"/>
-      <XPManifest>
-        <TextName Value="CompanyName.ProductName.AppName"/>
-        <TextDesc Value="Your application description."/>
-      </XPManifest>
     </General>
     <i18n>
       <EnableI18N LFM="False"/>
@@ -129,8 +125,8 @@ override_dh_auto_install:
         <IsPartOfProject Value="True"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="2"/>
-        <TopLine Value="620"/>
-        <CursorPos X="3" Y="632"/>
+        <TopLine Value="492"/>
+        <CursorPos X="57" Y="506"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit1>
