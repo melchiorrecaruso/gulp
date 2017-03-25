@@ -318,7 +318,10 @@ begin
     app.fix(appfilename)
   else
   if appcommand = 'purge' then
-    app.purge(appfilename);
+    app.purge(appfilename)
+  else
+  if appcommand = 'view' then
+    app.restore(appfilename);
   synchronize(@mainform.finish);
 end;
 
@@ -438,6 +441,9 @@ begin
   else
   if appcommand = 'purge' then
     notebook.pageindex := 5
+  else
+  if appcommand = 'list' then
+    notebook.pageindex := 1
 end;
 
 procedure tmainform.finish;
@@ -513,15 +519,14 @@ begin
     item.caption := t.name;
     if t.attr and fadirectory = 0 then
     begin
-      item.imageindex := 1;
-      item.stateindex := 1;
+      item.imageindex := 5;
+      item.stateindex := 5;
       item.subitems.add(sizetostring(t.size));
     end else
     begin
 
       item.imageindex := 3;
       item.stateindex := 3;
-      // item.subitems.add('-');
       item.subitems.add(sizetostring(t.size));
     end;
     item.subitems.add(timetostring(t.timeutc));
@@ -547,6 +552,24 @@ begin
     begin
       openpath.text := t.path + includetrailingpathdelimiter(t.name);
       openpath.editingdone;
+    end else
+    begin
+
+
+      caption := 'View ' + t.path + includetrailingpathdelimiter(t.name);
+      begin
+        clear;
+        app.reset;
+        appcommand   := 'view';
+        appfilename  := appfilename;
+        app.nodelete := true;
+        app.include.add(t.path + includetrailingpathdelimiter(t.name));
+        app.untilversion := $ffffffff;
+        appthread    := tappthread.create(false);
+      end;
+
+
+
     end;
   end;
 end;
@@ -572,34 +595,30 @@ end;
 
 procedure Tmainform.openpatheditingdone(sender: tobject);
 var
-   i: longint;
-   t: tliteitem;
+  i: longint;
+  t: tliteitem;
 begin
-  if appfolders.find(openpath.text) <> -1 then
+  appfolder := openpath.text;
+  openlistview.items.beginupdate;
+  openlistview.items.clear;
+  applist2.clear;
+  for i := 0 to applist1.count - 1 do
   begin
-    appfolder := openpath.text;
-    openlistview.items.beginupdate;
-    openlistview.items.clear;
-    applist2.clear;
-    for i := 0 to applist1.count - 1 do
+    t := applist1[i];
+    if filenamematch(t.path, appfolder) = true then
     begin
-      t := applist1[i];
-      if filenamematch(t.path, appfolder) = true then
-      begin
-        if openfind.text <> '' then
-          t.visible := filenamematch(t.name, openfind.text)
-        else
-          t.visible := true;
-      end else
-        t.visible := false;
+      if openfind.text <> '' then
+        t.visible := filenamematch(t.name, openfind.text)
+      else
+        t.visible := true;
+    end else
+      t.visible := false;
 
-      if t.visible = true then
-        applist2.add(t);
-    end;
-    openlistview.items.count := applist2.count;
-    openlistview.items.endupdate;
-  end else
-    openpath.text := appfolder;
+    if t.visible = true then
+      applist2.add(t);
+  end;
+  openlistview.items.count := applist2.count;
+  openlistview.items.endupdate;
 end;
 
 procedure tmainform.restorecancelclick(sender: tobject);

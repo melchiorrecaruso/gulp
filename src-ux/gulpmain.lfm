@@ -1,9 +1,8 @@
 object mainform: Tmainform
-  Left = 471
+  Left = 371
   Height = 540
-  Top = 149
+  Top = 57
   Width = 757
-  ActiveControl = buttonspanel
   Caption = 'Gulp - A simple journaling archiver'
   ClientHeight = 540
   ClientWidth = 757
@@ -23,8 +22,8 @@ object mainform: Tmainform
     AnchorSideRight.Side = asrBottom
     AnchorSideBottom.Control = progressbar
     Left = 0
-    Height = 483
-    Top = 41
+    Height = 473
+    Top = 51
     Width = 757
     PageIndex = 0
     Anchors = [akTop, akLeft, akRight, akBottom]
@@ -34,13 +33,13 @@ object mainform: Tmainform
     object welcomepage: TPage
       object welcomepanel1: TPanel
         Left = 0
-        Height = 483
+        Height = 473
         Top = 0
         Width = 757
         Align = alClient
         Anchors = []
         BevelOuter = bvNone
-        ClientHeight = 483
+        ClientHeight = 473
         ClientWidth = 757
         Color = clNone
         ParentColor = False
@@ -1631,8 +1630,8 @@ object mainform: Tmainform
         AnchorSideTop.Control = openshape1
         AnchorSideTop.Side = asrBottom
         Left = 0
-        Height = 428
-        Top = 71
+        Height = 398
+        Top = 75
         Width = 757
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
@@ -1684,15 +1683,15 @@ object mainform: Tmainform
         AnchorSideRight.Control = openpanel2
         AnchorSideRight.Side = asrBottom
         Left = 0
-        Height = 35
+        Height = 37
         Top = 0
         Width = 757
         Anchors = [akTop, akLeft, akRight]
         AutoSize = True
         BevelOuter = bvNone
-        ClientHeight = 35
+        ClientHeight = 37
         ClientWidth = 757
-        Color = clMenuBar
+        Color = clForm
         ParentColor = False
         TabOrder = 1
         object openfind: TComboBox
@@ -1703,7 +1702,7 @@ object mainform: Tmainform
           AnchorSideBottom.Control = openpanel1
           AnchorSideBottom.Side = asrBottom
           Left = 150
-          Height = 27
+          Height = 29
           Top = 4
           Width = 457
           Anchors = [akTop, akLeft, akRight]
@@ -1723,15 +1722,15 @@ object mainform: Tmainform
         AnchorSideRight.Control = openpage
         AnchorSideRight.Side = asrBottom
         Left = 0
-        Height = 35
-        Top = 35
+        Height = 37
+        Top = 37
         Width = 757
         Anchors = [akTop, akLeft, akRight]
         AutoSize = True
         BevelOuter = bvNone
-        ClientHeight = 35
+        ClientHeight = 37
         ClientWidth = 757
-        Color = clMenuBar
+        Color = clForm
         ParentColor = False
         TabOrder = 2
         object openup: TSpeedButton
@@ -1740,7 +1739,7 @@ object mainform: Tmainform
           AnchorSideBottom.Control = openpath
           AnchorSideBottom.Side = asrBottom
           Left = 12
-          Height = 27
+          Height = 29
           Top = 4
           Width = 28
           Anchors = [akTop, akLeft, akBottom]
@@ -1832,7 +1831,7 @@ object mainform: Tmainform
           AnchorSideRight.Control = openpanel2
           AnchorSideRight.Side = asrBottom
           Left = 52
-          Height = 27
+          Height = 29
           Top = 4
           Width = 693
           Anchors = [akTop, akLeft, akRight]
@@ -1855,7 +1854,7 @@ object mainform: Tmainform
         AnchorSideRight.Side = asrBottom
         Left = 0
         Height = 1
-        Top = 70
+        Top = 74
         Width = 757
         Anchors = [akTop, akLeft, akRight]
         Constraints.MaxHeight = 1
@@ -2613,15 +2612,15 @@ object mainform: Tmainform
     AnchorSideRight.Control = Owner
     AnchorSideRight.Side = asrBottom
     Left = 0
-    Height = 40
+    Height = 50
     Top = 0
     Width = 757
     Anchors = [akTop, akLeft, akRight]
     AutoSize = True
     BevelOuter = bvNone
-    ClientHeight = 40
+    ClientHeight = 50
     ClientWidth = 757
-    Color = clMenuBar
+    Color = clForm
     ParentColor = False
     TabOrder = 1
     object listrevision: TComboBox
@@ -2633,7 +2632,7 @@ object mainform: Tmainform
       AnchorSideBottom.Side = asrBottom
       Left = 569
       Height = 32
-      Top = 2
+      Top = 10
       Width = 120
       Anchors = [akTop, akRight, akBottom]
       AutoSize = False
@@ -2653,12 +2652,12 @@ object mainform: Tmainform
       AnchorSideTop.Control = buttonspanel
       Left = 20
       Height = 32
-      Top = 2
+      Top = 10
       Width = 96
       AutoSize = True
       BorderSpacing.Left = 20
-      BorderSpacing.Top = 2
-      BorderSpacing.Bottom = 6
+      BorderSpacing.Top = 10
+      BorderSpacing.Bottom = 8
       Constraints.MaxWidth = 96
       Constraints.MinHeight = 32
       Constraints.MinWidth = 96
@@ -2747,7 +2746,7 @@ object mainform: Tmainform
       AnchorSideTop.Control = homebtn
       Left = 140
       Height = 32
-      Top = 2
+      Top = 10
       Width = 96
       AutoSize = True
       BorderSpacing.Left = 24
@@ -2841,7 +2840,7 @@ object mainform: Tmainform
       AnchorSideBottom.Side = asrBottom
       Left = 713
       Height = 32
-      Top = 2
+      Top = 10
       Width = 32
       Anchors = [akTop, akRight, akBottom]
       AutoSize = True
@@ -2933,7 +2932,7 @@ object mainform: Tmainform
       AnchorSideBottom.Side = asrBottom
       Left = 338
       Height = 32
-      Top = 2
+      Top = 10
       Width = 96
       Anchors = [akTop, akLeft, akBottom]
       AutoSize = True
@@ -3026,7 +3025,7 @@ object mainform: Tmainform
       AnchorSideBottom.Side = asrBottom
       Left = 539
       Height = 32
-      Top = 2
+      Top = 10
       Width = 24
       Anchors = [akTop, akRight, akBottom]
       AutoSize = True
@@ -3067,7 +3066,7 @@ object mainform: Tmainform
       AnchorSideBottom.Side = asrBottom
       Left = 236
       Height = 32
-      Top = 2
+      Top = 10
       Width = 96
       Anchors = [akTop, akLeft, akBottom]
       AutoSize = True
@@ -3162,7 +3161,7 @@ object mainform: Tmainform
     AnchorSideRight.Side = asrBottom
     Left = 0
     Height = 1
-    Top = 40
+    Top = 50
     Width = 757
     Anchors = [akTop, akLeft, akRight]
     Constraints.MaxHeight = 1
