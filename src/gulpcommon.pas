@@ -233,7 +233,7 @@ end;
 
 function _getfilesize(var sr: tsearchrec): int64;
 begin
-  if sr.attr and (fadirectory) = 0 then
+  if fileisregular(sr.attr) then
     result := sr.size
   else
     result := 0;
