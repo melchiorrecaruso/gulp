@@ -1,6 +1,6 @@
 { Description: Main library unit.
 
-  Copyright (C) 2014-2016 Melchiorre Caruso <melchiorrecaruso@gmail.com>
+  Copyright (C) 2014-2017 Melchiorre Caruso <melchiorrecaruso@gmail.com>
 
   This source is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free
@@ -46,6 +46,21 @@ type
 
   tgulpflags = set of tgulpflag;
 
+  { gulp permissions }
+
+  tgulppermission  = (gpreadbyowner, gpwritebyowner, gpexecutebyowner,
+                      gpreadbygroup, gpwritebygroup, gpexecutebygroup,
+                      gpreadbyother, gpwritebyother, gpexecutebyother);
+
+  tgulppermissions = set of tgulppermission;
+
+  { gulp attributes }
+
+  tgulpattribute   = (gareadonly,  gahidden,  gasysfile, gavolumeid,
+                      gadirectory, gaarchive, gasymlink, galink);
+
+  tgulpattributes  = set of tgulpattribute;
+
   { gulp item }
 
   tgulpitem = record
@@ -53,8 +68,8 @@ type
     flags:      tgulpflags;
     mtime:      tdatetime;
     stime:      tdatetime;
-    attr:       longint;
-    mode:       longint;
+    attr:       tgulpattributes;
+    mode:       tgulppermissions;
     size:       int64;
     linkname:   rawbytestring;
     userid:     longint;
@@ -162,7 +177,7 @@ const
     68,233,72,6,60,107,74,16,223,55,134,75,20,207);
 
   gulpdescription =
-    'GULP v0.4 journaling archiver, copyright (c) 2014-2016 Melchiorre Caruso.'
+    'GULP v0.4 journaling archiver, copyright (c) 2014-2017 Melchiorre Caruso.'
     + lineending +
     'GULP archiver for user-level incremental backups with rollback capability.';
 
@@ -176,20 +191,17 @@ begin
     result := '???';
 end;
 
-function attrtostring(const attr: longint): rawbytestring;
+function attrtostring(const attr: tgulpattributes): rawbytestring;
 begin
-  if attr <> -1 then
-  begin
-    result := '-------';
-    if attr and fareadonly  <> 0 then result[1] := 'R';
-    if attr and fahidden    <> 0 then result[2] := 'H';
-    if attr and fasysfile   <> 0 then result[3] := 'S';
-    if attr and favolumeid  <> 0 then result[4] := 'V';
-    if attr and fadirectory <> 0 then result[5] := 'D';
-    if attr and faarchive   <> 0 then result[6] := 'A';
-    if attr and fasymlink   <> 0 then result[7] := 'L';
-  end else
-    result := '???';
+  result := '-------';
+  if gareadonly  in attr   then result[1] := 'R';
+  if gahidden    in attr   then result[2] := 'H';
+  if gasysfile   in attr   then result[3] := 'S';
+  if gavolumeid  in attr   then result[4] := 'V';
+  if gadirectory in attr   then result[5] := 'D';
+  if gaarchive   in attr   then result[6] := 'A';
+  if gasymlink   in attr   then result[7] := 'L';
+  if galink      in attr   then result[7] := 'L';
 end;
 
 function sizetostring(const size: int64): rawbytestring;
@@ -210,13 +222,23 @@ begin
     result := '???';
 end;
 
-function modetostring(const mode: longint): rawbytestring;
+function modetostring(const mode: tgulppermissions): rawbytestring;
+{$IFDEF LINUX}
+var
+  m: longint = 0;
+{$ENDIF}
 begin
   {$IFDEF LINUX}
-  if mode <> -1 then
-    result := octstr(mode, 3)
-  else
-    result := '???';
+  if gpreadbyowner    in mode then m := m or $0100;
+  if gpwritebyowner   in mode then m := m or $0080;
+  if gpexecutebyowner in mode then m := m or $0040;
+  if gpreadbygroup    in mode then m := m or $0020;
+  if gpwritebygroup   in mode then m := m or $0010;
+  if gpexecutebygroup in mode then m := m or $0008;
+  if gpreadbyother    in mode then m := m or $0004;
+  if gpwritebyother   in mode then m := m or $0002;
+  if gpexecutebyother in mode then m := m or $0001;
+  result := octstr(m, 3);
   {$ELSE}
   {$IFDEF MSWINDOWS}
   result := '';
@@ -237,13 +259,13 @@ begin
     result := '???';
 end;
 
-function stringtoattr(s: rawbytestring): longint;
+function stringtoattr(s: rawbytestring): tgulpattr;
 const
   a: array[0..6] of char = ('R','H','S','V','D','A','L');
 var
   i: longword;
 begin
-  result := 0;
+  result := [];
   for i  := 0 to 6 do
     if pos(a[i], uppercase(s)) > 0 then
     begin
@@ -292,8 +314,8 @@ begin
   p^.flags     := [];
   p^.mtime     := 0.0;
   p^.stime     := 0.0;
-  p^.attr      := 0;
-  p^.mode      := 0;
+  p^.attr      := [];
+  p^.mode      := [];
   p^.size      := 0;
   p^.linkname  := '';
   p^.userid    := 0;
@@ -502,8 +524,9 @@ begin
         showwarning(format(gesetmode, [p^.name]));
       {$ELSE}
       {$IFDEF MSWINDOWS}
-      if _setfileattr(p^.name, p^.attr ) <> 0 then
-        showwarning(format(gesetattributes, [p^.name]));
+      if _setfileattr(p^.name, result and (fahidden or fasysfile or
+        favolumeid or fadirectory or faarchive or fasymlink)) = -1 then
+        showwarning(format(gesetmode, [p^.name]));
       {$ELSE}
       ...
       {$ENDIF}
@@ -533,7 +556,7 @@ begin
     showwarning(format(gesetmode, [p^.name]));
   {$ELSE}
   {$IFDEF MSWINDOWS}
-  if _setfileattr(p^.name, p^.attr) <> 0 then
+  if _setfileattr(p^.name, p^.attrs) <> 0 then
     showwarning(format(gesetattributes, [p^.name]));
 
   if _setfiletimeutc(p^.name, p^.mtime) <> 0 then
@@ -585,10 +608,17 @@ begin
       libwrite(outstream, list[i]);
 
     for i := 0 to list.count - 1 do
+      {$IFDEF LINUX}
       if fileissymlink(list[i]^.attr) then
       begin
         list[i]^.linkname := _getsymlink(list[i]^.name);
       end else
+      {$ELSE}
+      {$IFDEF MSWINDOWS}
+      {$ELSE}
+      ...
+      {$ENDIF}
+      {$ENDIF}
       if fileisdirectory(list[i]^.attr) then
       begin
          // nothing to do
@@ -686,6 +716,7 @@ begin
     libread(instream, p)^.version := version;
     inc(offset, itemgetsize(p));
     inc(offset, p^.offset2 - p^.offset1);
+
     if gfclose in p^.flags then
     begin
       if instream.seek(offset, sobeginning) <> offset then
@@ -718,6 +749,7 @@ begin
     libread(instream, p)^.version := version;
     inc(offset, itemgetsize(p));
     inc(offset, p^.offset2 - p^.offset1);
+
     if gfclose in p^.flags then
     begin
       if instream.seek(offset, sobeginning) <> offset then
@@ -749,6 +781,7 @@ begin
     end;
   end;
   dispose(p);
+
   if offset <> size then
     raise exception.createfmt(gebrokenarchive, ['003014']);
 end;
