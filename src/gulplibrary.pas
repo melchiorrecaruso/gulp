@@ -40,52 +40,6 @@ uses
   sysutils;
 
 type
-  { gulp flags }
-
-  tgulpflag  = (gfadd, gfdelete, gfclose);
-
-  tgulpflags = set of tgulpflag;
-
-  { gulp permissions }
-
-  tgulppermission  = (gpreadbyowner, gpwritebyowner, gpexecutebyowner,
-                      gpreadbygroup, gpwritebygroup, gpexecutebygroup,
-                      gpreadbyother, gpwritebyother, gpexecutebyother);
-
-  tgulppermissions = set of tgulppermission;
-
-  { gulp attributes }
-
-  tgulpattribute   = (gareadonly,  gahidden,  gasysfile, gavolumeid,
-                      gadirectory, gaarchive, gasymlink, galink);
-
-  tgulpattributes  = set of tgulpattribute;
-
-  { gulp item }
-
-  tgulpitem = record
-    name:       rawbytestring;
-    flags:      tgulpflags;
-    mtime:      tdatetime;
-    stime:      tdatetime;
-    attr:       tgulpattributes;
-    mode:       tgulppermissions;
-    size:       int64;
-    linkname:   rawbytestring;
-    userid:     longint;
-    groupid:    longint;
-    username:   rawbytestring;
-    groupname:  rawbytestring;
-    comment:    rawbytestring;
-    offset1:    int64;
-    offset2:    int64;
-    checksum1:  tsha1digest;
-    checksum2:  tsha1digest;
-    version:    longint;
-  end;
-
-  pgulpitem  = ^tgulpitem;
-
   { gulp item list }
 
   tgulplist = specialize tgenericlist<pgulpitem>;
@@ -191,18 +145,6 @@ begin
     result := '???';
 end;
 
-function attrtostring(const attr: tgulpattributes): rawbytestring;
-begin
-  result := '-------';
-  if gareadonly  in attr   then result[1] := 'R';
-  if gahidden    in attr   then result[2] := 'H';
-  if gasysfile   in attr   then result[3] := 'S';
-  if gavolumeid  in attr   then result[4] := 'V';
-  if gadirectory in attr   then result[5] := 'D';
-  if gaarchive   in attr   then result[6] := 'A';
-  if gasymlink   in attr   then result[7] := 'L';
-  if galink      in attr   then result[7] := 'L';
-end;
 
 function sizetostring(const size: int64): rawbytestring;
 begin
@@ -259,29 +201,7 @@ begin
     result := '???';
 end;
 
-function stringtoattr(s: rawbytestring): tgulpattr;
-const
-  a: array[0..6] of char = ('R','H','S','V','D','A','L');
-var
-  i: longword;
-begin
-  result := [];
-  for i  := 0 to 6 do
-    if pos(a[i], uppercase(s)) > 0 then
-    begin
-      if a[i] = 'R' then result := result or fareadonly;
-      if a[i] = 'H' then result := result or fahidden;
-      if a[i] = 'S' then result := result or fasysfile;
-      if a[i] = 'V' then result := result or favolumeid;
-      if a[i] = 'D' then result := result or fadirectory;
-      if a[i] = 'A' then result := result or faarchive;
-      if a[i] = 'L' then result := result or fasymlink;
-      delete(s, pos(a[i], uppercase(s)),  1);
-    end;
 
-  if s <> '' then
-    raise exception.createfmt(gereadstream, ['004001']);
-end;
 
 function stringtomode(const s: rawbytestring): longint;
 {$IFDEF LINUX}
@@ -492,7 +412,7 @@ begin
   if (outpath <> '') and (forcedirectories(outpath) = false) then
     raise exception.createfmt(gecreatepath, [outpath]);
 
-  if fileissymlink(p^.attr) then
+  if fileissymlink(gasymlink in p^.attr) then
   begin
     {$IFDEF LINUX}
     gulpscanner.deleteany(p^.name);

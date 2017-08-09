@@ -1,6 +1,6 @@
 { Description: Common routines unit.
 
-  Copyright (C) 2014-2016 Melchiorre Caruso <melchiorrecaruso@gmail.com>
+  Copyright (C) 2014-2017 Melchiorre Caruso <melchiorrecaruso@gmail.com>
 
   This source is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free
@@ -26,9 +26,56 @@ unit gulpcommon;
 interface
 
 uses
+  sha1,
   sysutils;
 
 type
+  { gulp flags }
+
+  tgulpflag  = (gfadd, gfdelete, gfclose);
+
+  tgulpflags = set of tgulpflag;
+
+  { gulp permissions }
+
+  tgulppermission  = (gpreadbyowner, gpwritebyowner, gpexecutebyowner,
+                      gpreadbygroup, gpwritebygroup, gpexecutebygroup,
+                      gpreadbyother, gpwritebyother, gpexecutebyother);
+
+  tgulppermissions = set of tgulppermission;
+
+  { gulp attributes }
+
+  tgulpattribute   = (gareadonly,  gahidden,  gasysfile, gavolumeid,
+                      gadirectory, gaarchive, gasymlink, galink);
+
+  tgulpattributes  = set of tgulpattribute;
+
+  { gulp item }
+
+  tgulpitem = record
+    name:       rawbytestring;
+    flags:      tgulpflags;
+    mtime:      tdatetime;
+    stime:      tdatetime;
+    attr:       tgulpattributes;
+    mode:       tgulppermissions;
+    size:       int64;
+    linkname:   rawbytestring;
+    userid:     longint;
+    groupid:    longint;
+    username:   rawbytestring;
+    groupname:  rawbytestring;
+    comment:    rawbytestring;
+    offset1:    int64;
+    offset2:    int64;
+    checksum1:  tsha1digest;
+    checksum2:  tsha1digest;
+    version:    longint;
+  end;
+
+  pgulpitem  = ^tgulpitem;
+
   { gulp interface events }
 
    tgulpshowmessage = procedure(const message: rawbytestring) of object;
@@ -59,13 +106,45 @@ type
 
   { common routines }
 
+  function getattributes(attr: longint): tgulpattributes; overload;
+  function getattributes(attr: tgulpattributes): longint; overload;
+  function getattributes(var sr: tsearchrec): tgulpattributes; overload;
+  function getattributes(var sr: tsearchrec): longint; overload;
+  function getattributes(const filename: rawbytestring): tgulpattributes; overload;
+  function getattributes(const filename: rawbytestring): longint; overload;
+  function getattributes(attr: longint): rawbytestring; overload;
+  function getattributes(attr: rawbytestring): longint; overload;
+
+
+
+
+  function setattributes(const filename: rawbytestring; attr: tgulpattributes): tgulpattributes; overload;
+  function setattributes(const filename: rawbytestring; attr: longint): longint; overload;
+
+
+
+
+
+
+  function  attributestoosattr(attr: tgulpattributes): longint;
+
+
+
+
+
+  function  osattrtoattributes(attr: longint): tgulpattributes;
+  function  osattrtostring    (attr: longint): rawbytestring;
+
+  function  permissionstoosmode(p: tgulppermissions): longint;
+  function  osmodetopermissions(p: longint): tgulppermissions;
+
+
+
   function _getfiletimeutc(var sr: tsearchrec): tdatetime; overload;
   function _getfiletimeutc(const filename: rawbytestring): tdatetime; overload;
   function _setfiletimeutc(const filename: rawbytestring; timeutc: tdatetime): longint;
 
-  function _getfileattr(const filename: rawbytestring): longint; overload;
-  function _getfileattr(var sr: tsearchrec): longint; overload;
-  function _setfileattr(const filename: rawbytestring; attr: longint): longint;
+
 
   function _getfilesize(var sr: tsearchrec): int64; overload;
   function _getfilesize(const filename: rawbytestring): int64; overload;
@@ -73,6 +152,7 @@ type
   function _getsymlink(const filename: rawbytestring): rawbytestring;
   function _setsymlink(const filename, linkname: rawbytestring): longint;
 
+  function _getfilemode(const filename: rawbytestring): tgulppermissions;
   function _getfilemode(const filename: rawbytestring): longint;
   function _setfilemode(const filename: rawbytestring; mode: longint): longint;
 
@@ -85,13 +165,17 @@ type
   function _getfileusername (const filename: rawbytestring): rawbytestring;
   function _getfilegroupname(const filename: rawbytestring): rawbytestring;
 
-  function fileissymlink  (attr: longint): boolean;
-  function fileisdirectory(attr: longint): boolean;
-  function fileisregular  (attr: longint): boolean;
+  function fileissymlink  (attr: longint): boolean; overload;
+  function fileisdirectory(attr: longint): boolean; overload;
+  function fileisregular  (attr: longint): boolean; overload;
 
-  function fileissymlink  (const filename: rawbytestring): boolean;
-  function fileisdirectory(const filename: rawbytestring): boolean;
-  function fileisregular  (const filename: rawbytestring): boolean;
+  function fileissymlink  (attr: tgulpattributes): boolean; overload;
+  function fileisdirectory(attr: tgulpattributes): boolean; overload;
+  function fileisregular  (attr: tgulpattributes): boolean; overload;
+
+  function fileissymlink  (const filename: rawbytestring): boolean; overload;
+  function fileisdirectory(const filename: rawbytestring): boolean; overload;
+  function fileisregular  (const filename: rawbytestring): boolean; overload;
 
   function isabsolutepath(const pathname: rawbytestring): boolean;
 
@@ -165,6 +249,123 @@ end;
 
 { common routines }
 
+function getattributes(attr: longint): tgulpattributes;
+begin
+  result :=[];
+  if fareadonly  and attr <> 0 then include(result, gareadonly);
+  if fahidden    and attr <> 0 then include(result, gahidden);
+  if fasysfile   and attr <> 0 then include(result, gasysfile);
+  if favolumeid  and attr <> 0 then include(result, gavolumeid);
+  if fadirectory and attr <> 0 then include(result, gadirectory);
+  if faarchive   and attr <> 0 then include(result, gaarchive);
+  if fasymlink   and attr <> 0 then include(result, gasymlink);
+end;
+
+function getattributes(attr: tgulpattributes): longint;
+begin
+  result := 0;
+  if gareadonly  in attr then result := result or fareadonly;
+  if gahidden    in attr then result := result or fahidden;
+  if gasysfile   in attr then result := result or fasysfile;
+  if gavolumeid  in attr then result := result or favolumeid;
+  if gadirectory in attr then result := result or fadirectory;
+  if gaarchive   in attr then result := result or faarchive;
+  if gasymlink   in attr then result := result or fasymlink;
+end;
+
+function getattributes(var sr: tsearchrec): longint;
+begin
+  result := sr.attr;
+end;
+
+function getattributes(var sr: tsearchrec): tgulpattributes;
+begin
+  result := getattributes(sr.attr);
+end;
+
+function getattributes(const filename: rawbytestring): longint;
+var
+  sr: tsearchrec;
+begin
+  result := 0;
+  if sysutils.findfirst(filename, fareadonly or fahidden or fasysfile or
+    favolumeid or fadirectory or faarchive or fasymlink or faanyfile, sr) = 0 then
+      result := sr.attr;
+  sysutils.findclose(sr);
+end;
+
+function getattributes(const filename: rawbytestring): tgulpattributes;
+var
+  sr: tsearchrec;
+begin
+  result := [];
+  if sysutils.findfirst(filename, fareadonly or fahidden or fasysfile or
+    favolumeid or fadirectory or faarchive or fasymlink or faanyfile, sr) = 0 then
+      result := getattributes(sr.attr);
+  sysutils.findclose(sr);
+end;
+
+function getattributes(attr: longint): rawbytestring;
+begin
+  result := '-------';
+  if fareadonly  and attr <> 0 then result[1] := 'R';
+  if fahidden    and attr <> 0 then result[2] := 'H';
+  if fasysfile   and attr <> 0 then result[3] := 'S';
+  if favolumeid  and attr <> 0 then result[4] := 'V';
+  if fadirectory and attr <> 0 then result[5] := 'D';
+  if faarchive   and attr <> 0 then result[6] := 'A';
+  if fasymlink   and attr <> 0 then result[7] := 'L';
+end;
+
+function getattributes(attr: rawbytestring): longint;
+const
+  a: array[0..6] of char = ('R','H','S','V','D','A','L');
+var
+  i: longword;
+begin
+  result := 0;
+  for i  := 0 to 7 do
+    if pos(a[i], uppercase(s)) > 0 then
+    begin
+      if a[i] = 'R' then result := result or fareadonly;
+      if a[i] = 'H' then result := result or fahidden;
+      if a[i] = 'S' then result := result or fasysfile;
+      if a[i] = 'V' then result := result or favolumeid;
+      if a[i] = 'D' then result := result or fadirectory;
+      if a[i] = 'A' then result := result or faarchive;
+      if a[i] = 'L' then result := result or fasymlink;
+    end;
+
+  if s <> '' then
+    raise exception.createfmt(gereadstream, ['005001']);
+end;
+
+
+
+
+
+
+function  osattrtoattributes(a: longint): tgulpattributes;
+begin
+
+
+end;
+
+function  permissionstoosmode(p: tgulppermissions): longint;
+begin
+
+end;
+
+function  osmodetopermissions(p: longint): tgulppermissions;
+begin
+
+end;
+
+
+
+
+
+
 function _getfiletimeutc(var sr: tsearchrec): tdatetime;
 begin
   result := localtime2universal(filedatetodatetime(sr.time));
@@ -199,6 +400,10 @@ begin
   end;
 end;
 
+
+
+
+
 function _getfileattr(var sr: tsearchrec): longint;
 begin
   result := sr.attr;
@@ -214,6 +419,9 @@ begin
       result := _getfileattr(sr);
   sysutils.findclose(sr);
 end;
+
+
+
 
 function _setfileattr(const filename: rawbytestring; attr: longint): longint;
 begin
