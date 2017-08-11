@@ -131,95 +131,9 @@ const
     68,233,72,6,60,107,74,16,223,55,134,75,20,207);
 
   gulpdescription =
-    'GULP v0.4 journaling archiver, copyright (c) 2014-2017 Melchiorre Caruso.'
+    'GULP v0.6 journaling archiver, copyright (c) 2014-2017 Melchiorre Caruso.'
     + lineending +
     'GULP archiver for user-level incremental backups with rollback capability.';
-
-{ usefull routines }
-
-function versiontostring(const version: longint): rawbytestring;
-begin
-  if version <> -1 then
-    result := inttostr(version)
-  else
-    result := '???';
-end;
-
-
-function sizetostring(const size: int64): rawbytestring;
-begin
-  if size <> -1 then
-    result := format('%u', [size])
-  else
-    result := '???';
-end;
-
-function timetostring(const t: tdatetime): rawbytestring;
-begin
-  if t <> -1 then
-    result := formatdatetime(
-      defaultformatsettings.longdateformat + ' ' +
-      defaultformatsettings.longtimeformat, t)
-  else
-    result := '???';
-end;
-
-function modetostring(const mode: tgulppermissions): rawbytestring;
-{$IFDEF LINUX}
-var
-  m: longint = 0;
-{$ENDIF}
-begin
-  {$IFDEF LINUX}
-  if gpreadbyowner    in mode then m := m or $0100;
-  if gpwritebyowner   in mode then m := m or $0080;
-  if gpexecutebyowner in mode then m := m or $0040;
-  if gpreadbygroup    in mode then m := m or $0020;
-  if gpwritebygroup   in mode then m := m or $0010;
-  if gpexecutebygroup in mode then m := m or $0008;
-  if gpreadbyother    in mode then m := m or $0004;
-  if gpwritebyother   in mode then m := m or $0002;
-  if gpexecutebyother in mode then m := m or $0001;
-  result := octstr(m, 3);
-  {$ELSE}
-  {$IFDEF MSWINDOWS}
-  result := '';
-  {$ELSE}
-  ...
-  {$ENDIF}
-  {$ENDIF}
-end;
-
-function flagstostring(const f: tgulpflags): rawbytestring;
-begin
-  if (gfadd in f) then
-    result := 'ADD'
-  else
-  if (gfdelete in f) then
-    result := 'DEL'
-  else
-    result := '???';
-end;
-
-
-
-function stringtomode(const s: rawbytestring): longint;
-{$IFDEF LINUX}
-var
-  i: longint;
-{$ENDIF}
-begin
-  result := 0;
-  {$IFDEF LINUX}
-  for i := 1 to length(s) do
-    result := result * 8 + strtoint(copy(s, i, 1));
-  {$ELSE}
-  {$IFDEF MSWINDOWS}
-  {$ELSE}
-  ...
-  {$ENDIF}
-  {$ENDIF}
-end;
 
 { internal routines }
 

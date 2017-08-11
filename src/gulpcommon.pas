@@ -106,20 +106,24 @@ type
 
   { common routines }
 
-  function getattributes(attr: longint): tgulpattributes; overload;
-  function getattributes(attr: tgulpattributes): longint; overload;
-  function getattributes(var sr: tsearchrec): tgulpattributes; overload;
-  function getattributes(var sr: tsearchrec): longint; overload;
-  function getattributes(const filename: rawbytestring): tgulpattributes; overload;
-  function getattributes(const filename: rawbytestring): longint; overload;
-  function getattributes(attr: longint): rawbytestring; overload;
-  function getattributes(attr: rawbytestring): longint; overload;
+  function getversion(const version: longint): rawbytestring;
+  function getsizetostring(const size: int64): rawbytestring;
+  function gettime(const t: tdatetime): rawbytestring;
+  function getmode(const s: rawbytestring): longint;
+  function getmode(const mode: tgulppermissions): rawbytestring;
+  function getflags(const flags: tgulpflags): rawbytestring;
 
+  function getattributes1(attr: tgulpattributes): longint;
+  function getattributes1(attr: longint): tgulpattributes;
+  function getattributes2(var sr: tsearchrec): longint;
+  function getattributes2(var sr: tsearchrec): tgulpattributes;
+  function getattributes3(const filename: rawbytestring): longint;
+  function getattributes3(const filename: rawbytestring): tgulpattributes;
+  function getattributes4(attr: rawbytestring): longint;
+  function getattributes4(attr: longint): rawbytestring;
 
-
-
-  function setattributes(const filename: rawbytestring; attr: tgulpattributes): tgulpattributes; overload;
-  function setattributes(const filename: rawbytestring; attr: longint): longint; overload;
+  function setattributes(const filename: rawbytestring; attr: tgulpattributes): tgulpattributes;
+  function setattributes(const filename: rawbytestring; attr: longint): longint;
 
 
 
@@ -200,7 +204,8 @@ uses
   {$IFDEF MSWINDOWS}
   windows,
   {$ENDIF}
-  gulpfixes;
+  gulpfixes,
+  gulpmessages;
 
 const
   hexadecimals: array [0..15] of char = '0123456789ABCDEF';
@@ -249,19 +254,88 @@ end;
 
 { common routines }
 
-function getattributes(attr: longint): tgulpattributes;
+function getversion(const version: longint): rawbytestring;
 begin
-  result :=[];
-  if fareadonly  and attr <> 0 then include(result, gareadonly);
-  if fahidden    and attr <> 0 then include(result, gahidden);
-  if fasysfile   and attr <> 0 then include(result, gasysfile);
-  if favolumeid  and attr <> 0 then include(result, gavolumeid);
-  if fadirectory and attr <> 0 then include(result, gadirectory);
-  if faarchive   and attr <> 0 then include(result, gaarchive);
-  if fasymlink   and attr <> 0 then include(result, gasymlink);
+  if version <> -1 then
+    result := inttostr(version)
+  else
+    result := '???';
 end;
 
-function getattributes(attr: tgulpattributes): longint;
+function getsize(const size: int64): rawbytestring;
+begin
+  if size <> -1 then
+    result := format('%u', [size])
+  else
+    result := '???';
+end;
+
+function gettime(const t: tdatetime): rawbytestring;
+begin
+  if t <> -1 then
+    result := formatdatetime(
+      defaultformatsettings.longdateformat + ' ' +
+      defaultformatsettings.longtimeformat, t)
+  else
+    result := '???';
+end;
+
+function getmode(const s: rawbytestring): longint;
+{$IFDEF LINUX}
+var
+  i: longint;
+{$ENDIF}
+begin
+  result := 0;
+  {$IFDEF LINUX}
+  for i := 1 to length(s) do
+    result := result * 8 + strtoint(copy(s, i, 1));
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
+  {$ELSE}
+  ...
+  {$ENDIF}
+  {$ENDIF}
+end;
+
+function getmode(const mode: tgulppermissions): rawbytestring;
+{$IFDEF LINUX}
+var
+  m: longint = 0;
+{$ENDIF}
+begin
+  {$IFDEF LINUX}
+  if gpreadbyowner    in mode then m := m or $0100;
+  if gpwritebyowner   in mode then m := m or $0080;
+  if gpexecutebyowner in mode then m := m or $0040;
+  if gpreadbygroup    in mode then m := m or $0020;
+  if gpwritebygroup   in mode then m := m or $0010;
+  if gpexecutebygroup in mode then m := m or $0008;
+  if gpreadbyother    in mode then m := m or $0004;
+  if gpwritebyother   in mode then m := m or $0002;
+  if gpexecutebyother in mode then m := m or $0001;
+  result := octstr(m, 3);
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
+  result := '';
+  {$ELSE}
+  ...
+  {$ENDIF}
+  {$ENDIF}
+end;
+
+function getflags(const flags: tgulpflags): rawbytestring;
+begin
+  if (gfadd in flags) then
+    result := 'ADD'
+  else
+  if (gfdelete in flags) then
+    result := 'DEL'
+  else
+    result := '???';
+end;
+
+function getattributes1(attr: tgulpattributes): longint;
 begin
   result := 0;
   if gareadonly  in attr then result := result or fareadonly;
@@ -273,17 +347,29 @@ begin
   if gasymlink   in attr then result := result or fasymlink;
 end;
 
-function getattributes(var sr: tsearchrec): longint;
+function getattributes1(attr: longint): tgulpattributes;
+begin
+  result :=[];
+  if fareadonly  and attr <> 0 then include(result, gareadonly);
+  if fahidden    and attr <> 0 then include(result, gahidden);
+  if fasysfile   and attr <> 0 then include(result, gasysfile);
+  if favolumeid  and attr <> 0 then include(result, gavolumeid);
+  if fadirectory and attr <> 0 then include(result, gadirectory);
+  if faarchive   and attr <> 0 then include(result, gaarchive);
+  if fasymlink   and attr <> 0 then include(result, gasymlink);
+end;
+
+function getattributes2(var sr: tsearchrec): longint;
 begin
   result := sr.attr;
 end;
 
-function getattributes(var sr: tsearchrec): tgulpattributes;
+function getattributes2(var sr: tsearchrec): tgulpattributes;
 begin
-  result := getattributes(sr.attr);
+  result := getattributes1(sr.attr);
 end;
 
-function getattributes(const filename: rawbytestring): longint;
+function getattributes3(const filename: rawbytestring): longint;
 var
   sr: tsearchrec;
 begin
@@ -294,18 +380,12 @@ begin
   sysutils.findclose(sr);
 end;
 
-function getattributes(const filename: rawbytestring): tgulpattributes;
-var
-  sr: tsearchrec;
+function getattributes3(const filename: rawbytestring): tgulpattributes;
 begin
-  result := [];
-  if sysutils.findfirst(filename, fareadonly or fahidden or fasysfile or
-    favolumeid or fadirectory or faarchive or fasymlink or faanyfile, sr) = 0 then
-      result := getattributes(sr.attr);
-  sysutils.findclose(sr);
+  result := getattributes1(getattributes3(filename));
 end;
 
-function getattributes(attr: longint): rawbytestring;
+function getattributes4(attr: longint): rawbytestring;
 begin
   result := '-------';
   if fareadonly  and attr <> 0 then result[1] := 'R';
@@ -317,15 +397,15 @@ begin
   if fasymlink   and attr <> 0 then result[7] := 'L';
 end;
 
-function getattributes(attr: rawbytestring): longint;
+function getattributes4(attr: rawbytestring): longint;
 const
   a: array[0..6] of char = ('R','H','S','V','D','A','L');
 var
   i: longword;
 begin
   result := 0;
-  for i  := 0 to 7 do
-    if pos(a[i], uppercase(s)) > 0 then
+  for i  := 0 to 6 do
+    if pos(a[i], uppercase(attr)) > 0 then
     begin
       if a[i] = 'R' then result := result or fareadonly;
       if a[i] = 'H' then result := result or fahidden;
@@ -334,32 +414,37 @@ begin
       if a[i] = 'D' then result := result or fadirectory;
       if a[i] = 'A' then result := result or faarchive;
       if a[i] = 'L' then result := result or fasymlink;
+      delete(attr, pos(a[i], uppercase(attr)),  1);
     end;
 
-  if s <> '' then
-    raise exception.createfmt(gereadstream, ['005001']);
+  if attr <> '' then
+    raise exception.createfmt(gereadstream, ['006001']);
 end;
 
+function setattributes(const filename: rawbytestring; attr: longint): longint;
+begin
+  result := -1;
+  if attr <> -1 then
+  begin
+    {$IFDEF LINUX}
+    {$ELSE}
+    {$IFDEF MSWINDOWS}
+    result := filesetattr(filename, attr);
+    {$ELSE}
+    ...
+    {$ENDIF}
+    {$ENDIF}
+  end;
+end;
 
-
-
-
-
-function  osattrtoattributes(a: longint): tgulpattributes;
+function setattributes(const filename: rawbytestring; attr: tgulpattributes): tgulpattributes;
 begin
 
 
 end;
 
-function  permissionstoosmode(p: tgulppermissions): longint;
-begin
 
-end;
 
-function  osmodetopermissions(p: longint): tgulppermissions;
-begin
-
-end;
 
 
 
@@ -404,40 +489,14 @@ end;
 
 
 
-function _getfileattr(var sr: tsearchrec): longint;
-begin
-  result := sr.attr;
-end;
-
-function _getfileattr(const filename: rawbytestring): longint;
-var
-  sr: tsearchrec;
-begin
-  result := -1;
-  if sysutils.findfirst(filename, fareadonly or fahidden or fasysfile or
-    favolumeid or fadirectory or faarchive or fasymlink or faanyfile, sr) = 0 then
-      result := _getfileattr(sr);
-  sysutils.findclose(sr);
-end;
 
 
 
 
-function _setfileattr(const filename: rawbytestring; attr: longint): longint;
-begin
-  result := -1;
-  if attr <> -1 then
-  begin
-    {$IFDEF LINUX}
-    {$ELSE}
-    {$IFDEF MSWINDOWS}
-    result := filesetattr(filename, attr);
-    {$ELSE}
-    ...
-    {$ENDIF}
-    {$ENDIF}
-  end;
-end;
+
+
+
+
 
 function _getfilesize(var sr: tsearchrec): int64;
 begin
