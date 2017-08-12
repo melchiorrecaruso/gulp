@@ -121,9 +121,8 @@ type
   function getattributes3(const filename: rawbytestring): tgulpattributes;
   function getattributes4(attr: rawbytestring): longint;
   function getattributes4(attr: longint): rawbytestring;
-
-  function setattributes(const filename: rawbytestring; attr: tgulpattributes): tgulpattributes;
-  function setattributes(const filename: rawbytestring; attr: longint): longint;
+  function setattributes (const filename: rawbytestring; attr: tgulpattributes): longint;
+  function setattributes (const filename: rawbytestring; attr: longint): longint;
 
   { common mode routines }
 
@@ -133,9 +132,8 @@ type
   function getmode3(const filename: rawbytestring): tgulppermissions;
   function getmode4(const mode: rawbytestring): longint;
   function getmode4(const mode: tgulppermissions): rawbytestring;
-
-  function setmode(const filename: rawbytestring; mode: longint): longint;
-  function setmode(const filename: rawbytestring; mode: tgulppermissions): tgulppermissions;
+  function setmode (const filename: rawbytestring; mode: longint): longint;
+  function setmode (const filename: rawbytestring; mode: tgulppermissions): longint;
 
   { common size routines }
 
@@ -143,20 +141,11 @@ type
   function getsize3(const filename: rawbytestring): int64;
   function getsize4(const size: int64): rawbytestring;
 
+   { common time routines }
 
-
-
-  function  osattrtoattributes(attr: longint): tgulpattributes;
-  function  osattrtostring    (attr: longint): rawbytestring;
-
-  function  permissionstoosmode(p: tgulppermissions): longint;
-  function  osmodetopermissions(p: longint): tgulppermissions;
-
-
-
-  function _getfiletimeutc(var sr: tsearchrec): tdatetime; overload;
-  function _getfiletimeutc(const filename: rawbytestring): tdatetime; overload;
-  function _setfiletimeutc(const filename: rawbytestring; timeutc: tdatetime): longint;
+  function gettimeutc2(var sr: tsearchrec): tdatetime;
+  function gettimeutc3(const filename: rawbytestring): tdatetime;
+  function settimeutc (const filename: rawbytestring; timeutc: tdatetime): longint;
 
 
 
@@ -335,9 +324,9 @@ var
   sr: tsearchrec;
 begin
   result := 0;
-  if sysutils.findfirst(filename, fareadonly or fahidden or fasysfile or
-    favolumeid or fadirectory or faarchive or fasymlink or faanyfile, sr) = 0 then
-      result := sr.attr;
+  if sysutils.findfirst(filename,
+    fareadonly  or fahidden  or fasysfile or favolumeid or
+    fadirectory or faarchive or fasymlink or faanyfile, sr) = 0 then result := sr.attr;
   sysutils.findclose(sr);
 end;
 
@@ -395,9 +384,9 @@ begin
   {$ENDIF}
 end;
 
-function setattributes(const filename: rawbytestring; attr: tgulpattributes): tgulpattributes;
+function setattributes(const filename: rawbytestring; attr: tgulpattributes): longint;
 begin
-  result := getattributes1(setattributes(filename, getattributes1(attr)));
+  result := setattributes(filename, getattributes1(attr));
 end;
 
 { common modes routines }
@@ -497,7 +486,7 @@ end;
 
 function setmode(const filename: rawbytestring; mode: longint): longint;
 begin
-  result := 0;
+  result := -1;
   {$IFDEF LINUX}
   if fileissymlink(filename) = false then
     result := fpchmod(filename, mode);
@@ -509,9 +498,9 @@ begin
   {$ENDIF}
 end;
 
-function setmode(const filename: rawbytestring; mode: tgulppermissions): tgulppermissions;
+function setmode(const filename: rawbytestring; mode: tgulppermissions): longint;
 begin
-  result := getmode1(setmode(filename, getmode1(mode)));;
+  result := setmode(filename, getmode1(mode));
 end;
 
 { common size routines }
@@ -529,9 +518,9 @@ var
   sr: tsearchrec;
 begin
   result := 0;
-  if sysutils.findfirst(filename, fareadonly or fahidden or fasysfile or
-    favolumeid or fadirectory or faarchive or fasymlink or faanyfile, sr) = 0 then
-      result := _getfilesize(sr);
+  if sysutils.findfirst(filename,
+    fareadonly  or fahidden  or fasysfile or favolumeid or
+    fadirectory or faarchive or fasymlink or faanyfile, sr) = 0 then result := getsize2(sr);
   sysutils.findclose(sr);
 end;
 
@@ -543,6 +532,11 @@ begin
     result := '???';
 end;
 
+{ common time routines }
+
+function gettimeutc2(var sr: tsearchrec): tdatetime;
+function gettimeutc3(const filename: rawbytestring): tdatetime;
+function settimeutc (const filename: rawbytestring; timeutc: tdatetime): longint;
 
 
 

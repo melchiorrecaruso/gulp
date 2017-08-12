@@ -143,8 +143,8 @@ override_dh_auto_install:
         <IsPartOfProject Value="True"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="492"/>
-        <CursorPos X="21" Y="543"/>
+        <TopLine Value="458"/>
+        <CursorPos X="83" Y="539"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit3>
