@@ -79,23 +79,29 @@ type
     with tgulpitem(p^) do
       if gfadd in flags then
       begin
-        if fileisdirectory(attr) then
+        if isdirectory02(attr) then
           writeln(format('%4s %3s %3s %7s %19s %12s %s',
-            [versiontostring(version), flagstostring(flags),modetostring(mode),
-            attrtostring(attr), timetostring(universaltime2local(mtime)),
-            '', name]))
+            [getversion(version),
+             getflags(flags),
+             getmode06(getmode01(mode)),
+             getattributes07(getattributes01(attr)),
+             gettimeutc03(universaltime2local(mtime)),
+             '', name]))
         else
           writeln(format('%4s %3s %3s %7s %19s %12s %s',
-            [versiontostring(version), flagstostring(flags), modetostring(mode),
-            attrtostring(attr), timetostring(universaltime2local(mtime)),
-            sizetostring(size), name]));
+            [getversion(version),
+             getflags(flags),
+             getmode06(getmode01(mode)),
+             getattributes07(getattributes01(attr)),
+             gettimeutc03(universaltime2local(mtime)),
+             getsize03(size), name]));
       end else
-      if fileisdirectory(attr) then
+      if isdirectory02(attr) then
         writeln(format('%4s %3s %3s %7s %19s %12s %s',
-          [versiontostring(version), flagstostring(flags), '', '', '', '', name]))
+          [getversion(version), getflags(flags), '', '', '', '', name]))
       else
         writeln(format('%4s %3s %3s %7s %19s %12s %s',
-          [versiontostring(version), flagstostring(flags), '', '', '', '', name]));
+          [getversion(version), getflags(flags), '', '', '', '', name]));
   end;
 
   procedure tshellapplication.run;
@@ -130,11 +136,11 @@ type
         end;
         if hasoption('', '--excludeattr') = true then
         begin
-          app.excludeattr := stringtoattr(getoptionvalue('', '--excludeattr'));
+          app.excludeattr := getattributes08(getoptionvalue('', '--excludeattr'));
         end;
         if hasoption('', '--excludemode') = true then
         begin
-          app.excludemode := stringtomode(getoptionvalue('', '--excludemode'));
+          app.excludemode := getmode05(getoptionvalue('', '--excludemode'));
         end;
         if hasoption('-i', '--include') = true then
         begin

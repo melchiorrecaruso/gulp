@@ -1,6 +1,6 @@
 { Description: Messages unit.
 
-  Copyright (C) 2014-2016 Melchiorre Caruso <melchiorrecaruso@gmail.com>
+  Copyright (C) 2014-2017 Melchiorre Caruso <melchiorrecaruso@gmail.com>
 
   This source is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free
@@ -42,6 +42,8 @@ const
   gesetgroupid      = 'Unable to set groupid for "%s"';
 
   gesetmode         = 'Unable to set mode for "%s"';
+  gegetmode         = 'Unable to get mode for "%s"';
+  gegetattributes   = 'Unable to get attributes for "%s"';
   gesetattributes   = 'Unable to set attributes for "%s"';
   gesetdatetime     = 'Unable to set date for "%s"';
   gerestoreitem     = 'Unable to restore item "%s"';
@@ -77,7 +79,18 @@ const
   gmlistfinish      = 'Finished (%u listed items)';
   gmlistlastversion = 'Lastest version %u';
 
+
+  procedure raiseexception(const m, n: rawbytestring);
+
 implementation
+
+  uses
+    sysutils;
+
+  procedure raiseexception(const m, n: rawbytestring);
+  begin
+    raise exception.createfmt(m, [n]);
+  end;
 
 end.
 

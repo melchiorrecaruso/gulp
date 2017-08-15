@@ -106,17 +106,6 @@ type
     property untilversion: longword read funtilversion write funtilversion;
   end;
 
-{ usefull routines }
-
-function versiontostring(const version: longint): rawbytestring;
-function attrtostring   (const attr: longint): rawbytestring;
-function sizetostring   (const size: int64): rawbytestring;
-function timetostring   (const t: tdatetime): rawbytestring;
-function modetostring   (const mode: longint): rawbytestring;
-function flagstostring  (const f: tgulpflags): rawbytestring;
-
-function stringtoattr(s: rawbytestring): longint;
-function stringtomode(const s: rawbytestring): longint;
 
 implementation
 
@@ -326,11 +315,11 @@ begin
   if (outpath <> '') and (forcedirectories(outpath) = false) then
     raise exception.createfmt(gecreatepath, [outpath]);
 
-  if fileissymlink(gasymlink in p^.attr) then
+  if issymlink02(p^.attr) then
   begin
     {$IFDEF LINUX}
     gulpscanner.deleteany(p^.name);
-    if _setsymlink(p^.name, p^.linkname) <> 0 then
+    if setsymlink02(p^.name, p^.linkname) <> 0 then
       showwarning(format(gerestorelink, [p^.name]));
     {$ELSE}
     {$IFDEF MSWINDOWS}
@@ -341,12 +330,12 @@ begin
     {$ENDIF}
     {$ENDIF}
   end else
-  if fileisdirectory(p^.attr) then
+  if isdirectory02(p^.attr) then
   begin
-    if fileissymlink(p^.name) then
+    if issymlink03(p^.name) then
       gulpscanner.deleteany(p^.name);
 
-    if fileisdirectory(p^.name) = false then
+    if isdirectory03(p^.name) = false then
     begin
       gulpscanner.deleteany(p^.name);
       if createdir(p^.name) = false then
@@ -354,7 +343,7 @@ begin
     end else
     begin
       {$IFDEF LINUX}
-      if _setfilemode(p^.name, s_irwxo or s_irwxg or s_irwxu) <> 0 then
+      if setmode07(p^.name, s_irwxo or s_irwxg or s_irwxu) <> 0 then
         showwarning(format(gesetmode, [p^.name]));
       {$ELSE}
       {$IFDEF MSWINDOWS}
@@ -377,23 +366,23 @@ end;
 procedure tgulplibrary.librestore(p: pgulpitem);
 begin
   {$IFDEF LINUX}
-  if _setfileuserid(p^.name, p^.userid) <> 0 then
+  if setuserid02(p^.name, p^.userid) <> 0 then
     showwarning(format(gesetuserid, [p^.name]));
 
-  if _setfilegroupid(p^.name, p^.groupid) <> 0 then
+  if setgroupid02(p^.name, p^.groupid) <> 0 then
     showwarning(format(gesetgroupid, [p^.name]));
 
-  if _setfiletimeutc(p^.name, p^.mtime) <> 0 then
+  if settimeutc04(p^.name, p^.mtime) <> 0 then
     showwarning(format(gesetdatetime, [p^.name]));
 
-  if _setfilemode(p^.name, p^.mode) <> 0 then
+  if setmode08(p^.name, p^.mode) <> 0 then
     showwarning(format(gesetmode, [p^.name]));
   {$ELSE}
   {$IFDEF MSWINDOWS}
-  if _setfileattr(p^.name, p^.attrs) <> 0 then
+  if setattributes(p^.name, p^.attrs) <> 0 then
     showwarning(format(gesetattributes, [p^.name]));
 
-  if _setfiletimeutc(p^.name, p^.mtime) <> 0 then
+  if settimeutc03(p^.name, p^.mtime) <> 0 then
     showwarning(format(gesetdatetime, [p^.name]));
   {$ELSE}
   ...
@@ -443,9 +432,9 @@ begin
 
     for i := 0 to list.count - 1 do
       {$IFDEF LINUX}
-      if fileissymlink(list[i]^.attr) then
+      if issymlink02(list[i]^.attr) then
       begin
-        list[i]^.linkname := _getsymlink(list[i]^.name);
+        list[i]^.linkname := getsymlink01(list[i]^.name);
       end else
       {$ELSE}
       {$IFDEF MSWINDOWS}
@@ -453,7 +442,7 @@ begin
       ...
       {$ENDIF}
       {$ENDIF}
-      if fileisdirectory(list[i]^.attr) then
+      if isdirectory02(list[i]^.attr) then
       begin
          // nothing to do
       end else
@@ -634,13 +623,12 @@ begin
   result^.name     := filename;
   result^.flags    := [gfadd];
   result^.stime    := stimeutc;
-  result^.mtime    := _getfiletimeutc(filename);
-  result^.size     := _getfilesize   (filename);
-  result^.attr     := _getfileattr   (filename);
-  result^.mode     := _getfilemode   (filename);
-//result^.linkname := _getsymlink    (filename);
-  result^.userid   := _getfileuserid (filename);
-  result^.groupid  := _getfilegroupid(filename);
+  result^.mtime    := gettimeutc02   (filename);
+  result^.attr     := getattributes06(filename);
+  result^.mode     := getmode04      (filename);
+//result^.linkname := getsymlink     (filename);
+  result^.userid   := getuserid01    (filename);
+  result^.groupid  := getgroupid01   (filename);
 end;
 
 procedure tgulplibrary.libappend(list: tgulplist; p: pgulpitem);
@@ -759,7 +747,7 @@ begin
       showmessage2(format(gmsyncitem, [scan[i]]));
       libappend(list2, libnew2(scan[i], fstimeutc));
     end else
-    if _getfiletimeutc(scan[i]) <> list1[j]^.mtime then
+    if gettimeutc02(scan[i]) <> list1[j]^.mtime then
     begin
       showmessage2(format(gmsyncitem, [scan[i]]));
       libappend(list2, libnew1(scan[i], fstimeutc));
@@ -775,7 +763,7 @@ begin
   freeandnil(stream);
   freeandnil(scan);
 
-  showmessage1(format(gmsyncfinish, [_getfilesize(filename) - size]));
+  showmessage1(format(gmsyncfinish, [getsize02(filename) - size]));
   fterminated := true;
 end;
 
@@ -805,7 +793,7 @@ begin
   begin
     j := libfind(list1, finclude[i]);
     if j <> -1 then
-      if fileisdirectory(list1[j]^.attr) then
+      if isdirectory02(list1[j]^.attr) then
         finclude.add(includetrailingpathdelimiter(finclude[i]) + '*');
   end;
   if finclude.count = 0 then
@@ -815,7 +803,7 @@ begin
   begin
     j := libfind(list1, fexclude[i]);
     if j <> -1 then
-      if fileisdirectory(list1[j]^.attr) then
+      if isdirectory02(list1[j]^.attr) then
         fexclude.add(includetrailingpathdelimiter(fexclude[i]) + '*');
   end;
   fexclude.add(filename);
@@ -837,7 +825,7 @@ begin
     if isincluded(p) and (isexcluded(p) = false) then
     begin
       j := scan.find(p^.name);
-      if (j = -1) or (_getfiletimeutc(scan[j]) <> p^.mtime) then
+      if (j = -1) or (gettimeutc02(scan[j]) <> p^.mtime) then
       begin
         showmessage2(format(gmrestoreitem, [p^.name]));
         librestore(stream, p);
@@ -893,7 +881,7 @@ begin
   freeandnil(stream);
   freeandnil(nul);
 
-  showmessage1(format(gmcheckfinish, [_getfilesize(filename)]));
+  showmessage1(format(gmcheckfinish, [getsize02(filename)]));
   fterminated := true;
 end;
 
@@ -1039,7 +1027,7 @@ begin
   begin
     j := libfind(list1, finclude[i]);
     if j <> -1 then
-      if fileisdirectory(list1[j]^.attr) then
+      if isdirectory02(list1[j]^.attr) then
         finclude.add(includetrailingpathdelimiter(finclude[i]) + '*');
   end;
   if finclude.count = 0 then
@@ -1049,7 +1037,7 @@ begin
   begin
     j := libfind(list1, fexclude[i]);
     if j <> -1 then
-      if fileisdirectory(list1[j]^.attr) then
+      if isdirectory02(list1[j]^.attr) then
         fexclude.add(includetrailingpathdelimiter(fexclude[i]) + '*');
   end;
 
@@ -1093,16 +1081,16 @@ end;
 
 function tgulpapplication.isexcluded(const item: pgulpitem): boolean;
 begin
-  result := filenamematch(item^.name, fexclude)      or
-            (item^.attr and fexcludeattr <> 0) or
-            (item^.mode and fexcludemode <> 0);
+  result := filenamematch(item^.name, fexclude)                 or
+            (getattributes01(item^.attr) and fexcludeattr <> 0) or
+            (getmode01      (item^.mode) and fexcludemode <> 0);
 end;
 
 function tgulpapplication.isexcluded(const filename: rawbytestring): boolean;
 begin
-  result := filenamematch(filename, fexclude)                   or
-            (_getfileattr(filename) and fexcludeattr <> 0) or
-            (_getfilemode(filename) and fexcludemode <> 0);
+  result := filenamematch(filename, fexclude)                 or
+            (getattributes05(filename) and fexcludeattr <> 0) or
+            (getmode03      (filename) and fexcludemode <> 0);
 end;
 
 end.

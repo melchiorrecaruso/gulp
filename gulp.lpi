@@ -115,36 +115,36 @@ override_dh_auto_install:
       <Unit0>
         <Filename Value="src/gulp.pas"/>
         <IsPartOfProject Value="True"/>
-        <TopLine Value="253"/>
-        <CursorPos X="61" Y="292"/>
+        <IsVisibleTab Value="True"/>
+        <TopLine Value="124"/>
+        <CursorPos X="39" Y="143"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
         <Filename Value="src/gulplibrary.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="2"/>
-        <TopLine Value="802"/>
-        <CursorPos X="15" Y="134"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="355"/>
+        <CursorPos X="18" Y="375"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit1>
       <Unit2>
         <Filename Value="src/gulpmessages.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="3"/>
-        <TopLine Value="18"/>
-        <CursorPos X="18" Y="21"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="19"/>
+        <CursorPos X="35" Y="45"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit2>
       <Unit3>
         <Filename Value="src/gulpcommon.pas"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="458"/>
-        <CursorPos X="83" Y="539"/>
+        <TopLine Value="108"/>
+        <CursorPos X="21" Y="131"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit3>
@@ -160,8 +160,8 @@ override_dh_auto_install:
         <Filename Value="src/gulpscanner.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="4"/>
-        <TopLine Value="85"/>
-        <CursorPos X="55" Y="104"/>
+        <TopLine Value="224"/>
+        <CursorPos X="26" Y="250"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit5>

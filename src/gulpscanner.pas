@@ -228,14 +228,14 @@ begin
 
   for i := s.count -1 downto 0 do
   begin
-    attr := _getfileattr(s[i]);
-    if fileissymlink(attr) then
+    attr := getattributes05(s[i]);
+    if issymlink01(attr) then
       deletelink(s[i])
     else
-    if fileisdirectory(attr) then
+    if isdirectory01(attr) then
       removedir(s[i])
     else
-    if fileisregular(attr) then
+    if isregular01(attr) then
       deletefile(s[i]);
   end;
   s.destroy;
@@ -247,14 +247,14 @@ function deleteany(const name: rawbytestring) : boolean;
 var
   attr: longint;
 begin
-  attr := _getfileattr(name);
-  if fileissymlink(attr) then
+  attr := getattributes05(name);
+  if issymlink01(attr) then
     result := deletelink(name)
   else
-  if fileisdirectory(attr) then
+  if isdirectory01(attr) then
     result := deletedir(name)
   else
-  if fileisregular(attr) then
+  if isregular01(attr) then
     result := deletefile(name)
   else
     result := false;
