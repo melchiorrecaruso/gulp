@@ -13,10 +13,6 @@
       <MainUnit Value="0"/>
       <Title Value="gdiff"/>
       <UseAppBundle Value="False"/>
-      <XPManifest>
-        <TextName Value="CompanyName.ProductName.AppName"/>
-        <TextDesc Value="Your application description."/>
-      </XPManifest>
     </General>
     <i18n>
       <EnableI18N LFM="False"/>
@@ -36,8 +32,9 @@
       <Unit0>
         <Filename Value="src/gdiff.pas"/>
         <IsPartOfProject Value="True"/>
-        <TopLine Value="119"/>
-        <CursorPos X="22" Y="77"/>
+        <IsVisibleTab Value="True"/>
+        <TopLine Value="74"/>
+        <CursorPos X="12" Y="93"/>
         <UsageCount Value="58"/>
         <Loaded Value="True"/>
       </Unit0>
@@ -53,7 +50,6 @@
       <Unit2>
         <Filename Value="src/gulpcommon.pas"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
         <TopLine Value="224"/>
         <CursorPos X="21" Y="233"/>
