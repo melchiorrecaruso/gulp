@@ -1,6 +1,6 @@
 { Description: Directories scanner unit.
 
-  Copyright (C) 2014-2016 Melchiorre Caruso <melchiorrecaruso@gmail.com>
+  Copyright (C) 2014-2017 Melchiorre Caruso <melchiorrecaruso@gmail.com>
 
   This source is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free
@@ -94,8 +94,9 @@ var
 begin
   path := extractfilepath(filemask);
   mask := extractfilename(filemask);
-  err  := sysutils.findfirst(path + '*', fareadonly or fahidden or fasysfile or
-    favolumeid or fadirectory or faarchive or fasymlink or faanyfile, sr);
+  err  := sysutils.findfirst(path + '*',
+    fareadonly  or fahidden  or fasysfile or favolumeid or
+    fadirectory or faarchive or fasymlink or faanyfile, sr);
   while err = 0 do
   begin
     if sr.attr and gulpnotsupported = 0 then
@@ -228,14 +229,14 @@ begin
 
   for i := s.count -1 downto 0 do
   begin
-    attr := getattributes05(s[i]);
-    if issymlink01(attr) then
+    attr := getattributes(s[i]);
+    if issymlink(attr) then
       deletelink(s[i])
     else
-    if isdirectory01(attr) then
+    if isdirectory(attr) then
       removedir(s[i])
     else
-    if isregular01(attr) then
+    if isregular(attr) then
       deletefile(s[i]);
   end;
   s.destroy;
@@ -247,14 +248,14 @@ function deleteany(const name: rawbytestring) : boolean;
 var
   attr: longint;
 begin
-  attr := getattributes05(name);
-  if issymlink01(attr) then
+  attr := getattributes(name);
+  if issymlink(attr) then
     result := deletelink(name)
   else
-  if isdirectory01(attr) then
+  if isdirectory(attr) then
     result := deletedir(name)
   else
-  if isregular01(attr) then
+  if isregular(attr) then
     result := deletefile(name)
   else
     result := false;

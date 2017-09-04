@@ -1,6 +1,6 @@
 { Description: Lists unit.
 
-  Copyright (C) 2014-2016 Melchiorre Caruso <melchiorrecaruso@gmail.com>
+  Copyright (C) 2014-2017 Melchiorre Caruso <melchiorrecaruso@gmail.com>
 
   This source is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free
@@ -164,14 +164,14 @@ end;
 
 function compare(item1, item2: prawbytestringitem): longint;
 begin
-{$IFDEF UNIX}
+  {$IFDEF UNIX}
   result := ansicomparestr(item1^.fstring, item2^.fstring);
-{$ELSE}
-{$IFDEF MSWINDOWS}
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
   result := ansicomparetext(item1^.fstring, item2^.fstring);
-{$ELSE}
-{$ENDIF}
-{$ENDIF}
+  {$ELSE}
+  {$ENDIF}
+  {$ENDIF}
 end;
 
 constructor trawbytestringlist.create;

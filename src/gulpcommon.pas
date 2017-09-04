@@ -106,75 +106,70 @@ type
 
   { common routines }
 
-  function getversion(const version: longint): rawbytestring;
-  function getflags  (const flags: tgulpflags): rawbytestring;
+  function version2str(const version: longint): rawbytestring;
+  function flags2str  (const flags: tgulpflags): rawbytestring;
 
   { common attributes routines }
 
-  function getattributes01(attr: tgulpattributes): longint;
-  function getattributes02(attr: longint): tgulpattributes;
-  function getattributes03(var sr: tsearchrec): longint;
-  function getattributes04(var sr: tsearchrec): tgulpattributes;
-  function getattributes05(const filename: rawbytestring): longint;
-  function getattributes06(const filename: rawbytestring): tgulpattributes;
-  function getattributes07(attr: longint): rawbytestring;
-  function getattributes08(attr: rawbytestring): longint;
-  function setattributes09(const filename: rawbytestring; attr: longint): longint;
-  function setattributes10(const filename: rawbytestring; attr: tgulpattributes): longint;
+  function l2sattributes (attr: tgulpattributes): longint;
+  function s2lattributes (attr: longint): tgulpattributes;
+  function getattributes (var sr: tsearchrec): longint;
+  function getattributes (const filename: rawbytestring): longint;
+  function setattributes (const filename: rawbytestring; attr: longint): longint;
+  function attributes2str(attr: longint): rawbytestring;
+  function str2attributes(attr: rawbytestring): longint;
 
   { common mode routines }
 
-  function getmode01(mode: tgulppermissions): longint;
-  function getmode02(mode: longint): tgulppermissions;
-  function getmode03(const filename: rawbytestring): longint;
-  function getmode04(const filename: rawbytestring): tgulppermissions;
-  function getmode05(const mode: rawbytestring): longint;
-  function getmode06(const mode: longint): rawbytestring;
-  function setmode07(const filename: rawbytestring; mode: longint): longint;
-  function setmode08(const filename: rawbytestring; mode: tgulppermissions): longint;
+  function l2smode (mode: tgulppermissions): longint;
+  function s2lmode (mode: longint): tgulppermissions;
+  function getmode (const filename: rawbytestring): longint;
+  function setmode (const filename: rawbytestring; mode: longint): longint;
+  function mode2str(const mode: longint): rawbytestring;
+  function str2mode(const mode: rawbytestring): longint;
 
   { common size routines }
 
-  function getsize01(var sr: tsearchrec): int64;
-  function getsize02(const filename: rawbytestring): int64;
-  function getsize03(const size: int64): rawbytestring;
+  function getsize (var sr: tsearchrec): int64;
+  function getsize (const filename: rawbytestring): int64;
+  function size2str(const size: int64): rawbytestring;
 
    { common time routines }
 
-  function gettimeutc01(var sr: tsearchrec): tdatetime;
-  function gettimeutc02(const filename: rawbytestring): tdatetime;
-  function gettimeutc03(const t: tdatetime): rawbytestring;
-  function settimeutc04(const filename: rawbytestring; timeutc: tdatetime): longint;
+  function gettimeutc(var sr: tsearchrec): tdatetime;
+  function gettimeutc(const filename: rawbytestring): tdatetime;
+  function settimeutc(const filename: rawbytestring; timeutc: tdatetime): longint;
+  function time2str  (const t: tdatetime): rawbytestring;
 
   { common time routines }
 
-  function getsymlink01(const filename: rawbytestring): rawbytestring;
-  function setsymlink02(const filename, linkname: rawbytestring): longint;
+  function getsymlink(const filename: rawbytestring): rawbytestring;
+  function setsymlink(const filename, linkname: rawbytestring): longint;
 
   { common user/group routines }
 
-  function getuserid01   (const filename: rawbytestring): longint;
-  function setuserid02   (const filename: rawbytestring; userid: longint): longint;
+  function getuserid   (const filename: rawbytestring): longint;
+  function setuserid   (const filename: rawbytestring; userid: longint): longint;
 
-  function getgroupid01  (const filename: rawbytestring): longint;
-  function setgroupid02  (const filename: rawbytestring; groupid: longint): longint;
+  function getgroupid  (const filename: rawbytestring): longint;
+  function setgroupid  (const filename: rawbytestring; groupid: longint): longint;
 
-  function getusername01 (const filename: rawbytestring): rawbytestring;
-  function getgroupname01(const filename: rawbytestring): rawbytestring;
+  function getusername (const filename: rawbytestring): rawbytestring;
+  function getgroupname(const filename: rawbytestring): rawbytestring;
 
   { common files routines }
 
-  function issymlink01  (attr: longint): boolean;
-  function issymlink02  (attr: tgulpattributes): boolean;
-  function issymlink03  (const filename: rawbytestring): boolean;
+  function issymlink  (attr: longint): boolean; overload;
+  function issymlink  (attr: tgulpattributes): boolean; overload;
+  function issymlink  (const filename: rawbytestring): boolean; overload;
 
-  function isdirectory01(attr: longint): boolean;
-  function isdirectory02(attr: tgulpattributes): boolean;
-  function isdirectory03(const filename: rawbytestring): boolean;
+  function isdirectory(attr: longint): boolean; overload;
+  function isdirectory(attr: tgulpattributes): boolean; overload;
+  function isdirectory(const filename: rawbytestring): boolean; overload;
 
-  function isregular01  (attr: longint): boolean;
-  function isregular02  (attr: tgulpattributes): boolean;
-  function isregular03  (const filename: rawbytestring): boolean;
+  function isregular  (attr: longint): boolean; overload;
+  function isregular  (attr: tgulpattributes): boolean; overload;
+  function isregular  (const filename: rawbytestring): boolean; overload;
 
   function isabsolutepath(const pathname: rawbytestring): boolean;
 
@@ -249,12 +244,12 @@ end;
 
 { common routines }
 
-function getversion(const version: longint): rawbytestring;
+function version2str(const version: longint): rawbytestring;
 begin
   result := inttostr(version);
 end;
 
-function getflags(const flags: tgulpflags): rawbytestring;
+function flags2str(const flags: tgulpflags): rawbytestring;
 begin
   if (gfadd in flags) then
     result := 'ADD'
@@ -267,7 +262,7 @@ end;
 
 { common attributes routines }
 
-function getattributes01(attr: tgulpattributes): longint;
+function l2sattributes(attr: tgulpattributes): longint;
 begin
   result := 0;
   if gareadonly  in attr then result := result or fareadonly;
@@ -279,7 +274,7 @@ begin
   if gasymlink   in attr then result := result or fasymlink;
 end;
 
-function getattributes02(attr: longint): tgulpattributes;
+function s2lattributes(attr: longint): tgulpattributes;
 begin
   result :=[];
   if fareadonly  and attr <> 0 then include(result, gareadonly);
@@ -291,17 +286,12 @@ begin
   if fasymlink   and attr <> 0 then include(result, gasymlink);
 end;
 
-function getattributes03(var sr: tsearchrec): longint;
+function getattributes(var sr: tsearchrec): longint;
 begin
   result := sr.attr;
 end;
 
-function getattributes04(var sr: tsearchrec): tgulpattributes;
-begin
-  result := getattributes02(sr.attr);
-end;
-
-function getattributes05(const filename: rawbytestring): longint;
+function getattributes(const filename: rawbytestring): longint;
 var
   sr: tsearchrec;
 begin
@@ -315,12 +305,20 @@ begin
   sysutils.findclose(sr);
 end;
 
-function getattributes06(const filename: rawbytestring): tgulpattributes;
+function setattributes(const filename: rawbytestring; attr: longint): longint;
 begin
-  result := getattributes02(getattributes05(filename));
+  {$IFDEF LINUX}
+  result := -1;
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
+  result := filesetattr(filename, attr);
+  {$ELSE}
+  ...
+  {$ENDIF}
+  {$ENDIF}
 end;
 
-function getattributes07(attr: longint): rawbytestring;
+function attributes2str(attr: longint): rawbytestring;
 begin
   result := '-------';
   if fareadonly  and attr <> 0 then result[1] := 'R';
@@ -332,7 +330,7 @@ begin
   if fasymlink   and attr <> 0 then result[7] := 'L';
 end;
 
-function getattributes08(attr: rawbytestring): longint;
+function str2attributes(attr: rawbytestring): longint;
 const
   a: array[0..6] of char = ('R','H','S','V','D','A','L');
 var
@@ -355,27 +353,9 @@ begin
   if attr <> '' then raiseexception(gereadstream, '006001');
 end;
 
-function setattributes09(const filename: rawbytestring; attr: longint): longint;
-begin
-  {$IFDEF LINUX}
-  result := -1;
-  {$ELSE}
-  {$IFDEF MSWINDOWS}
-  result := filesetattr(filename, attr);
-  {$ELSE}
-  ...
-  {$ENDIF}
-  {$ENDIF}
-end;
-
-function setattributes10(const filename: rawbytestring; attr: tgulpattributes): longint;
-begin
-  result := setattributes09(filename, getattributes01(attr));
-end;
-
 { common modes routines }
 
-function getmode01(mode: tgulppermissions): longint;
+function l2smode(mode: tgulppermissions): longint;
 begin
   result := 0;
   {$IFDEF LINUX}
@@ -396,7 +376,7 @@ begin
   {$ENDIF}
 end;
 
-function getmode02(mode: longint): tgulppermissions;
+function s2lmode(mode: longint): tgulppermissions;
 begin
   result := [];
   {$IFDEF LINUX}
@@ -417,7 +397,7 @@ begin
   {$ENDIF}
 end;
 
-function getmode03(const filename: rawbytestring): longint;
+function getmode(const filename: rawbytestring): longint;
 {$IFDEF LINUX}
 var
   info: stat;
@@ -425,7 +405,7 @@ var
 begin
   result := 0;
   {$IFDEF LINUX}
-  if issymlink03(filename) then
+  if issymlink(filename) then
   begin
     if fplstat(filename, info) = 0 then
       result := info.st_mode;
@@ -440,12 +420,34 @@ begin
   {$ENDIF}
 end;
 
-function getmode04(const filename: rawbytestring): tgulppermissions;
+function setmode(const filename: rawbytestring; mode: longint): longint;
 begin
-  result := getmode02(getmode03(filename));
+  result := -1;
+  {$IFDEF LINUX}
+  if issymlink(filename) = false then
+    result := fpchmod(filename, mode);
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
+  {$ELSE}
+  ...
+  {$ENDIF}
+  {$ENDIF}
 end;
 
-function getmode05(const mode: rawbytestring): longint;
+function mode2str(const mode: longint): rawbytestring;
+begin
+  result := '---';
+  {$IFDEF UNIX}
+  if mode <> 0 then
+    result := octstr(mode, 3);
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
+  {$ELSE}
+  {$ENDIF}
+  {$ENDIF}
+end;
+
+function str2mode(const mode: rawbytestring): longint;
 {$IFDEF LINUX}
 var
   i: longint;
@@ -463,49 +465,17 @@ begin
   {$ENDIF}
 end;
 
-function getmode06(const mode: longint): rawbytestring;
-begin
-  result := '---';
-  {$IFDEF UNIX}
-  if mode <> 0 then
-    result := octstr(mode, 3);
-  {$ELSE}
-  {$IFDEF MSWINDOWS}
-  {$ELSE}
-  {$ENDIF}
-  {$ENDIF}
-end;
-
-function setmode07(const filename: rawbytestring; mode: longint): longint;
-begin
-  result := -1;
-  {$IFDEF LINUX}
-  if not issymlink03(filename) then
-    result := fpchmod(filename, mode);
-  {$ELSE}
-  {$IFDEF MSWINDOWS}
-  {$ELSE}
-  ...
-  {$ENDIF}
-  {$ENDIF}
-end;
-
-function setmode08(const filename: rawbytestring; mode: tgulppermissions): longint;
-begin
-  result := setmode07(filename, getmode01(mode));
-end;
-
 { common size routines }
 
-function getsize01(var sr: tsearchrec): int64;
+function getsize(var sr: tsearchrec): int64;
 begin
-  if isregular01(sr.attr) then
+  if isregular(sr.attr) then
     result := sr.size
   else
     result := 0;
 end;
 
-function getsize02(const filename: rawbytestring): int64;
+function getsize(const filename: rawbytestring): int64;
 var
   sr: tsearchrec;
 begin
@@ -514,24 +484,24 @@ begin
     fareadonly  or fahidden  or fasysfile or favolumeid or
     fadirectory or faarchive or fasymlink or faanyfile, sr) = 0 then
   begin
-    result := getsize01(sr);
+    result := getsize(sr);
   end;
   sysutils.findclose(sr);
 end;
 
-function getsize03(const size: int64): rawbytestring;
+function size2str(const size: int64): rawbytestring;
 begin
   result := format('%u', [size]);
 end;
 
 { common time routines }
 
-function gettimeutc01(var sr: tsearchrec): tdatetime;
+function gettimeutc(var sr: tsearchrec): tdatetime;
 begin
   result := localtime2universal(filedatetodatetime(sr.time));
 end;
 
-function gettimeutc02(const filename: rawbytestring): tdatetime;
+function gettimeutc(const filename: rawbytestring): tdatetime;
 var
   sr: tsearchrec;
 begin
@@ -540,23 +510,16 @@ begin
     fareadonly  or fahidden  or fasysfile or favolumeid or
     fadirectory or faarchive or fasymlink or faanyfile,sr) = 0 then
   begin
-    result := gettimeutc01(sr);
+    result := gettimeutc(sr);
   end;
   sysutils.findclose(sr);
 end;
 
-function gettimeutc03(const t: tdatetime): rawbytestring;
-begin
-  result := formatdatetime(
-    defaultformatsettings.longdateformat + ' ' +
-    defaultformatsettings.longtimeformat, t);
-end;
-
-function settimeutc04(const filename: rawbytestring; timeutc: tdatetime): longint;
+function settimeutc(const filename: rawbytestring; timeutc: tdatetime): longint;
 begin
   result := -1;
   {$IFDEF LINUX}
-  if issymlink03(filename) = false then
+  if issymlink(filename) = false then
     result := filesetdate(filename, datetimetofiledate(universaltime2local(timeutc)));
   {$ELSE}
   {$IFDEF MSWINDOWS}
@@ -567,9 +530,16 @@ begin
   {$ENDIF}
 end;
 
+function time2str(const t: tdatetime): rawbytestring;
+begin
+  result := formatdatetime(
+    defaultformatsettings.longdateformat + ' ' +
+    defaultformatsettings.longtimeformat, t);
+end;
+
 { common link routines }
 
-function getsymlink01(const filename: rawbytestring): rawbytestring;
+function getsymlink(const filename: rawbytestring): rawbytestring;
 begin
   {$IFDEF LINUX}
   result := fpreadlink(filename);
@@ -582,7 +552,7 @@ begin
   {$ENDIF}
 end;
 
-function setsymlink02(const filename, linkname: rawbytestring): longint;
+function setsymlink(const filename, linkname: rawbytestring): longint;
 begin
   {$IFDEF LINUX}
   result := fpsymlink(pchar(linkname), pchar(filename));
@@ -597,7 +567,7 @@ end;
 
 { common user/group routines }
 
-function getuserid01(const filename: rawbytestring): longint;
+function getuserid(const filename: rawbytestring): longint;
 {$IFDEF LINUX}
 var
   info: stat;
@@ -605,7 +575,7 @@ var
 begin
   result := -1;
   {$IFDEF LINUX}
-  if issymlink03(filename) then
+  if issymlink(filename) then
   begin
     if fplstat(filename, info) = 0 then
       result := info.st_uid;
@@ -620,30 +590,7 @@ begin
   {$ENDIF}
 end;
 
-function setuserid02(const filename: rawbytestring; userid: longint): longint;
-{$IFDEF LINUX}
-var
-  systempath: rawbytestring;
-{$ENDIF}
-begin
-  result := -1;
-  {$IFDEF LINUX}
-  systempath := tosinglebytefilesystemencodedfilename(filename);
-  if issymlink03(filename) = false then
-    result := do_syscall(syscall_nr_chown,
-      tsysparam(pchar(systempath)), tsysparam(userid), tsysparam(getgroupid01(filename)))
-  else
-    result := do_syscall(syscall_nr_lchown,
-      tsysparam(pchar(systempath)), tsysparam(userid), tsysparam(getgroupid01(filename)));
-  {$ELSE}
-  {$IFDEF MSWINDOWS}
-  {$ELSE}
-  ...
-  {$ENDIF}
-  {$ENDIF}
-end;
-
-function getgroupid01(const filename: rawbytestring): longint;
+function getgroupid(const filename: rawbytestring): longint;
 {$IFDEF LINUX}
 var
   info: stat;
@@ -651,7 +598,7 @@ var
 begin
   result := -1;
   {$IFDEF LINUX}
-  if issymlink03(filename) then
+  if issymlink(filename) then
   begin
     if fplstat(filename, info) = 0 then
       result := info.st_gid;
@@ -666,7 +613,7 @@ begin
   {$ENDIF}
 end;
 
-function setgroupid02(const filename: rawbytestring; groupid: longint): longint;
+function setuserid(const filename: rawbytestring; userid: longint): longint;
 {$IFDEF LINUX}
 var
   systempath: rawbytestring;
@@ -675,12 +622,12 @@ begin
   result := -1;
   {$IFDEF LINUX}
   systempath := tosinglebytefilesystemencodedfilename(filename);
-  if issymlink03(filename) = false then
+  if issymlink(filename) = false then
     result := do_syscall(syscall_nr_chown,
-      tsysparam(pchar(systempath)), tsysparam(getuserid01(filename)), tsysparam(groupid))
+      tsysparam(pchar(systempath)), tsysparam(userid), tsysparam(getgroupid(filename)))
   else
     result := do_syscall(syscall_nr_lchown,
-      tsysparam(pchar(systempath)), tsysparam(getuserid01(filename)), tsysparam(groupid));
+      tsysparam(pchar(systempath)), tsysparam(userid), tsysparam(getgroupid(filename)));
   {$ELSE}
   {$IFDEF MSWINDOWS}
   {$ELSE}
@@ -689,77 +636,100 @@ begin
   {$ENDIF}
 end;
 
-function getusername01(const filename: rawbytestring): rawbytestring;
+function setgroupid(const filename: rawbytestring; groupid: longint): longint;
+{$IFDEF LINUX}
+var
+  systempath: rawbytestring;
+{$ENDIF}
+begin
+  result := -1;
+  {$IFDEF LINUX}
+  systempath := tosinglebytefilesystemencodedfilename(filename);
+  if issymlink(filename) = false then
+    result := do_syscall(syscall_nr_chown,
+      tsysparam(pchar(systempath)), tsysparam(getuserid(filename)), tsysparam(groupid))
+  else
+    result := do_syscall(syscall_nr_lchown,
+      tsysparam(pchar(systempath)), tsysparam(getuserid(filename)), tsysparam(groupid));
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
+  {$ELSE}
+  ...
+  {$ENDIF}
+  {$ENDIF}
+end;
+
+function getusername(const filename: rawbytestring): rawbytestring;
 begin
   result := '';
 end;
 
-function getgroupname01(const filename: rawbytestring): rawbytestring;
+function getgroupname(const filename: rawbytestring): rawbytestring;
 begin
   result := '';
 end;
 
 { common file routines }
 
-function issymlink01(attr: longint): boolean;
+function issymlink(attr: longint): boolean;
 begin
   result := fasymlink and attr > 0;
 end;
 
-function issymlink02(attr: tgulpattributes): boolean;
+function issymlink(attr: tgulpattributes): boolean;
 begin
   result := gasymlink in attr;
 end;
 
-function issymlink03(const filename: rawbytestring): boolean;
+function issymlink(const filename: rawbytestring): boolean;
 begin
-  result := issymlink01(getattributes05(filename));
+  result := issymlink(getattributes(filename));
 end;
 
-function isdirectory01(attr: longint): boolean;
+function isdirectory(attr: longint): boolean;
 begin
-  result := issymlink01(attr) = false;
+  result := issymlink(attr) = false;
   if result then
   begin
     result := fadirectory and attr > 0;
   end;
 end;
 
-function isdirectory02(attr: tgulpattributes): boolean;
+function isdirectory(attr: tgulpattributes): boolean;
 begin
-  result := issymlink02(attr) = false;
+  result := issymlink(attr) = false;
   if result then
   begin
     result := gadirectory in attr;
   end;
 end;
 
-function isdirectory03(const filename: rawbytestring): boolean;
+function isdirectory(const filename: rawbytestring): boolean;
 begin
-  result := isdirectory01(getattributes05(filename));
+  result := isdirectory(getattributes(filename));
 end;
 
-function isregular01(attr: longint): boolean;
+function isregular(attr: longint): boolean;
 begin
-  result := issymlink01(attr) = false;
+  result := issymlink(attr) = false;
   if result then
   begin
-    result := isdirectory01(attr) = false;
+    result := isdirectory(attr) = false;
   end;
 end;
 
-function isregular02(attr: tgulpattributes): boolean;
+function isregular(attr: tgulpattributes): boolean;
 begin
-  result := issymlink02(attr) = false;
+  result := issymlink(attr) = false;
   if result then
   begin
-    result := isdirectory02(attr) = false;
+    result := isdirectory(attr) = false;
   end;
 end;
 
-function isregular03(const filename: rawbytestring): boolean;
+function isregular(const filename: rawbytestring): boolean;
 begin
-  result := isregular01(getattributes05(filename));
+  result := isregular(getattributes(filename));
 end;
 
 function isabsolutepath(const pathname: rawbytestring): boolean;
@@ -774,6 +744,8 @@ begin
   {$ENDIF}
   {$ENDIF}
 end;
+
+{ common hex routines }
 
 function hex(const data; count: longint): rawbytestring;
 var
@@ -810,6 +782,8 @@ begin
   result := true;
 end;
 
+{ common process priority routines }
+
 function setpriorityidle: boolean;
 begin
   {$IFDEF LINUX}
@@ -818,6 +792,7 @@ begin
   {$IFDEF MSWINDOWS}
   result := setpriorityclass(getcurrentprocess, idle_priority_class);
   {$ELSE}
+  ...
   {$ENDIF}
   {$ENDIF}
 end;
@@ -830,9 +805,12 @@ begin
   {$IFDEF MSWINDOWS}
   result := setpriorityclass(getcurrentprocess, normal_priority_class);
   {$ELSE}
+  ...
   {$ENDIF}
   {$ENDIF}
 end;
+
+{ common min7max routines }
 
 function max(a, b: longint): longint; inline;
 begin

@@ -79,7 +79,6 @@ const
   gmlistfinish      = 'Finished (%u listed items)';
   gmlistlastversion = 'Lastest version %u';
 
-
   procedure raiseexception(const m, n: rawbytestring);
 
 implementation
