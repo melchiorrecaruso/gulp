@@ -7,7 +7,7 @@ lazbuild -B -q -q gulp.lpi
 lazbuild -B -q -q gulpx.lpi
 lazbuild -B -q -q gdiff.lpi
 
-gzip -9 -k -n install/gulp.man
+gzip -7 -k -n install/gulp.man
 
 mv build/x86_64-linux/bin/gulp  build/gulp
 mv build/x86_64-linux/bin/gulpx build/gulpx

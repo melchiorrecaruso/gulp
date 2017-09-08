@@ -36,7 +36,7 @@ type
 
   tgulpflags = set of tgulpflag;
 
-  { gulp permissions }
+  { gulp mode }
 
   tgulppermission  = (gpreadbyowner, gpwritebyowner, gpexecutebyowner,
                       gpreadbygroup, gpwritebygroup, gpexecutebygroup,
@@ -44,7 +44,7 @@ type
 
   tgulppermissions = set of tgulppermission;
 
-  { gulp attributes }
+  { gulp attr }
 
   tgulpattribute   = (gareadonly,  gahidden,  gasysfile, gavolumeid,
                       gadirectory, gaarchive, gasymlink, galink);
@@ -111,13 +111,13 @@ type
 
   { common attributes routines }
 
-  function l2sattributes (attr: tgulpattributes): longint;
-  function s2lattributes (attr: longint): tgulpattributes;
-  function getattributes (var sr: tsearchrec): longint;
-  function getattributes (const filename: rawbytestring): longint;
-  function setattributes (const filename: rawbytestring; attr: longint): longint;
-  function attributes2str(attr: longint): rawbytestring;
-  function str2attributes(attr: rawbytestring): longint;
+  function l2sattr (attr: tgulpattributes): longint;
+  function s2lattr (attr: longint): tgulpattributes;
+  function getattr (var sr: tsearchrec): longint;
+  function getattr (const filename: rawbytestring): longint;
+  function setattr (const filename: rawbytestring; attr: longint): longint;
+  function attr2str(attr: longint): rawbytestring;
+  function str2attr(attr: rawbytestring): longint;
 
   { common mode routines }
 
@@ -262,7 +262,7 @@ end;
 
 { common attributes routines }
 
-function l2sattributes(attr: tgulpattributes): longint;
+function l2sattr(attr: tgulpattributes): longint;
 begin
   result := 0;
   if gareadonly  in attr then result := result or fareadonly;
@@ -274,7 +274,7 @@ begin
   if gasymlink   in attr then result := result or fasymlink;
 end;
 
-function s2lattributes(attr: longint): tgulpattributes;
+function s2lattr(attr: longint): tgulpattributes;
 begin
   result :=[];
   if fareadonly  and attr <> 0 then include(result, gareadonly);
@@ -286,12 +286,12 @@ begin
   if fasymlink   and attr <> 0 then include(result, gasymlink);
 end;
 
-function getattributes(var sr: tsearchrec): longint;
+function getattr(var sr: tsearchrec): longint;
 begin
   result := sr.attr;
 end;
 
-function getattributes(const filename: rawbytestring): longint;
+function getattr(const filename: rawbytestring): longint;
 var
   sr: tsearchrec;
 begin
@@ -305,7 +305,7 @@ begin
   sysutils.findclose(sr);
 end;
 
-function setattributes(const filename: rawbytestring; attr: longint): longint;
+function setattr(const filename: rawbytestring; attr: longint): longint;
 begin
   {$IFDEF LINUX}
   result := -1;
@@ -318,7 +318,7 @@ begin
   {$ENDIF}
 end;
 
-function attributes2str(attr: longint): rawbytestring;
+function attr2str(attr: longint): rawbytestring;
 begin
   result := '-------';
   if fareadonly  and attr <> 0 then result[1] := 'R';
@@ -330,7 +330,7 @@ begin
   if fasymlink   and attr <> 0 then result[7] := 'L';
 end;
 
-function str2attributes(attr: rawbytestring): longint;
+function str2attr(attr: rawbytestring): longint;
 const
   a: array[0..6] of char = ('R','H','S','V','D','A','L');
 var
@@ -683,7 +683,7 @@ end;
 
 function issymlink(const filename: rawbytestring): boolean;
 begin
-  result := issymlink(getattributes(filename));
+  result := issymlink(getattr(filename));
 end;
 
 function isdirectory(attr: longint): boolean;
@@ -706,7 +706,7 @@ end;
 
 function isdirectory(const filename: rawbytestring): boolean;
 begin
-  result := isdirectory(getattributes(filename));
+  result := isdirectory(getattr(filename));
 end;
 
 function isregular(attr: longint): boolean;
@@ -729,7 +729,7 @@ end;
 
 function isregular(const filename: rawbytestring): boolean;
 begin
-  result := isregular(getattributes(filename));
+  result := isregular(getattr(filename));
 end;
 
 function isabsolutepath(const pathname: rawbytestring): boolean;

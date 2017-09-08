@@ -115,17 +115,18 @@ override_dh_auto_install:
       <Unit0>
         <Filename Value="src/gulp.pas"/>
         <IsPartOfProject Value="True"/>
-        <TopLine Value="124"/>
-        <CursorPos X="54" Y="131"/>
+        <TopLine Value="68"/>
+        <CursorPos X="34" Y="79"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
         <Filename Value="src/gulplibrary.pas"/>
         <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="3"/>
-        <TopLine Value="641"/>
-        <CursorPos X="17" Y="1073"/>
+        <TopLine Value="1044"/>
+        <CursorPos X="32" Y="1073"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit1>
@@ -133,18 +134,17 @@ override_dh_auto_install:
         <Filename Value="src/gulpmessages.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="4"/>
-        <TopLine Value="56"/>
-        <CursorPos X="27" Y="82"/>
+        <TopLine Value="62"/>
+        <CursorPos X="5" Y="97"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit2>
       <Unit3>
         <Filename Value="src/gulpcommon.pas"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="120"/>
-        <CursorPos X="34" Y="157"/>
+        <TopLine Value="701"/>
+        <CursorPos X="40" Y="721"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit3>
@@ -160,6 +160,7 @@ override_dh_auto_install:
         <Filename Value="src/gulpscanner.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="2"/>
+        <TopLine Value="52"/>
         <CursorPos Y="88"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
@@ -196,6 +197,7 @@ override_dh_auto_install:
         <CStyleOperator Value="False"/>
         <AllowLabel Value="False"/>
         <CPPInline Value="False"/>
+        <UseAnsiStrings Value="False"/>
       </SyntaxOptions>
     </Parsing>
     <CodeGeneration>

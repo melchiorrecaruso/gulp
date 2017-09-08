@@ -265,7 +265,7 @@ begin
   begin
     readed := instream.read(buffer, min(sizeof(buffer), size));
     if readed = 0 then
-      raise exception.createfmt(gereadstream, ['003012']);
+      raiseexception(gereadstream, '003012');
     sha1update(context, buffer, readed);
     outstream.write(buffer, readed);
     dec(size, readed);
@@ -292,7 +292,7 @@ var
     begin
       if sha1match(libmove(instream, outstream,
         p^.offset2 - p^.offset1), p^.checksum2) = false then
-        raise exception.createfmt(gechecksum, ['003016']);
+        raiseexception(gechecksum, '003016');
       outstream.destroy;
     end;
   end;
@@ -300,7 +300,7 @@ var
 begin
   outpath := extractfiledir(p^.name);
   if (outpath <> '') and (forcedirectories(outpath) = false) then
-    raise exception.createfmt(gecreatepath, [outpath]);
+    raiseexception(gecreatepath, outpath);
 
   if issymlink(p^.attr) then
   begin
@@ -469,10 +469,10 @@ begin
   result := itemclear(p);
 
   if instream.read(marker, sizeof(tsha1digest)) <> sizeof(tsha1digest) then
-    raise exception.createfmt(gebrokenarchive, ['003001']);
+    raiseexception(gebrokenarchive, '003001');
 
   if itemcheckmarker(marker) = false then
-    raise exception.createfmt(gewrongmarker, ['003002']);
+    raiseexception(gewrongmarker, '003002');
 
   p^.name := instream.readansistring;
 
@@ -498,14 +498,14 @@ begin
   instream.read(p^.checksum2, sizeof(tsha1digest));
 
   if (([] = p^.flags)) or (([gfclose] = p^.flags)) then
-    raise exception.createfmt(gewrongflag, ['004001']);
+    raiseexception(gewrongflag, '004001');
   if ((gfdelete in p^.flags)) and ((gfadd in p^.flags)) then
-    raise exception.createfmt(gewrongflag, ['003003']);
+    raiseexception(gewrongflag, '003003');
 
   //if (p^.offset2 - p^.offset1 <> p^.size) then
-  //  raise exception.createfmt(gebrokenarchive, ['003004']);
+  //  raiseexception(gebrokenarchive, '003004');
   if sha1match(p^.checksum1, itemgetdigest(p)) = false then
-    raise exception.createfmt(gebrokenarchive, ['003007']);
+    raiseexception(gebrokenarchive, '003007');
 
   dodirseparators(p^.linkname);
   dodirseparators(p^.name);
@@ -530,17 +530,17 @@ begin
     if gfclose in p^.flags then
     begin
       if instream.seek(offset, sobeginning) <> offset then
-        raise exception.createfmt(gereadarchive, ['003008']);
+        raiseexception(gereadarchive, '003008');
       inc(version);
     end;
 
     if list.add(p) = -1 then
-      raise exception.createfmt(geduplicates, ['003009']);
+      raiseexception(geduplicates, '003009');
     p := new(pgulpitem);
   end;
   dispose(p);
   if offset <> size then
-    raise exception.createfmt(gebrokenarchive, ['003011']);
+    raiseexception(gebrokenarchive, '003011');
 end;
 
 procedure tgulplibrary.libread(instream: tstream; list: tgulplist; untilversion: longword);
@@ -563,7 +563,7 @@ begin
     if gfclose in p^.flags then
     begin
       if instream.seek(offset, sobeginning) <> offset then
-        raise exception.createfmt(gereadarchive, ['003018']);
+        raiseexception(gereadarchive, '003018');
       inc(version);
     end;
 
@@ -584,7 +584,7 @@ begin
       if (gfadd in p^.flags) then
       begin
         if list.add(p) = -1 then
-          raise exception.createfmt(geduplicates, ['003010']);
+          raiseexception(geduplicates, '003010');
         p := new(pgulpitem);
       end;
 
@@ -593,7 +593,7 @@ begin
   dispose(p);
 
   if offset <> size then
-    raise exception.createfmt(gebrokenarchive, ['003014']);
+    raiseexception(gebrokenarchive, '003014');
 end;
 
 function tgulplibrary.libnew1(const filename: rawbytestring; stimeutc: tdatetime): pgulpitem;
@@ -611,7 +611,7 @@ begin
   result^.flags    := [gfadd];
   result^.stime    := stimeutc;
   result^.mtime    := gettimeutc(filename);
-  result^.attr     := s2lattributes(getattributes(filename));
+  result^.attr     := s2lattr(getattr(filename));
   result^.mode     := s2lmode(getmode(filename));
 //result^.linkname := getsymlink(filename);
   result^.userid   := getuserid(filename);
@@ -621,7 +621,7 @@ end;
 procedure tgulplibrary.libappend(list: tgulplist; p: pgulpitem);
 begin
   if list.add(p) = -1 then
-    raise exception.createfmt(geduplicates, ['003019']);
+    raiseexception(geduplicates, '003019');
 end;
 
 function tgulplibrary.libfind(list: tgulplist; const filename: rawbytestring): longint;
@@ -705,7 +705,7 @@ begin
   for i := finclude.count - 1 downto 0 do
   begin
     if (fforcepath = FALSE) and (isabsolutepath(finclude[i]) = TRUE) then
-      raise exception.createfmt(geabsolutepath, ['003021']);
+      raiseexception(geabsolutepath, '003021');
     scan.add(finclude[i]);
   end;
 
@@ -896,7 +896,7 @@ begin
       if gfclose in p^.flags then
       begin
         if stream.seek(offset, sobeginning) <> offset then
-          raise exception.createfmt(gereadarchive, ['003020']);
+          raiseexception(gereadarchive, '003020');
         size := offset;
       end;
     end;
@@ -973,10 +973,10 @@ begin
   freeandnil(stream);
   freeandnil(tmp);
   if deletefile(filename) = false then
-    raise exception.createfmt(gedeletefile, [filename])
+    raiseexception(gedeletefile, filename)
   else
   if renamefile(tmpname, filename) = false then
-    raise exception.createfmt(gerenamefile, [tmpname]);
+    raiseexception(gerenamefile, tmpname);
 
   showmessage1(format(gmpurgefinish, [size]));
   fterminated := true;
@@ -1069,15 +1069,15 @@ end;
 function tgulpapplication.isexcluded(const item: pgulpitem): boolean;
 begin
   result := filenamematch(item^.name, fexclude)                 or
-            (l2sattributes(item^.attr) and fexcludeattr <> 0) or
-            (l2smode      (item^.mode) and fexcludemode <> 0);
+            (l2sattr(item^.attr) and fexcludeattr <> 0) or
+            (l2smode(item^.mode) and fexcludemode <> 0);
 end;
 
 function tgulpapplication.isexcluded(const filename: rawbytestring): boolean;
 begin
   result := filenamematch(filename, fexclude)                 or
-            (getattributes(filename) and fexcludeattr <> 0) or
-            (getmode      (filename) and fexcludemode <> 0);
+            (getattr(filename) and fexcludeattr <> 0) or
+            (getmode(filename) and fexcludemode <> 0);
 end;
 
 end.

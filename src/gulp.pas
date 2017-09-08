@@ -39,6 +39,7 @@ uses
   gulpcommon,
   gulpfixes,
   gulplibrary,
+  gulpmessages,
   sysutils;
 
 type
@@ -84,7 +85,7 @@ type
             [version2str(version),
              flags2str(flags),
              mode2str(l2smode(mode)),
-             attributes2str(l2sattributes(attr)),
+             attr2str(l2sattr(attr)),
              time2str(universaltime2local(mtime)),
              '', name]))
         else
@@ -92,7 +93,7 @@ type
             [version2str(version),
              flags2str(flags),
              mode2str(l2smode(mode)),
-             attributes2str(l2sattributes(attr)),
+             attr2str(l2sattr(attr)),
              time2str(universaltime2local(mtime)),
              size2str(size), name]));
       end else
@@ -136,7 +137,7 @@ type
         end;
         if hasoption('', '--excludeattr') = true then
         begin
-          app.excludeattr := str2attributes(getoptionvalue('', '--excludeattr'));
+          app.excludeattr := str2attr(getoptionvalue('', '--excludeattr'));
         end;
         if hasoption('', '--excludemode') = true then
         begin
@@ -209,7 +210,7 @@ type
 
   procedure tshellapplication.abort;
   begin
-    raise exception.create('User abort');
+    raiseexception('User abort');
   end;
 
   procedure tshellapplication.help;

@@ -80,6 +80,7 @@ const
   gmlistlastversion = 'Lastest version %u';
 
   procedure raiseexception(const m, n: rawbytestring);
+  procedure raiseexception(const m: rawbytestring);
 
 implementation
 
@@ -89,6 +90,11 @@ implementation
   procedure raiseexception(const m, n: rawbytestring);
   begin
     raise exception.createfmt(m, [n]);
+  end;
+
+  procedure raiseexception(const m: rawbytestring);
+  begin
+    raise exception.create(m);
   end;
 
 end.

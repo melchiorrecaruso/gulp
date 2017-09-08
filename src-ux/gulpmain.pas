@@ -7,7 +7,8 @@ interface
 
 uses
   classes, sysutils, fileutil, dividerbevel, forms, controls, graphics, dialogs,
-  comctrls, stdctrls, buttons, extctrls, menus, editbtn, gulplibrary, gulplist;
+  comctrls, stdctrls, buttons, extctrls, menus, editbtn, gulplibrary, gulplist,
+  gulpcommon;
 
 type
   { tliteitem }
@@ -17,8 +18,8 @@ type
     name    : rawbytestring;
     path    : rawbytestring;
     timeutc : tdatetime;
-    attr    : longint;
-    mode    : longint;
+    attr    : tgulpattributes;
+    mode    : tgulppermissions;
     size    : int64;
     version : longint;
     visible : boolean;
@@ -226,9 +227,7 @@ implementation
 {$r gulpmain.lfm}
 
 uses
-  gulpcommon,
   gulpfixes,
-
   gulpscanner,
   inifiles;
 
@@ -236,11 +235,11 @@ uses
 
 function compare(item1, item2: tliteitem): longint;
 begin
-  if ((item1.attr and fadirectory = fadirectory) xor
-      (item2.attr and fadirectory = fadirectory)) = false then
+  if ((gadirectory in item1.attr)  xor
+      (gadirectory in item2.attr)) then
     result := ansicomparefilename(item1.name, item2.name)
   else
-    if (item1.attr and fadirectory = fadirectory) then
+    if (gadirectory in item1.attr) then
       result := -1
     else
       result :=  1;
@@ -517,21 +516,21 @@ begin
   if t.visible = true then
   begin;
     item.caption := t.name;
-    if t.attr and fadirectory = 0 then
+    if gadirectory in t.attr then
     begin
       item.imageindex := 5;
       item.stateindex := 5;
-      item.subitems.add(sizetostring(t.size));
+      item.subitems.add(size2str(t.size));
     end else
     begin
 
       item.imageindex := 3;
       item.stateindex := 3;
-      item.subitems.add(sizetostring(t.size));
+      item.subitems.add(size2str(t.size));
     end;
-    item.subitems.add(timetostring(t.timeutc));
-    item.subitems.add(attrtostring(t.attr));
-    item.subitems.add(modetostring(t.mode));
+    item.subitems.add(time2str(t.timeutc));
+    item.subitems.add(attr2str(l2sattr(t.attr)));
+    item.subitems.add(mode2str(l2smode(t.mode)));
     item.subitems.add(t.path);
   end;
 end;
@@ -548,7 +547,7 @@ begin
   if openlistview.selcount = 1 then
   begin
     t := applist2[openlistview.selected.index];
-    if t.attr and fadirectory = fadirectory then
+    if gadirectory in t.attr then
     begin
       openpath.text := t.path + includetrailingpathdelimiter(t.name);
       openpath.editingdone;

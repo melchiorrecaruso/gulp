@@ -229,7 +229,7 @@ begin
 
   for i := s.count -1 downto 0 do
   begin
-    attr := getattributes(s[i]);
+    attr := getattr(s[i]);
     if issymlink(attr) then
       deletelink(s[i])
     else
@@ -248,7 +248,7 @@ function deleteany(const name: rawbytestring) : boolean;
 var
   attr: longint;
 begin
-  attr := getattributes(name);
+  attr := getattr(name);
   if issymlink(attr) then
     result := deletelink(name)
   else

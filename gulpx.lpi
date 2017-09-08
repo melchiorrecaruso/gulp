@@ -10,10 +10,6 @@
       <AutoCreateForms Value="False"/>
       <Title Value="gulpx"/>
       <UseXPManifest Value="True"/>
-      <XPManifest>
-        <TextName Value="CompanyName.ProductName.AppName"/>
-        <TextDesc Value="Your application description."/>
-      </XPManifest>
     </General>
     <i18n>
       <EnableI18N LFM="False"/>
@@ -53,9 +49,9 @@
         <ResourceBaseClass Value="Form"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="572"/>
-        <CursorPos X="8" Y="579"/>
-        <FoldState Value=" T3mL0K11312a"/>
+        <TopLine Value="530"/>
+        <CursorPos X="9" Y="550"/>
+        <FoldState Value=" T3n10401312-"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -63,10 +59,11 @@
       <Unit2>
         <Filename Value="src/gulpcommon.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="88"/>
-        <CursorPos X="15" Y="50"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="98"/>
+        <CursorPos X="12" Y="117"/>
         <UsageCount Value="176"/>
+        <Loaded Value="True"/>
       </Unit2>
       <Unit3>
         <Filename Value="src/gulplibrary.pas"/>

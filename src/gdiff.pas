@@ -90,67 +90,67 @@ begin
           end;
         end;
 
-        if _getfiletimeutc(scan[1][i]) <> _getfiletimeutc(scan[2][j]) then
+        if gettimeutc(scan[1][i]) <> gettimeutc(scan[2][j]) then
         begin
           writeln;
-          writeln(format('(MTIME %s) "%s"', [timetostring(_getfiletimeutc(scan[1][i])), scan[1][i]]));
-          writeln(format('(MTIME %s) "%s"', [timetostring(_getfiletimeutc(scan[2][j])), scan[2][j]]));
+          writeln(format('(MTIME %s) "%s"', [time2str(gettimeutc(scan[1][i])), scan[1][i]]));
+          writeln(format('(MTIME %s) "%s"', [time2str(gettimeutc(scan[2][j])), scan[2][j]]));
         end;
 
-        if _getfilemode(scan[1][i]) <> _getfilemode(scan[2][j]) then
+        if getmode(scan[1][i]) <> getmode(scan[2][j]) then
         begin
           writeln;
-          writeln(format('(MODE %s) "%s"', [modetostring(_getfilemode(scan[1][i])), scan[1][i]]));
-          writeln(format('(MODE %s) "%s"', [modetostring(_getfilemode(scan[2][j])), scan[2][j]]));
+          writeln(format('(MODE %s) "%s"', [mode2str(getmode(scan[1][i])), scan[1][i]]));
+          writeln(format('(MODE %s) "%s"', [mode2str(getmode(scan[2][j])), scan[2][j]]));
         end;
 
-        if _getfileattr(scan[1][i]) <> _getfileattr(scan[2][j]) then
+        if getattr(scan[1][i]) <> getattr(scan[2][j]) then
         begin
           writeln;
-          writeln(format('(ATTR %s) "%s"', [attrtostring(_getfileattr(scan[1][i])), scan[1][i]]));
-          writeln(format('(ATTR %s) "%s"', [attrtostring(_getfileattr(scan[2][j])), scan[2][j]]));
+          writeln(format('(ATTR %s) "%s"', [attr2str(getattr(scan[1][i])), scan[1][i]]));
+          writeln(format('(ATTR %s) "%s"', [attr2str(getattr(scan[2][j])), scan[2][j]]));
         end;
 
-        if _getfileuserid(scan[1][i]) <> _getfileuserid(scan[2][j]) then
+        if getuserid(scan[1][i]) <> getuserid(scan[2][j]) then
         begin
           writeln;
-          writeln(format('(USER ID %s) "%s"', [inttostr(_getfileuserid(scan[1][i])), scan[1][i]]));
-          writeln(format('(USER ID %s) "%s"', [inttostr(_getfileuserid(scan[2][j])), scan[2][j]]));
+          writeln(format('(USER ID %s) "%s"', [inttostr(getuserid(scan[1][i])), scan[1][i]]));
+          writeln(format('(USER ID %s) "%s"', [inttostr(getuserid(scan[2][j])), scan[2][j]]));
         end;
 
-        if _getfileusername(scan[1][i]) <> _getfileusername(scan[2][j]) then
+        if getusername(scan[1][i]) <> getusername(scan[2][j]) then
         begin
           writeln;
-          writeln(format('(USER NAME %s) "%s"', [_getfileusername(scan[1][i]), scan[1][i]]));
-          writeln(format('(USER NAME %s) "%s"', [_getfileusername(scan[2][j]), scan[2][j]]));
+          writeln(format('(USER NAME %s) "%s"', [getusername(scan[1][i]), scan[1][i]]));
+          writeln(format('(USER NAME %s) "%s"', [getusername(scan[2][j]), scan[2][j]]));
         end;
 
-        if _getfilegroupid(scan[1][i]) <> _getfilegroupid(scan[2][j]) then
+        if getgroupid(scan[1][i]) <> getgroupid(scan[2][j]) then
         begin
           writeln;
-          writeln(format('(GROUP ID %s) "%s"', [inttostr(_getfilegroupid(scan[1][i])), scan[1][i]]));
-          writeln(format('(GROUP ID %s) "%s"', [inttostr(_getfilegroupid(scan[2][j])), scan[2][j]]));
+          writeln(format('(GROUP ID %s) "%s"', [inttostr(getgroupid(scan[1][i])), scan[1][i]]));
+          writeln(format('(GROUP ID %s) "%s"', [inttostr(getgroupid(scan[2][j])), scan[2][j]]));
         end;
 
-        if _getfilegroupname(scan[1][i]) <> _getfilegroupname(scan[2][j]) then
+        if getgroupname(scan[1][i]) <> getgroupname(scan[2][j]) then
         begin
           writeln;
-          writeln(format('(GROUP NAME %s) "%s"', [_getfilegroupname(scan[1][i]), scan[1][i]]));
-          writeln(format('(GROUP NAME %s) "%s"', [_getfilegroupname(scan[2][j]), scan[2][j]]));
+          writeln(format('(GROUP NAME %s) "%s"', [getgroupname(scan[1][i]), scan[1][i]]));
+          writeln(format('(GROUP NAME %s) "%s"', [getgroupname(scan[2][j]), scan[2][j]]));
         end;
 
-        if _getfilesize(scan[1][i]) <> _getfilesize(scan[2][j]) then
+        if getsize(scan[1][i]) <> getsize(scan[2][j]) then
         begin
           writeln;
-          writeln(format('(SIZE %s) "%s"', [sizetostring(_getfilesize(scan[1][i])), scan[1][i]]));
-          writeln(format('(SIZE %s) "%s"', [sizetostring(_getfilesize(scan[2][j])), scan[2][j]]));
+          writeln(format('(SIZE %s) "%s"', [size2str(getsize(scan[1][i])), scan[1][i]]));
+          writeln(format('(SIZE %s) "%s"', [size2str(getsize(scan[2][j])), scan[2][j]]));
         end;
 
-        if _getsymlink(scan[1][i]) <> _getsymlink(scan[2][j]) then
+        if getsymlink(scan[1][i]) <> getsymlink(scan[2][j]) then
         begin
           writeln;
-          writeln(format('(LINKNAME %s) "%s"', [_getsymlink(scan[1][i]), scan[1][i]]));
-          writeln(format('(LINKNAME %s) "%s"', [_getsymlink(scan[2][j]), scan[2][j]]));
+          writeln(format('(LINKNAME %s) "%s"', [getsymlink(scan[1][i]), scan[1][i]]));
+          writeln(format('(LINKNAME %s) "%s"', [getsymlink(scan[2][j]), scan[2][j]]));
         end;
 
         scan[2].delete(j);
