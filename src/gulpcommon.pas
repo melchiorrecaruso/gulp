@@ -54,24 +54,24 @@ type
   { gulp item }
 
   tgulpitem = record
-    name:       rawbytestring;
-    flags:      tgulpflags;
-    mtime:      tdatetime;
-    stime:      tdatetime;
-    attr:       tgulpattributes;
-    mode:       tgulppermissions;
-    size:       int64;
-    linkname:   rawbytestring;
-    userid:     longint;
-    groupid:    longint;
-    username:   rawbytestring;
-    groupname:  rawbytestring;
-    comment:    rawbytestring;
-    offset1:    int64;
-    offset2:    int64;
-    checksum1:  tsha1digest;
-    checksum2:  tsha1digest;
-    version:    longint;
+    name:      rawbytestring;
+    flags:     tgulpflags;
+    mtime:     tdatetime;
+    stime:     tdatetime;
+    attr:      tgulpattributes;
+    mode:      tgulppermissions;
+    size:      int64;
+    linkname:  rawbytestring;
+    userid:    longint;
+    groupid:   longint;
+    username:  rawbytestring;
+    groupname: rawbytestring;
+    comment:   rawbytestring;
+    offset1:   int64;
+    offset2:   int64;
+    checksum1: tsha1digest;
+    checksum2: tsha1digest;
+    version:   longint;
   end;
 
   pgulpitem  = ^tgulpitem;
@@ -277,13 +277,13 @@ end;
 function s2lattr(attr: longint): tgulpattributes;
 begin
   result :=[];
-  if fareadonly  and attr <> 0 then include(result, gareadonly);
-  if fahidden    and attr <> 0 then include(result, gahidden);
-  if fasysfile   and attr <> 0 then include(result, gasysfile);
-  if favolumeid  and attr <> 0 then include(result, gavolumeid);
-  if fadirectory and attr <> 0 then include(result, gadirectory);
-  if faarchive   and attr <> 0 then include(result, gaarchive);
-  if fasymlink   and attr <> 0 then include(result, gasymlink);
+  if fareadonly  and attr > 0 then include(result, gareadonly);
+  if fahidden    and attr > 0 then include(result, gahidden);
+  if fasysfile   and attr > 0 then include(result, gasysfile);
+  if favolumeid  and attr > 0 then include(result, gavolumeid);
+  if fadirectory and attr > 0 then include(result, gadirectory);
+  if faarchive   and attr > 0 then include(result, gaarchive);
+  if fasymlink   and attr > 0 then include(result, gasymlink);
 end;
 
 function getattr(var sr: tsearchrec): longint;
@@ -295,13 +295,13 @@ function getattr(const filename: rawbytestring): longint;
 var
   sr: tsearchrec;
 begin
-  result := 0;
   if sysutils.findfirst(filename,
     fareadonly  or fahidden  or fasysfile or favolumeid or
     fadirectory or faarchive or fasymlink or faanyfile, sr) = 0 then
   begin
     result := sr.attr;
-  end;
+  end else
+    raiseexception('getattr_error');
   sysutils.findclose(sr);
 end;
 

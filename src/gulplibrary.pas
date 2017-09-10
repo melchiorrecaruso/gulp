@@ -123,11 +123,6 @@ const
 
 { internal routines }
 
-function itemcheckmarker(marker: tsha1digest): boolean;
-begin
-  result := sha1match(marker, gulpmarker);
-end;
-
 function itemclear(p: pgulpitem): pgulpitem;
 begin
   p^.name      := '';
@@ -418,37 +413,41 @@ begin
       libwrite(outstream, list[i]);
 
     for i := 0 to list.count - 1 do
-      {$IFDEF LINUX}
-      if issymlink(list[i]^.attr) then
+      if gfadd in list[i]^.flags then
       begin
-        list[i]^.linkname := getsymlink(list[i]^.name);
-      end else
-      {$ELSE}
-      {$IFDEF MSWINDOWS}
-      {$ELSE}
-      ...
-      {$ENDIF}
-      {$ENDIF}
-      if isdirectory(list[i]^.attr) then
-      begin
-         // nothing to do
-      end else
-      begin
-        list[i]^.offset1 := outstream.position;
-        try
-          instream := tfilestream.create(
-            list[i]^.name, fmopenread or fmsharedenywrite);
-        except
-          showwarning(format(geopenstream, [list[i]^.name]));
-          instream := nil;
-        end;
-
-        if assigned(instream) then
+        {$IFDEF LINUX}
+        if issymlink(list[i]^.attr) then
         begin
-          list[i]^.checksum2 := libmove(instream, outstream, list[i]^.size);
-          instream.destroy;
+          list[i]^.linkname := getsymlink(list[i]^.name);
+        end else
+        {$ELSE}
+        {$IFDEF MSWINDOWS}
+        {$ELSE}
+        ...
+        {$ENDIF}
+        {$ENDIF}
+        if isdirectory(list[i]^.attr) then
+        begin
+           // nothing to do
+        end else
+        begin
+          list[i]^.offset1 := outstream.position;
+          try
+            instream := tfilestream.create(
+              list[i]^.name, fmopenread or fmsharedenywrite);
+          except
+            showwarning(format(geopenstream, [list[i]^.name]));
+            instream := nil;
+          end;
+
+          if assigned(instream) then
+          begin
+            list[i]^.size      := instream.size;
+            list[i]^.checksum2 := libmove(instream, outstream, list[i]^.size);
+            instream.destroy;
+          end;
+          list[i]^.offset2 := outstream.position;
         end;
-        list[i]^.offset2 := outstream.position;
       end;
 
     outstream.seek(size, sobeginning);
@@ -468,10 +467,9 @@ var
 begin
   result := itemclear(p);
 
-  if instream.read(marker, sizeof(tsha1digest)) <> sizeof(tsha1digest) then
-    raiseexception(gebrokenarchive, '003001');
-
-  if itemcheckmarker(marker) = false then
+  fillbyte(marker, sizeof(tsha1digest), 0);
+  instream.read(marker, sizeof(tsha1digest));
+  if sha1match(marker, gulpmarker) = false then
     raiseexception(gewrongmarker, '003002');
 
   p^.name := instream.readansistring;
@@ -613,6 +611,7 @@ begin
   result^.mtime    := gettimeutc(filename);
   result^.attr     := s2lattr(getattr(filename));
   result^.mode     := s2lmode(getmode(filename));
+//result^.size     := getsize(filename);
 //result^.linkname := getsymlink(filename);
   result^.userid   := getuserid(filename);
   result^.groupid  := getgroupid(filename);
@@ -942,6 +941,7 @@ begin
     for i := 0 to list1.count - 1 do
     begin
       p := list1[i];
+      system.exclude(p^.flags, gfclose);
       if (p^.offset2 > p^.offset1) then
       begin
         showmessage2(format(gmmoveitem, [p^.name]));
@@ -955,14 +955,11 @@ begin
     end;
 
     tmp.seek(0, sobeginning);
+    system.include(list1[list1.count - 1]^.flags, gfclose);
     for i := 0 to list1.count - 1 do
     begin
-      p := list1[i];
-      if i = list1.count - 1 then
-        system.include(p^.flags, gfclose)
-      else
-        system.exclude(p^.flags,gfclose);
-      libwrite(tmp, p);
+      list1[i]^.checksum1 := itemgetdigest(list1[i]);
+      libwrite(tmp, list1[i]);
     end;
     tmp.seek(tmp.size, sobeginning);
   end;
