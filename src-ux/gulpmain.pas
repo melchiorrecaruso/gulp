@@ -518,14 +518,14 @@ begin
     item.caption := t.name;
     if gadirectory in t.attr then
     begin
-      item.imageindex := 5;
-      item.stateindex := 5;
+      item.imageindex := 3;
+      item.stateindex := 3;
       item.subitems.add(size2str(t.size));
     end else
     begin
 
-      item.imageindex := 3;
-      item.stateindex := 3;
+      item.imageindex := 5;
+      item.stateindex := 5;
       item.subitems.add(size2str(t.size));
     end;
     item.subitems.add(time2str(t.timeutc));
@@ -1080,6 +1080,7 @@ begin
   caption := 'Gulp - A simple journaling archiver';
   notebook.pageindex := 0;
   updatebuttons(false);
+  clear;
 end;
 
 end.

@@ -301,7 +301,7 @@ begin
   begin
     result := sr.attr;
   end else
-    raiseexception('getattr_error');
+    result := -1;
   sysutils.findclose(sr);
 end;
 
@@ -479,13 +479,13 @@ function getsize(const filename: rawbytestring): int64;
 var
   sr: tsearchrec;
 begin
-  result := 0;
   if sysutils.findfirst(filename,
     fareadonly  or fahidden  or fasysfile or favolumeid or
     fadirectory or faarchive or fasymlink or faanyfile, sr) = 0 then
   begin
     result := getsize(sr);
-  end;
+  end else
+    result := 0;
   sysutils.findclose(sr);
 end;
 
@@ -505,25 +505,26 @@ function gettimeutc(const filename: rawbytestring): tdatetime;
 var
   sr: tsearchrec;
 begin
-  result := 0;
   if sysutils.findfirst(filename,
     fareadonly  or fahidden  or fasysfile or favolumeid or
-    fadirectory or faarchive or fasymlink or faanyfile,sr) = 0 then
+    fadirectory or faarchive or fasymlink or faanyfile, sr) = 0 then
   begin
     result := gettimeutc(sr);
-  end;
+  end else
+    result := 0;
   sysutils.findclose(sr);
 end;
 
 function settimeutc(const filename: rawbytestring; timeutc: tdatetime): longint;
 begin
-  result := -1;
   {$IFDEF LINUX}
   if issymlink(filename) = false then
-    result := filesetdate(filename, datetimetofiledate(universaltime2local(timeutc)));
+    result := filesetdate(filename, datetimetofiledate(universaltime2local(timeutc)))
+  else
+    result := -1;
   {$ELSE}
   {$IFDEF MSWINDOWS}
-  result := filesetdate(filename, datetimetofiledate(universaltime2local(timeutc)))
+  result := filesetdate(filename, datetimetofiledate(universaltime2local(timeutc)));
   {$ELSE}
   ...
   {$ENDIF}

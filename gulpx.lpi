@@ -49,9 +49,9 @@
         <ResourceBaseClass Value="Form"/>
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="530"/>
-        <CursorPos X="9" Y="550"/>
-        <FoldState Value=" T3n10401312-"/>
+        <TopLine Value="1048"/>
+        <CursorPos X="21" Y="785"/>
+        <FoldState Value=" T3n1040131223A7 pibsJ0E6]9ajQ092m"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -59,11 +59,11 @@
       <Unit2>
         <Filename Value="src/gulpcommon.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="2"/>
-        <TopLine Value="98"/>
-        <CursorPos X="12" Y="117"/>
-        <UsageCount Value="176"/>
-        <Loaded Value="True"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="259"/>
+        <CursorPos X="26" Y="269"/>
+        <FoldState Value=" T3lY07H"/>
+        <UsageCount Value="177"/>
       </Unit2>
       <Unit3>
         <Filename Value="src/gulplibrary.pas"/>
@@ -71,7 +71,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="82"/>
         <CursorPos X="98" Y="92"/>
-        <UsageCount Value="176"/>
+        <UsageCount Value="177"/>
       </Unit3>
     </Units>
   </ProjectOptions>
@@ -95,7 +95,7 @@
     <CodeGeneration>
       <SmartLinkUnit Value="True"/>
       <Optimizations>
-        <OptimizationLevel Value="4"/>
+        <OptimizationLevel Value="3"/>
       </Optimizations>
     </CodeGeneration>
     <Linking>

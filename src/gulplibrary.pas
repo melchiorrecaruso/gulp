@@ -1065,16 +1065,23 @@ end;
 
 function tgulpapplication.isexcluded(const item: pgulpitem): boolean;
 begin
-  result := filenamematch(item^.name, fexclude)                 or
-            (l2sattr(item^.attr) and fexcludeattr <> 0) or
-            (l2smode(item^.mode) and fexcludemode <> 0);
+  result := filenamematch(item^.name, fexclude);
+  if result = false then
+  begin
+    result := (l2sattr(item^.attr) and fexcludeattr <> 0) or
+              (l2smode(item^.mode) and fexcludemode <> 0);
+  end;
 end;
 
 function tgulpapplication.isexcluded(const filename: rawbytestring): boolean;
 begin
-  result := filenamematch(filename, fexclude)                 or
-            (getattr(filename) and fexcludeattr <> 0) or
-            (getmode(filename) and fexcludemode <> 0);
+  result := filenamematch(filename, fexclude);
+  if result = false then
+  begin
+   result := (getattr(filename) and fexcludeattr <> 0) or
+             (getmode(filename) and fexcludemode <> 0);
+  end;
+
 end;
 
 end.

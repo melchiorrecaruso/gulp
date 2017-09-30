@@ -1,8 +1,9 @@
 # Change Log
-## [0.4](https://github.com/melchiorrecaruso/gulp/tree/0.4) (2016-03-25)
+## [0.4](https://github.com/melchiorrecaruso/gulp/tree/0.4) (2017-09-30)
 [Full Changelog](https://github.com/melchiorrecaruso/gulp/compare/0.3...0.4)
 ###
 **Merged pull requests:**
+- New file format
 - New "--verbose" switch. It's show more process info.
 - New "--excludeattr" switch. Avoid operating on files whose attributes include attributes ATTR.
 - New "--excludemode" switch. Avoid operating on files whose modes include modes MODE.
