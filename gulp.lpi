@@ -115,7 +115,7 @@ override_dh_auto_install:
       <Unit0>
         <Filename Value="src/gulp.pas"/>
         <IsPartOfProject Value="True"/>
-        <TopLine Value="305"/>
+        <TopLine Value="40"/>
         <CursorPos X="34" Y="79"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
@@ -123,9 +123,10 @@ override_dh_auto_install:
       <Unit1>
         <Filename Value="src/gulplibrary.pas"/>
         <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="2"/>
-        <TopLine Value="696"/>
-        <CursorPos Y="756"/>
+        <TopLine Value="990"/>
+        <CursorPos X="16" Y="1010"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit1>
@@ -140,10 +141,9 @@ override_dh_auto_install:
       <Unit3>
         <Filename Value="src/gulpcommon.pas"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="471"/>
-        <CursorPos X="3" Y="508"/>
+        <TopLine Value="66"/>
+        <CursorPos X="35" Y="66"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit3>
