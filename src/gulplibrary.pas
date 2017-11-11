@@ -50,14 +50,14 @@ type
 
   tgulplibrary = class(tgulpinterface)
   protected
-    function  libmove   (instrm,  outstrm: tbuffstream; size: int64): tsha1digest;
-    procedure librestore(instrm:  tbuffstream; p:    pgulpitem);
+    function  libmove   (instrm,  outstrm: tstream; size: int64): tsha1digest;
+    procedure librestore(instrm:  tstream; p:    pgulpitem);
     procedure librestore(                      p:    pgulpitem);
-    procedure libwrite  (outstrm: tbuffstream; p:    pgulpitem);
-    procedure libwrite  (outstrm: tbuffstream; list: tgulplist);
-    function  libread   (instrm:  tbuffstream; p:    pgulpitem): pgulpitem;
-    procedure libread   (instrm:  tbuffstream; list: tgulplist);
-    procedure libread   (instrm:  tbuffstream; list: tgulplist; untilversion: longword);
+    procedure libwrite  (outstrm: tstream; p:    pgulpitem);
+    procedure libwrite  (outstrm: tstream; list: tgulplist);
+    function  libread   (instrm:  tstream; p:    pgulpitem): pgulpitem;
+    procedure libread   (instrm:  tstream; list: tgulplist);
+    procedure libread   (instrm:  tstream; list: tgulplist; untilversion: longword);
     function  libnew1   (const filename: rawbytestring; stimeutc: tdatetime): pgulpitem;
     function  libnew2   (const filename: rawbytestring; stimeutc: tdatetime): pgulpitem;
     procedure libappend (list: tgulplist; p: pgulpitem);
@@ -250,7 +250,7 @@ end;
 
 { gulp library class }
 
-function tgulplibrary.libmove(instrm, outstrm: tbuffstream; size: int64): tsha1digest;
+function tgulplibrary.libmove(instrm, outstrm: tstream; size: int64): tsha1digest;
 var
   buffer:  array[0..$FFFF] of byte;
   context: tsha1context;
@@ -269,27 +269,28 @@ begin
   sha1final(context, result);
 end;
 
-procedure tgulplibrary.librestore(instrm: tbuffstream; p: pgulpitem);
+procedure tgulplibrary.librestore(instrm: tstream; p: pgulpitem);
 var
-  outpath:   rawbytestring;
-  outstream: tbuffstream;
+  outpath: rawbytestring;
 
-  procedure librestorefile(instream: tbuffstream; p: pgulpitem); inline;
+  procedure librestorefile(instrm: tstream; p: pgulpitem); inline;
+  var
+    outstrm: tstream;
   begin
-    instream.seek(p^.offset1, sobeginning);
+    instrm.seek(p^.offset1, sobeginning);
     try
-      outstream := tfilewriter.create(p^.name, TRUE);
+      outstrm := tfilestream.create(p^.name, fmcreate);
     except
       showwarning(format(geopenstream, [p^.name]));
-      outstream := nil;
+      outstrm := nil;
     end;
 
-    if assigned(outstream) then
+    if assigned(outstrm) then
     begin
-      if sha1match(libmove(instream, outstream,
+      if sha1match(libmove(instrm, outstrm,
         p^.offset2 - p^.offset1), p^.checksum2) = false then
         raiseexception(gechecksum, '003016');
-      outstream.destroy;
+      outstrm.destroy;
     end;
   end;
 
@@ -373,11 +374,11 @@ begin
   {$ENDIF}
 end;
 
-procedure tgulplibrary.libwrite(outstrm: tbuffstream; p: pgulpitem);
+procedure tgulplibrary.libwrite(outstrm: tstream; p: pgulpitem);
 begin
   outstrm.write(gulpmarker, sizeof(tsha1digest));
 
-  outstrm.writestring(p^.name);
+  outstrm.writeansistring(p^.name);
 
   outstrm.write(p^.flags, sizeof(p^.flags));
   outstrm.write(p^.mtime, sizeof(p^.mtime));
@@ -386,14 +387,14 @@ begin
   outstrm.write(p^.mode,  sizeof(p^.mode));
   outstrm.write(p^.size,  sizeof(p^.size));
 
-  outstrm.writestring(p^.linkname);
+  outstrm.writeansistring(p^.linkname);
 
   outstrm.write(p^.userid,  sizeof(p^.userid));
   outstrm.write(p^.groupid, sizeof(p^.groupid));
 
-  outstrm.writestring(p^.username);
-  outstrm.writestring(p^.groupname);
-  outstrm.writestring(p^.comment);
+  outstrm.writeansistring(p^.username);
+  outstrm.writeansistring(p^.groupname);
+  outstrm.writeansistring(p^.comment);
 
   outstrm.write(p^.offset1,   sizeof(p^.offset1));
   outstrm.write(p^.offset2,   sizeof(p^.offset2));
@@ -401,10 +402,10 @@ begin
   outstrm.write(p^.checksum2, sizeof(tsha1digest));
 end;
 
-procedure tgulplibrary.libwrite(outstrm: tbuffstream; list: tgulplist);
+procedure tgulplibrary.libwrite(outstrm: tstream; list: tgulplist);
 var
   i:      longint;
-  instrm: tbuffstream;
+  instrm: tstream;
   size:   int64;
 begin
   if list.count > 0 then
@@ -434,7 +435,7 @@ begin
         begin
           list[i]^.offset1 := outstrm.position;
           try
-            instrm := tfilereader.create(list[i]^.name);
+            instrm := tfilestream.create(list[i]^.name, fmopenread or fmsharedenywrite);
           except
             showwarning(format(geopenstream, [list[i]^.name]));
             instrm := nil;
@@ -450,7 +451,7 @@ begin
         end;
       end;
 
-    outstrm.seek(0, soend);
+    outstrm.seek(size, sobeginning);
     include(list[list.count - 1]^.flags, gfclose);
     for i := 0 to list.count - 1 do
     begin
@@ -461,7 +462,7 @@ begin
   end;
 end;
 
-function tgulplibrary.libread(instrm: tbuffstream; p: pgulpitem): pgulpitem;
+function tgulplibrary.libread(instrm: tstream; p: pgulpitem): pgulpitem;
 var
   marker: tsha1digest;
 begin
@@ -472,7 +473,7 @@ begin
   if sha1match(marker, gulpmarker) = false then
     raiseexception(gewrongmarker, '003002');
 
-  p^.name := instrm.readstring;
+  p^.name := instrm.readansistring;
 
   instrm.read(p^.flags, sizeof(p^.flags));
   instrm.read(p^.mtime, sizeof(p^.mtime));
@@ -481,14 +482,14 @@ begin
   instrm.read(p^.mode,  sizeof(p^.mode));
   instrm.read(p^.size,  sizeof(p^.size));
 
-  p^.linkname := instrm.readstring;
+  p^.linkname := instrm.readansistring;
 
   instrm.read(p^.userid,  sizeof(p^.userid));
   instrm.read(p^.groupid, sizeof(p^.groupid));
 
-  p^.username  := instrm.readstring;
-  p^.groupname := instrm.readstring;
-  p^.comment   := instrm.readstring;
+  p^.username  := instrm.readansistring;
+  p^.groupname := instrm.readansistring;
+  p^.comment   := instrm.readansistring;
 
   instrm.read(p^.offset1,   sizeof(p^.offset1));
   instrm.read(p^.offset2,   sizeof(p^.offset2));
@@ -509,7 +510,7 @@ begin
   dodirseparators(p^.name);
 end;
 
-procedure tgulplibrary.libread(instrm: tbuffstream; list: tgulplist);
+procedure tgulplibrary.libread(instrm: tstream; list: tgulplist);
 var
   p:       pgulpitem;
   offset:  int64    = 0;
@@ -541,7 +542,7 @@ begin
     raiseexception(gebrokenarchive, '003011');
 end;
 
-procedure tgulplibrary.libread(instrm: tbuffstream; list: tgulplist; untilversion: longword);
+procedure tgulplibrary.libread(instrm: tstream; list: tgulplist; untilversion: longword);
 var
   i:       longint;
   p:       pgulpitem;
@@ -682,19 +683,19 @@ var
   list2: tgulplist;
   scan:  tscanner;
   size:  int64 = 0;
-  strm:  tbuffstream;
+  strm:  tstream;
 begin
   fterminated := false;
   showmessage1(gulpdescription);
   showmessage1(format(gmsync, [filename]));
 
   if fileexists(filename) = TRUE then
-  begin
-    strm  := tfilereader.create(filename);
-    list1 := tgulplist.create(@compare40);
-    libread(strm, list1, $ffffffff);
-    freeandnil(strm);
-  end;
+    strm  := tfilestream.create(filename, fmopenreadwrite or fmsharedenywrite)
+  else
+    strm  := tfilestream.create(filename, fmcreate);
+  list1 := tgulplist.create(@compare40);
+  libread(strm, list1, $ffffffff);
+  size := strm.seek(0, soend);
 
   scan := tscanner.create;
   for i := finclude.count - 1 downto 0 do
@@ -741,8 +742,6 @@ begin
       libappend(list2, libnew2(scan[i], fstimeutc));
     end;
   end;
-  strm := tfilewriter.create(filename, not fileexists(filename));
-  size := strm.seek(0, soend);
   libwrite(strm, list2);
 
   libclear(list1);
@@ -764,13 +763,13 @@ var
   p:     pgulpitem;
   scan:  tscanner;
   size:  int64 = 0;
-  strm:  tbuffstream;
+  strm:  tstream;
 begin
   fterminated := false;
   showmessage1(gulpdescription);
   showmessage1(format(gmrestore, [filename]));
 
-  strm  := tfilereader.create(filename);
+  strm  := tfilestream.create(filename, fmopenread or fmsharedenywrite);
   list1 := tgulplist.create(@compare40);
   list2 := tgulplist.create(@compare40);
   if funtilversion = 0 then
@@ -845,18 +844,18 @@ procedure tgulpapplication.check(const filename: rawbytestring);
 var
   i:     longint;
   list1: tgulplist;
-  null:  tbuffstream;
-  strm:  tbuffstream;
+  null:  tstream;
+  strm:  tstream;
 begin
   fterminated := false;
   showmessage1(gulpdescription);
   showmessage1(format(gmcheck, [filename]));
 
-  strm  := tfilereader.create(filename);
+  strm  := tfilestream.create(filename, fmopenread or fmsharedenywrite);
   list1 := tgulplist.create(@compare41);
   libread(strm, list1);
 
-  null := tnullwriter.create;
+  null := tnullstream.create;
   for i := 0 to list1.count - 1 do
   begin
     showmessage2(format(gmcheckitem, [list1[i]^.name]));
@@ -881,13 +880,13 @@ var
   p:      pgulpitem;
   offset: int64 = 0;
   size:   int64 = 0;
-  strm:   tbuffstream;
+  strm:   tstream;
 begin
   fterminated := false;
   showmessage1(gulpdescription);
   showmessage1(format(gmfix, [filename]));
 
-  strm := tfilereader.create(filename);
+  strm := tfilestream.create(filename, fmopenreadwrite or fmsharedenywrite);
   p := new(pgulpitem);
   try
     while true do
@@ -907,19 +906,14 @@ begin
   except
   end;
   dispose(p);
-
+  strm.seek(0, soend);
   offset := strm.size - size;
-  freeandnil(strm);
 
   if size > 0 then
-  begin
-    strm := tfilewriter.create(filename, false);
-    strm.seek(0, soend);
-    strm.size := size;
-    freeandnil(strm);
-  end
+    strm.size := size
   else
     raise exception.createfmt(gereadarchive, ['003015']);
+  freeandnil(strm);
 
   showmessage1(format(gmfixfinish, [offset]));
   fterminated := true;
@@ -931,20 +925,20 @@ var
   list1:   tgulplist;
   p:       pgulpitem;
   size:    int64;
-  instrm:  tfilereader;
-  outstrm: tfilewriter;
+  instrm:  tstream;
+  outstrm: tstream;
   outname: rawbytestring;
 begin
   fterminated := false;
   showmessage1(gulpdescription);
   showmessage1(format(gmpurge, [filename]));
 
-  instrm := tfilereader.create(filename);
+  instrm := tfilestream.create(filename, fmopenread or fmsharedenywrite);
   list1  := tgulplist.create(@compare40);
   libread(instrm, list1, $ffffffff);
 
   outname := gettempfilename(extractfiledir(filename), '');
-  outstrm := tfilewriter.create(outname, true);
+  outstrm := tfilestream.create(outname, fmcreate);
   if list1.count > 0 then
   begin
     for i := 0 to list1.count - 1 do
@@ -997,13 +991,13 @@ var
   i, j:  longint;
   list1: tgulplist;
   p:     pgulpitem;
-  strm:  tbuffstream;
+  strm:  tstream;
 begin
   fterminated := false;
   showmessage1(gulpdescription);
   showmessage1(format(gmlist, [filename]));
 
-  strm := tfilereader.create(filename);
+  strm := tfilestream.create(filename, fmopenread or fmsharedenywrite);
   if fonlyversion > 0 then
   begin
     list1 := tgulplist.create(@compare41);

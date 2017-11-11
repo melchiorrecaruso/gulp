@@ -286,7 +286,7 @@ constructor tdmccompressionstream.create(astream: tstream; c1, c2, nodeslimit: l
 begin
   inherited create;
   fcoder    := tdmccoder.create(astream);
-  fmodeller := tdmcmodeller.create(c1, c2, (2* 1024* 1024*1024) div sizeof(tdmcnode));
+  fmodeller := tdmcmodeller.create(c1, c2, nodeslimit);
 end;
 
 destructor tdmccompressionstream.destroy;

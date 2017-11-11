@@ -53,7 +53,7 @@ begin
     ws := twritebufstream.create(
           tfilestream.create(paramstr(3), fmcreate));
 
-    en := tdmccompressionstream.create(ws, 1, 24, (1024*1024*1024) div sizeof(tdmcnode));
+    en := tdmccompressionstream.create(ws, 2, 24, (1024*1024*1024) div sizeof(tdmcnode));
 
     ws.write(rs.size, sizeof(int64));
 

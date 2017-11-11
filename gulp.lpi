@@ -111,7 +111,7 @@ override_dh_auto_install:
         <Display Use="True"/>
       </local>
     </RunParams>
-    <Units Count="8">
+    <Units Count="10">
       <Unit0>
         <Filename Value="src/gulp.pas"/>
         <IsPartOfProject Value="True"/>
@@ -123,10 +123,9 @@ override_dh_auto_install:
       <Unit1>
         <Filename Value="src/gulplibrary.pas"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="2"/>
-        <TopLine Value="990"/>
-        <CursorPos X="16" Y="1010"/>
+        <EditorIndex Value="4"/>
+        <TopLine Value="22"/>
+        <CursorPos X="14" Y="37"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit1>
@@ -142,8 +141,8 @@ override_dh_auto_install:
         <Filename Value="src/gulpcommon.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="66"/>
-        <CursorPos X="35" Y="66"/>
+        <TopLine Value="22"/>
+        <CursorPos X="35" Y="62"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit3>
@@ -178,6 +177,25 @@ override_dh_auto_install:
         <CursorPos X="20" Y="171"/>
         <UsageCount Value="201"/>
       </Unit7>
+      <Unit8>
+        <Filename Value="src/gulpstream.pas"/>
+        <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="18"/>
+        <CursorPos X="21" Y="52"/>
+        <UsageCount Value="23"/>
+        <Loaded Value="True"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="src/gulpdmc.pas"/>
+        <IsPartOfProject Value="True"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="55"/>
+        <CursorPos X="33" Y="70"/>
+        <UsageCount Value="23"/>
+        <Loaded Value="True"/>
+      </Unit9>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -193,29 +211,24 @@ override_dh_auto_install:
     <Parsing>
       <SyntaxOptions>
         <CStyleOperator Value="False"/>
-        <IncludeAssertionCode Value="True"/>
         <AllowLabel Value="False"/>
         <CPPInline Value="False"/>
         <UseAnsiStrings Value="False"/>
       </SyntaxOptions>
     </Parsing>
     <CodeGeneration>
-      <Checks>
-        <IOChecks Value="True"/>
-        <RangeChecks Value="True"/>
-        <OverflowChecks Value="True"/>
-        <StackChecks Value="True"/>
-      </Checks>
-      <VerifyObjMethodCallValidity Value="True"/>
+      <SmartLinkUnit Value="True"/>
+      <RelocatableUnit Value="True"/>
       <Optimizations>
-        <OptimizationLevel Value="0"/>
+        <OptimizationLevel Value="4"/>
       </Optimizations>
     </CodeGeneration>
     <Linking>
       <Debugging>
-        <UseHeaptrc Value="True"/>
-        <UseExternalDbgSyms Value="True"/>
+        <GenerateDebugInfo Value="False"/>
+        <UseLineInfoUnit Value="False"/>
       </Debugging>
+      <LinkSmart Value="True"/>
     </Linking>
     <Other>
       <Verbosity>
