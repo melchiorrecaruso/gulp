@@ -13,7 +13,7 @@ uses
 {$endif}
   interfaces,
   forms,
-  gulpmain;
+  gulpmain, gulpabout;
 
 {$r *.res}
 

@@ -92,6 +92,7 @@ type
     fonshowwarning:  tgulpshowmessage;
   protected
     procedure showitem    (const item: pointer);
+
     procedure showmessage1(const message: rawbytestring);
     procedure showmessage2(const message: rawbytestring);
     procedure showwarning (const message: rawbytestring);

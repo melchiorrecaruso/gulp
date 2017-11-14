@@ -31,10 +31,9 @@
       <Unit0>
         <Filename Value="src/gtest.pas"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
-        <TopLine Value="45"/>
-        <CursorPos X="66" Y="56"/>
-        <UsageCount Value="30"/>
+        <TopLine Value="40"/>
+        <CursorPos X="40" Y="48"/>
+        <UsageCount Value="31"/>
         <Loaded Value="True"/>
       </Unit0>
     </Units>

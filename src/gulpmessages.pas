@@ -76,6 +76,7 @@ const
   gmpurgefinish     = 'Finished (%u removed bytes)';
 
   gmlist            = 'Listing the content of "%s"';
+  gmview            = 'Viewing the content of "%s"';
   gmlistfinish      = 'Finished (%u listed items)';
   gmlistlastversion = 'Lastest version %u';
 

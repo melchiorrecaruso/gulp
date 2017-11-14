@@ -31,7 +31,6 @@ uses
   {$ENDIF}
   classes,
   gulpcommon,
-  gulpdmc,
   gulpfixes,
   gulplist,
   gulpstream,
@@ -52,7 +51,7 @@ type
   protected
     function  libmove   (instrm,  outstrm: tstream; size: int64): tsha1digest;
     procedure librestore(instrm:  tstream; p:    pgulpitem);
-    procedure librestore(                      p:    pgulpitem);
+    procedure librestore(                  p:    pgulpitem);
     procedure libwrite  (outstrm: tstream; p:    pgulpitem);
     procedure libwrite  (outstrm: tstream; list: tgulplist);
     function  libread   (instrm:  tstream; p:    pgulpitem): pgulpitem;
@@ -76,6 +75,7 @@ type
     fforcepath: boolean;
     fnodelete: boolean;
     fonlyversion: longword;
+    fpipe: tmemorystream;
     fstimeutc: tdatetime;
     fterminated: boolean;
     funtilversion: longword;
@@ -92,6 +92,7 @@ type
     procedure fix(const filename: rawbytestring);
     procedure purge(const filename: rawbytestring);
     procedure list(const filename: rawbytestring);
+    procedure view(const filename: rawbytestring);
     procedure reset;
   public
     property exclude: trawbytestringlist read fexclude;
@@ -101,6 +102,7 @@ type
     property forcepath: boolean read fforcepath write fforcepath;
     property nodelete: boolean read fnodelete write fnodelete;
     property onlyversion: longword read fonlyversion write fonlyversion;
+    property pipe: tmemorystream read fpipe write fpipe;
     property terminated: boolean read fterminated;
     property untilversion: longword read funtilversion write funtilversion;
   end;
@@ -418,20 +420,15 @@ begin
       if gfadd in list[i]^.flags then
       begin
         {$IFDEF LINUX}
-        if issymlink(list[i]^.attr) then
-        begin
-          list[i]^.linkname := getsymlink(list[i]^.name);
-        end else
+        if issymlink(list[i]^.attr) = false then
+          if isdirectory(list[i]^.attr) = false then
         {$ELSE}
         {$IFDEF MSWINDOWS}
+          if isdirectory(list[i]^.attr) = false then
         {$ELSE}
         ...
         {$ENDIF}
         {$ENDIF}
-        if isdirectory(list[i]^.attr) then
-        begin
-           // nothing to do
-        end else
         begin
           list[i]^.offset1 := outstrm.position;
           try
@@ -524,7 +521,7 @@ begin
   begin
     libread(instrm, p)^.version := version;
     inc(offset, itemgetsize(p));
-    inc(offset, p^.offset2 - p^.offset1);
+    inc(offset, max(0, p^.offset2 - p^.offset1));
 
     if gfclose in p^.flags then
     begin
@@ -557,7 +554,7 @@ begin
   begin
     libread(instrm, p)^.version := version;
     inc(offset, itemgetsize(p));
-    inc(offset, p^.offset2 - p^.offset1);
+    inc(offset, max(0, p^.offset2 - p^.offset1));
 
     if gfclose in p^.flags then
     begin
@@ -590,7 +587,6 @@ begin
     end;
   end;
   dispose(p);
-
   if offset <> size then
     raiseexception(gebrokenarchive, '003014');
 end;
@@ -612,8 +608,24 @@ begin
   result^.mtime    := gettimeutc(filename);
   result^.attr     := s2lattr(getattr(filename));
   result^.mode     := s2lmode(getmode(filename));
-//result^.size     := getsize(filename);
-//result^.linkname := getsymlink(filename);
+  {$IFDEF LINUX}
+  if issymlink(result^.attr) then
+    result^.linkname := getsymlink(result^.name)
+  else
+    if isdirectory(result^.attr) then
+      result^.size := 0
+    else
+      result^.size := getsize(filename);
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
+  if isdirectory(list[i]^.attr) then
+    result^.size   := 0
+  else
+    result^.size   := getsize(filename);
+  {$ELSE}
+  ...
+  {$ENDIF}
+  {$ENDIF}
   result^.userid   := getuserid(filename);
   result^.groupid  := getgroupid(filename);
 end;
@@ -671,6 +683,8 @@ begin
   fforcepath    := false;
   fnodelete     := false;
   fonlyversion  := 0;
+  if assigned(fpipe) then
+    fpipe.clear;
   fstimeutc     := localtime2universal(now);
   fterminated   := true;
   funtilversion := $ffffffff;
@@ -690,9 +704,9 @@ begin
   showmessage1(format(gmsync, [filename]));
 
   if fileexists(filename) = TRUE then
-    strm  := tfilestream.create(filename, fmopenreadwrite or fmsharedenywrite)
+    strm := tfilestream.create(filename, fmopenreadwrite or fmsharedenywrite)
   else
-    strm  := tfilestream.create(filename, fmcreate);
+    strm := tfilestream.create(filename, fmcreate);
   list1 := tgulplist.create(@compare40);
   libread(strm, list1, $ffffffff);
   size := strm.seek(0, soend);
@@ -744,8 +758,8 @@ begin
   end;
   libwrite(strm, list2);
 
-  libclear(list1);
-  libclear(list2);
+  libclear  (list1);
+  libclear  (list2);
   freeandnil(list1);
   freeandnil(list2);
   freeandnil(scan);
@@ -830,7 +844,7 @@ begin
     list2.delete(0);
   end;
 
-  libclear(list1);
+  libclear  (list1);
   freeandnil(list1);
   freeandnil(list2);
   freeandnil(scan);
@@ -862,11 +876,14 @@ begin
     if (list1[i]^.offset2 > list1[i]^.offset1) then
     begin
       strm.seek(list1[i]^.offset1, sobeginning);
-      libmove(strm, null, list1[i]^.offset2 - list1[i]^.offset1);
+      if sha1match(libmove(strm, null, list1[i]^.offset2 -
+                                       list1[i]^.offset1),
+                                       list1[i]^.checksum2) = false then
+        raiseexception(gechecksum, '004050');
     end;
   end;
 
-  libclear(list1);
+  libclear  (list1);
   freeandnil(list1);
   freeandnil(null);
   freeandnil(strm);
@@ -971,7 +988,7 @@ begin
   end;
   size := instrm.size - outstrm.size;
 
-  libclear(list1);
+  libclear  (list1);
   freeandnil(list1);
   freeandnil(instrm);
   freeandnil(outstrm);
@@ -1050,7 +1067,89 @@ begin
         end;
   end;
 
-  libclear(list1);
+  libclear  (list1);
+  freeandnil(list1);
+  freeandnil(strm);
+
+  showmessage1(format(gmlistfinish, [c]));
+  showmessage1(format(gmlistlastversion, [j]));
+  fterminated := true;
+end;
+
+procedure tgulpapplication.view(const filename: rawbytestring);
+var
+  c:     longint = 0;
+  i, j:  longint;
+  list1: tgulplist;
+  p:     pgulpitem;
+  strm:  tstream;
+begin
+  fterminated := false;
+  showmessage1(gulpdescription);
+  showmessage1(format(gmview, [filename]));
+
+  strm := tfilestream.create(filename, fmopenread or fmsharedenywrite);
+  if fonlyversion > 0 then
+  begin
+    list1 := tgulplist.create(@compare41);
+    libread(strm, list1);
+  end else
+    if funtilversion > 0 then
+    begin
+      list1 := tgulplist.create(@compare40);
+      libread(strm, list1, funtilversion);
+    end else
+    begin
+      list1 := tgulplist.create(@compare41);
+      libread(strm, list1);
+    end;
+
+  for i := finclude.count - 1 downto 0 do
+  begin
+    j := libfind(list1, finclude[i]);
+    if j <> -1 then
+      if isdirectory(list1[j]^.attr) then
+        finclude.add(includetrailingpathdelimiter(finclude[i]) + '*');
+  end;
+  if finclude.count = 0 then
+    finclude.add('*');
+
+  for i := fexclude.count - 1 downto 0 do
+  begin
+    j := libfind(list1, fexclude[i]);
+    if j <> -1 then
+      if isdirectory(list1[j]^.attr) then
+        fexclude.add(includetrailingpathdelimiter(fexclude[i]) + '*');
+  end;
+
+  c := 0;
+  j := 0;
+  for i := 0 to list1.count - 1 do
+  begin
+    p := list1[i];
+    j := max(j, p^.version);
+    if isincluded(p) and (isexcluded(p) = false) then
+      if fonlyversion = 0 then
+      begin
+
+        strm.seek(p^.offset1, sobeginning);
+        if assigned(fpipe) then
+          fpipe.copyfrom(strm, p^.offset2 - p^.offset1);
+
+        inc(c);
+      end else
+        if p^.version = fonlyversion then
+        begin
+
+         strm.seek(p^.offset1, sobeginning);
+         if assigned(fpipe) then
+           fpipe.copyfrom(strm, p^.offset2 - p^.offset1);
+
+          inc(c);
+        end;
+  end;
+
+  libclear  (list1);
   freeandnil(list1);
   freeandnil(strm);
 

@@ -33,7 +33,7 @@
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="4">
+    <Units Count="5">
       <Unit0>
         <Filename Value="src-ux/gulpx.pas"/>
         <IsPartOfProject Value="True"/>
@@ -47,11 +47,10 @@
         <ComponentName Value="mainform"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="1"/>
-        <TopLine Value="785"/>
-        <CursorPos X="21" Y="785"/>
-        <FoldState Value=" T3n1040131223A7L"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="426"/>
+        <CursorPos X="23" Y="444"/>
+        <FoldState Value=" T3mU09522H3 T0rS4819"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -63,16 +62,29 @@
         <TopLine Value="259"/>
         <CursorPos X="26" Y="269"/>
         <FoldState Value=" T3lY07H"/>
-        <UsageCount Value="177"/>
+        <UsageCount Value="184"/>
       </Unit2>
       <Unit3>
         <Filename Value="src/gulplibrary.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="82"/>
-        <CursorPos X="98" Y="92"/>
-        <UsageCount Value="177"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="854"/>
+        <CursorPos X="32" Y="873"/>
+        <UsageCount Value="184"/>
+        <Loaded Value="True"/>
       </Unit3>
+      <Unit4>
+        <Filename Value="src-ux/gulpabout.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="aboutform"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <EditorIndex Value="3"/>
+        <CursorPos X="17" Y="6"/>
+        <UsageCount Value="26"/>
+        <Loaded Value="True"/>
+      </Unit4>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -90,6 +102,7 @@
         <CStyleOperator Value="False"/>
         <AllowLabel Value="False"/>
         <CPPInline Value="False"/>
+        <UseAnsiStrings Value="False"/>
       </SyntaxOptions>
     </Parsing>
     <CodeGeneration>

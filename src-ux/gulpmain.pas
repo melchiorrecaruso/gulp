@@ -43,20 +43,26 @@ type
     constructor create(createsuspended: boolean);
   end;
 
+type
+  tfomcomponent = (
+    fchomebtn, fcsyncbtn, fcrestbtn, fcfindbtn,
+    fcopenpnl, fcrevcbox, fclogmemo, fcopenlview);
+
+  tformcomponents = set of tfomcomponent;
+
+type
+  tappcommand = (acwelcome, acsync, acrestore, accheck, acfix, acpurge, aclist, acview);
+
+type
   { Tmainform }
 
   Tmainform = class(TForm)
-    aboutname: TLabel;
-    aboutversion: TLabel;
-    aboutdescription: TLabel;
-    aboutlink: TLabel;
-    aboutcopyrigth: TLabel;
-    aboutlicense: TLabel;
+    logok: TBitBtn;
     openpath: TComboBox;
+
 
     progressbar: TProgressBar;
     restorepath: TDirectoryEdit;
-    aboutimage: TImage;
     welcomepurge: TSpeedButton;
     syncok: TBitBtn;
     restoreok: TBitBtn;
@@ -78,7 +84,7 @@ type
     restoremode: TComboBox;
     restorerevision: TComboBox;
     restorerevisionlabel: TLabel;
-    listrevision: TComboBox;
+    revcbox: TComboBox;
     welcomecheck: TSpeedButton;
     welcomefix: TSpeedButton;
     syncbtn: TSpeedButton;
@@ -104,8 +110,8 @@ type
     restorepage: TPage;
     syncpage: TPage;
     MoreMenu: TPopupMenu;
-    openpanel1: TPanel;
-    openlistview: TListView;
+    openpnl1: TPanel;
+    openlview: TListView;
     MenuItem4: TMenuItem;
     notebook: TNotebook;
     openfind: TComboBox;
@@ -114,14 +120,13 @@ type
     welcomeopenlabel: TLabel;
     welcomeopen: TSpeedButton;
     openpage: TPage;
-    openpanel2: TPanel;
+    openpnl2: TPanel;
     openshape1: TShape;
     syncmode: TComboBox;
     syncmodelabel: TLabel;
     topshape: TShape;
     welcomepage: TPage;
-    aboutpage: TPage;
-    MenuItem1: TMenuItem;
+    mi_open: TMenuItem;
     MenuItem2: TMenuItem;
     MenuItem3: TMenuItem;
     byNameMenuItem: TMenuItem;
@@ -138,6 +143,7 @@ type
 
 
     procedure AboutMenuItemClick(Sender: TObject);
+    procedure logokClick(Sender: TObject);
 
 
     procedure BitBtn2Click(Sender: TObject);
@@ -155,9 +161,10 @@ type
     procedure findbtnClick(Sender: TObject);
 
 
-    procedure openlistviewData(Sender: TObject; Item: TListItem);
-    procedure openlistviewDblClick(Sender: TObject);
-    procedure MenuItem1Click(Sender: TObject);
+    procedure openlviewData(Sender: TObject; Item: TListItem);
+    procedure openlviewDblClick(Sender: TObject);
+    procedure mi_openClick(Sender: TObject);
+    procedure restoreokClick(Sender: TObject);
 
 
     procedure restorepathAcceptDirectory(Sender: TObject; var Value: String);
@@ -170,7 +177,7 @@ type
     procedure PathComboBoxCloseUp(Sender: TObject);
     procedure PathComboBoxKeyPress(Sender: TObject; var Key: char);
 
-    procedure listrevisionChange(Sender: TObject);
+    procedure revcboxChange(Sender: TObject);
     procedure welcomecheckClick(Sender: TObject);
 
 
@@ -201,10 +208,12 @@ type
 
 
     procedure synclistviewupdate;
-    procedure updatebuttons(value: boolean);
+    procedure updatecaption(const value: rawbytestring);
+    procedure updatebuttons(value: tformcomponents);
   public
     { public declarations }
   end;
+
 
 
 var
@@ -213,7 +222,7 @@ var
   appthread:   tappthread;
 
   app:         tgulpapplication;
-  appcommand:  rawbytestring;
+  appcommand:  tappcommand;
   appfilename: rawbytestring;
   applist1:    tliteitemlist;
   applist2:    tliteitemlist;
@@ -227,6 +236,7 @@ implementation
 {$r gulpmain.lfm}
 
 uses
+  gulpabout,
   gulpfixes,
   gulpscanner,
   inifiles;
@@ -235,24 +245,13 @@ uses
 
 function compare(item1, item2: tliteitem): longint;
 begin
-  if ((gadirectory in item1.attr)  xor
-      (gadirectory in item2.attr)) then
+  if ((gadirectory in item1.attr) = (gadirectory in item2.attr)) then
     result := ansicomparefilename(item1.name, item2.name)
   else
     if (gadirectory in item1.attr) then
       result := -1
     else
       result :=  1;
-
-  if result = 0 then
-  {$IFDEF UNIX}
-    result := ansicomparestr(item1.path + item1.name, item2.path + item2.name);
-  {$ELSE}
-  {$IFDEF MSWINDOWS}
-    result := ansicomparetext(item1.path + item1.name, item2.path + item2.name);
-  {$ELSE}
-  {$ENDIF}
-  {$ENDIF}
 end;
 
 { tappthread }
@@ -304,23 +303,19 @@ procedure tappthread.execute;
 begin
   app.onshowitem     := @showitem;
   app.onshowmessage1 := @showmessage;
-  //app.onshowmessage2 := @showmessage;
+  app.onshowmessage2 := @showmessage;
 
   synchronize(@mainform.start);
-  if appcommand = 'list' then
-    app.list(appfilename)
-  else
-  if appcommand = 'check' then
-    app.check(appfilename)
-  else
-  if appcommand = 'fix' then
-    app.fix(appfilename)
-  else
-  if appcommand = 'purge' then
-    app.purge(appfilename)
-  else
-  if appcommand = 'view' then
-    app.restore(appfilename);
+  case appcommand of
+    acwelcome: ;
+    acsync   : app.sync   (appfilename);
+    acrestore: app.restore(appfilename);
+    accheck  : app.check  (appfilename);
+    acfix    : app.fix    (appfilename);
+    acpurge  : app.purge  (appfilename);
+    aclist   : app.list   (appfilename);
+    acview   : app.view   (appfilename);
+  end;
   synchronize(@mainform.finish);
 end;
 
@@ -338,12 +333,12 @@ begin
   self.width       :=              ini.readinteger('mainform', 'width',      600);
   self.windowstate := twindowstate(ini.readinteger('mainform', 'windowstate', 0));
 
-  openlistview.columns[0].width := ini.readinteger('listview', 'columns[0].width', 100);
-  openlistview.columns[1].width := ini.readinteger('listview', 'columns[1].width', 100);
-  openlistview.columns[2].width := ini.readinteger('listview', 'columns[2].width', 100);
-  openlistview.columns[3].width := ini.readinteger('listview', 'columns[3].width', 100);
-  openlistview.columns[4].width := ini.readinteger('listview', 'columns[4].width', 100);
-  openlistview.columns[5].width := ini.readinteger('listview', 'columns[5].width', 100);
+  openlview.columns[0].width := ini.readinteger('listview', 'columns[0].width', 100);
+  openlview.columns[1].width := ini.readinteger('listview', 'columns[1].width', 100);
+  openlview.columns[2].width := ini.readinteger('listview', 'columns[2].width', 100);
+  openlview.columns[3].width := ini.readinteger('listview', 'columns[3].width', 100);
+  openlview.columns[4].width := ini.readinteger('listview', 'columns[4].width', 100);
+  openlview.columns[5].width := ini.readinteger('listview', 'columns[5].width', 100);
 
   savedialog .initialdir := ini.readstring('savedialog', ' initialdir', '');
   opendialog .initialdir := ini.readstring('opendialog',  'initialdir', '');
@@ -352,6 +347,7 @@ begin
   ini.destroy;
   // gulp application core
   app               := tgulpapplication.create;
+  app.pipe          := tmemorystream.create;
 
   applist1          := tliteitemlist.create(@compare);
   applist2          := tliteitemlist.create(@compare);
@@ -367,12 +363,12 @@ begin
   welcomeopenlabel.font.size   := 14;
   welcomeopenlabel.font.style  := [];
 
-  openpanel2.autosize      := true;
-  openpanel1.autosize      := false;
-  openpanel1.height        := 1;
+  openpnl2.autosize      := true;
+  openpnl1.autosize      := false;
+  openpnl1.height        := 1;
 
   homebitbtnclick(sender);
-  updatebuttons(false);
+  updatebuttons([]);
 end;
 
 procedure Tmainform.formdestroy(sender: tobject);
@@ -391,12 +387,12 @@ begin
   end;
   ini.writeinteger  ('mainform', 'windowstate', longint(self.windowstate));
 
-  ini.writeinteger('listview', 'columns[0].width', openlistview.columns[0].width);
-  ini.writeinteger('listview', 'columns[1].width', openlistview.columns[1].width);
-  ini.writeinteger('listview', 'columns[2].width', openlistview.columns[2].width);
-  ini.writeinteger('listview', 'columns[3].width', openlistview.columns[3].width);
-  ini.writeinteger('listview', 'columns[4].width', openlistview.columns[4].width);
-  ini.writeinteger('listview', 'columns[5].width', openlistview.columns[5].width);
+  ini.writeinteger('listview', 'columns[0].width', openlview.columns[0].width);
+  ini.writeinteger('listview', 'columns[1].width', openlview.columns[1].width);
+  ini.writeinteger('listview', 'columns[2].width', openlview.columns[2].width);
+  ini.writeinteger('listview', 'columns[3].width', openlview.columns[3].width);
+  ini.writeinteger('listview', 'columns[4].width', openlview.columns[4].width);
+  ini.writeinteger('listview', 'columns[5].width', openlview.columns[5].width);
 
   ini.writestring('savedialog',  'initialdir', savedialog .initialdir);
   ini.writestring('opendialog',  'initialdir', opendialog .initialdir);
@@ -407,6 +403,7 @@ begin
   appfolders.destroy;
   applist1.destroy;
   applist2.destroy;
+  app.pipe.destroy;
   app.destroy;
 end;
 
@@ -420,29 +417,25 @@ begin
   end;
   logmemo.clear;
   openpath.clear;
-  openlistview.clear;
+  openlview.clear;
 end;
 
 procedure Tmainform.start;
 begin
-  updatebuttons(false);
+  updatebuttons([]);
   progressbar.style   := pbstmarquee;
   progressbar.visible := true;
 
-  if appcommand = 'list' then
-    notebook.pageindex := 1
-  else
-  if appcommand = 'check' then
-    notebook.pageindex := 5
-  else
-  if appcommand = 'fix' then
-    notebook.pageindex := 5
-  else
-  if appcommand = 'purge' then
-    notebook.pageindex := 5
-  else
-  if appcommand = 'list' then
-    notebook.pageindex := 1
+  case appcommand of
+    acwelcome: ;
+    acsync   : notebook.pageindex := 4;
+    acrestore: notebook.pageindex := 4;
+    accheck  : notebook.pageindex := 4;
+    acfix    : notebook.pageindex := 4;
+    acpurge  : notebook.pageindex := 4;
+    aclist   : notebook.pageindex := 1;
+    acview   : notebook.pageindex := 4;
+  end;
 end;
 
 procedure tmainform.finish;
@@ -450,17 +443,27 @@ var
   i: longint = 0;
   v: longint = 0;
 begin
-  if appcommand = 'list' then
+
+  //acwelcome: ;
+  //acsync   : notebook.pageindex := 4;
+  //acrestore: notebook.pageindex := 4;
+  //accheck  : notebook.pageindex := 4;
+  //acfix    : notebook.pageindex := 4;
+  //acpurge  : notebook.pageindex := 4;
+  //   : notebook.pageindex := 1;
+  //   : notebook.pageindex := 4;
+
+  if appcommand = aclist then
   begin
     if app.untilversion = $ffffffff then
     begin
       appfolder := '';
       for i := 0 to applist1.count - 1 do
         v := max(v, applist1[i].version);
-      listrevision.items.clear;
+      revcbox.items.clear;
       for i := 0 to v - 1 do
-        listrevision.additem(' revision ' + inttostr(i + 1), nil);
-      listrevision.itemindex := listrevision.items.count - 1;
+        revcbox.additem(' revision ' + inttostr(i + 1), nil);
+      revcbox.itemindex := revcbox.items.count - 1;
     end;
 
     appfolders.clear;
@@ -480,35 +483,58 @@ begin
     end;
     openpath.text := appfolder;
     openpath.editingdone;
-    updatebuttons(true);
-    caption := 'Gulp - ' + opendialog.filename;
+
+    updatecaption('Gulp UX shows - ' + opendialog.filename);
+    updatebuttons([fchomebtn, fcsyncbtn, fcrestbtn, fcfindbtn,
+                   fcrevcbox, fcopenpnl, fclogmemo, fcopenlview]);
+  end else
+  if appcommand = acview then
+  begin
+    app.pipe.seek(0, sobeginning);
+    logmemo.lines.loadfromstream(app.pipe);
+    updatecaption('Gulp UX shows - ' + app.include[0]);
+    updatebuttons([fchomebtn, fclogmemo]);
+  end else
+  if appcommand = accheck then
+  begin
+    updatebuttons([fchomebtn, fclogmemo]);
+  end;
+  if appcommand = acfix then
+  begin
+    updatebuttons([fchomebtn, fclogmemo]);
+  end;
+  if appcommand = acpurge then
+  begin
+    updatebuttons([fchomebtn, fclogmemo]);
   end;
 
   progressbar.style   := pbstnormal;
   progressbar.visible := false;
 end;
 
-
-
-procedure Tmainform.updatebuttons(value: boolean);
+procedure Tmainform.updatecaption(const value: rawbytestring);
 begin
-  homebtn.enabled := true;
-  syncbtn.enabled := value;
-  restbtn.enabled := value;
-  findbtn.enabled := value;
-  openpanel1.enabled := value;
-  revimg .enabled := value;
-  listrevision.enabled  := value;
-
-  logmemo.enabled  := true;
-  logmemo.readonly := true;
-
-  openpanel2.enabled := value;
-  openlistview  .enabled := value;
-  openlistview  .showcolumnheaders := value;
+  caption := value;
 end;
 
-procedure Tmainform.openlistviewdata(sender: tobject; item: tlistitem);
+procedure Tmainform.updatebuttons(value: tformcomponents);
+begin
+  homebtn .enabled := fchomebtn in value;
+  syncbtn .enabled := fcsyncbtn in value;
+  restbtn .enabled := fcrestbtn in value;
+  findbtn .enabled := fcfindbtn in value;
+  openpnl1.enabled := fcopenpnl in value;
+  openpnl2.enabled := fcopenpnl in value;
+  revcbox .enabled := fcrevcbox in value;
+
+  logmemo .enabled  := fclogmemo in value;
+  logmemo .readonly := true;
+
+  openlview.enabled           := fcopenlview in value;
+  openlview.showcolumnheaders := fcopenlview in value;
+end;
+
+procedure Tmainform.openlviewData(sender: tobject; item: tlistitem);
 var
   t: tliteitem;
 begin
@@ -523,7 +549,6 @@ begin
       item.subitems.add(size2str(t.size));
     end else
     begin
-
       item.imageindex := 5;
       item.stateindex := 5;
       item.subitems.add(size2str(t.size));
@@ -535,49 +560,74 @@ begin
   end;
 end;
 
-procedure Tmainform.openlistviewdblclick(sender: tobject);
+procedure Tmainform.openlviewDblClick(sender: tobject);
 begin
-  menuitem1click(sender);
+  mi_openclick(sender);
 end;
 
-procedure Tmainform.menuitem1click(sender: tobject);
+procedure tmainform.mi_openclick(sender: tobject);
 var
   t: tliteitem;
 begin
-  if openlistview.selcount = 1 then
+  if openlview.selcount = 1 then
   begin
-    t := applist2[openlistview.selected.index];
+    t := applist2[openlview.selected.index];
     if gadirectory in t.attr then
     begin
       openpath.text := t.path + includetrailingpathdelimiter(t.name);
       openpath.editingdone;
     end else
     begin
-
-
-      caption := 'View ' + t.path + includetrailingpathdelimiter(t.name);
-      begin
-        clear;
-        app.reset;
-        appcommand   := 'view';
-        appfilename  := appfilename;
-        app.nodelete := true;
-        app.include.add(t.path + includetrailingpathdelimiter(t.name));
-        app.untilversion := $ffffffff;
-        appthread    := tappthread.create(false);
-      end;
-
-
-
+      app.reset;
+      appcommand   := acview;
+      appfilename  := appfilename;
+      app.nodelete := true;
+      app.include.add(t.path + t.name);
+      app.untilversion := $ffffffff;
+      appthread        := tappthread.create(false);
     end;
   end;
 end;
 
+procedure Tmainform.restoreokclick(Sender: TObject);
+begin
+  if sender = syncok then
+    showmessage('sync not implemented')
+  else
+  if sender = restoreok then
+    showmessage('rest not implemented');
+end;
+
 // filter panel routines
 
-procedure Tmainform.aboutmenuitemclick(sender: tobject);
+procedure tmainform.aboutmenuitemclick(sender: tobject);
 begin
-  notebook.pageindex := 2;
+  aboutform := taboutform.create(nil);
+  aboutform.showmodal;
+  freeandnil(aboutform);
+end;
+
+procedure Tmainform.logokClick(Sender: TObject);
+begin
+  if appcommand = acview then
+  begin
+    notebook.pageindex := 1;
+    updatecaption('Gulp UX shows - ' + opendialog.filename);
+    updatebuttons([fchomebtn, fcsyncbtn, fcrestbtn, fcfindbtn,
+                   fcrevcbox, fcopenpnl, fclogmemo, fcopenlview]);
+  end else
+  if appcommand = accheck then
+  begin
+    homebitbtnclick(nil);
+  end else
+  if appcommand = acfix then
+  begin
+    homebitbtnclick(nil);
+  end else
+  if appcommand = acpurge then
+  begin
+    homebitbtnclick(nil);
+  end;
 end;
 
 procedure Tmainform.bitbtn2click(sender: tobject);
@@ -598,8 +648,8 @@ var
   t: tliteitem;
 begin
   appfolder := openpath.text;
-  openlistview.items.beginupdate;
-  openlistview.items.clear;
+  openlview.items.beginupdate;
+  openlview.items.clear;
   applist2.clear;
   for i := 0 to applist1.count - 1 do
   begin
@@ -616,15 +666,19 @@ begin
     if t.visible = true then
       applist2.add(t);
   end;
-  openlistview.items.count := applist2.count;
-  openlistview.items.endupdate;
+  openlview.items.count := applist2.count;
+  openlview.items.endupdate;
 end;
 
 procedure tmainform.restorecancelclick(sender: tobject);
 begin
   notebook.pageindex := 1;
-  updatebuttons(true);
+  updatebuttons([fchomebtn, fcsyncbtn, fcrestbtn, fcfindbtn,
+                 fcrevcbox, fcopenpnl, fclogmemo, fcopenlview]);
 end;
+
+
+
 
 
 
@@ -658,8 +712,8 @@ begin
   syncmode.itemindex := 1;
   synclistview.clear;
   syncroot.clear;
-  updatebuttons(false);
-  notebook.pageindex := 3;
+  updatebuttons([fchomebtn]);
+  notebook.pageindex := 2;
 end;
 
 procedure tmainform.restbitbtnclick(sender: tobject);
@@ -669,36 +723,36 @@ begin
   restorepath.text := '';
   restoremode.itemindex := 1;
   restorerevision.clear;
-  for i := 0 to listrevision.items.count - 1 do
-    restorerevision.additem(listrevision.items[i], nil);
-  restorerevision.itemindex := listrevision.itemindex;
-  updatebuttons(false);
-  notebook.pageindex := 4;
+  for i := 0 to revcbox.items.count - 1 do
+    restorerevision.additem(revcbox.items[i], nil);
+  restorerevision.itemindex := revcbox.itemindex;
+  updatebuttons([fchomebtn]);
+  notebook.pageindex := 3;
 end;
 
 procedure tmainform.findbtnclick(sender: tobject);
 begin
-  if openpanel1.height < 10 then
+  if openpnl1.height < 10 then
   begin
     findbtn.flat        := true;
-    openpanel1.autosize := true;
-    openpanel2.autosize := false;
-    openpanel2.height   := 1;
+    openpnl1.autosize := true;
+    openpnl2.autosize := false;
+    openpnl2.height   := 1;
   end else
   begin
     findbtn.flat        := false;
-    openpanel2.autosize := true;
-    openpanel1.autosize := false;
-    openpanel1.height   := 1;
+    openpnl2.autosize := true;
+    openpnl1.autosize := false;
+    openpnl1.height   := 1;
   end;
 end;
 
-procedure tmainform.listrevisionchange(sender: tobject);
+procedure tmainform.revcboxchange(sender: tobject);
 begin
   clear;
   app.reset;
-  appcommand := 'list';
-  app.untilversion := listrevision.itemindex + 1;
+  appcommand := aclist;
+  app.untilversion := revcbox.itemindex + 1;
   appthread  := tappthread.create(false);
 end;
 
@@ -725,7 +779,7 @@ begin
     begin
       clear;
       app.reset;
-      appcommand  := 'list';
+      appcommand  := aclist;
       appfilename := opendialog.filename;
       app.untilversion := $ffffffff;
       appthread   := tappthread.create(false);
@@ -742,7 +796,7 @@ begin
     begin
       clear;
       app.reset;
-      appcommand  := 'check';
+      appcommand  := accheck;
       appfilename := opendialog.filename;
       appthread   := tappthread.create(false);
     end;
@@ -758,7 +812,7 @@ begin
     begin
       clear;
       app.reset;
-      appcommand  := 'fix';
+      appcommand  := acfix;
       appfilename := opendialog.filename;
       appthread   := tappthread.create(false);
     end;
@@ -774,7 +828,7 @@ begin
     begin
       clear;
       app.reset;
-      appcommand  := 'purge';
+      appcommand  := acpurge;
       appfilename := opendialog.filename;
       appthread   := tappthread.create(false);
     end;
@@ -807,7 +861,7 @@ var
   d: string;
   t: tlistitem;
 begin
-  if selectdirectory('select directory', getcurrentdir, d) then
+  if selectdirectory('Select directory', getcurrentdir, d) then
   begin
     t := synclistview.items.add;
     t.caption  := (d);
@@ -1024,9 +1078,9 @@ begin
   try
     f.folderedit.text := getcurrentdir;
     f.revisioncombobox.clear;
-    for i := 0 to listrevision.items.count - 1 do
-      f.revisioncombobox.additem(listrevision.items[i], nil);
-    f.revisioncombobox.itemindex := listrevision.itemindex;
+    for i := 0 to revcbox.items.count - 1 do
+      f.revisioncombobox.additem(revcbox.items[i], nil);
+    f.revisioncombobox.itemindex := revcbox.itemindex;
     f.modecombobox    .itemindex := 1;
 
     f.excludememo.clear;
@@ -1077,9 +1131,9 @@ end;
 
 procedure Tmainform.homebitbtnclick(sender: tobject);
 begin
-  caption := 'Gulp - A simple journaling archiver';
+  caption := 'Gulp UX - A simple journaling archiver';
   notebook.pageindex := 0;
-  updatebuttons(false);
+  updatebuttons([fchomebtn]);
   clear;
 end;
 
