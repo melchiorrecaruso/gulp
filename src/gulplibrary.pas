@@ -119,6 +119,8 @@ const
   gulpmarker : tsha1digest = (106,144,157,18,207,10,
     68,233,72,6,60,107,74,16,223,55,134,75,20,207);
 
+  nullmarker : tsha1digest = (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+
   gulpdescription =
     'GULP v0.4 journaling archiver, copyright (c) 2014-2017 Melchiorre Caruso.'
     + lineending +
@@ -143,8 +145,8 @@ begin
   p^.comment   := '';
   p^.offset1   := 0;
   p^.offset2   := 0;
-  fillchar(p^.checksum1, sizeof(tsha1digest), 0);
-  fillchar(p^.checksum2, sizeof(tsha1digest), 0);
+  p^.checksum1 := nullmarker;
+  p^.checksum2 := nullmarker;
   p^.version   := 0;
   result       := p;
 end;
@@ -172,8 +174,10 @@ begin
   sha1update(context, pointer(p^.groupname)^, length(p^.groupname));
   sha1update(context, pointer(p^.comment)^,   length(p^.comment));
 
-  sha1update(context, p^.offset1, sizeof(p^.offset1));
-  sha1update(context, p^.offset2, sizeof(p^.offset2));
+  sha1update(context, p^.offset1,   sizeof(p^.offset1));
+  sha1update(context, p^.offset2,   sizeof(p^.offset2));
+//sha1update(context, p^.checksum1, sizeof(p^.checksum1));
+//sha1update(context, p^.checksum2, sizeof(p^.checksum2));
 
   sha1final (context, result);
 end;
@@ -202,8 +206,8 @@ begin
 
   inc(result, sizeof(p^.offset1));
   inc(result, sizeof(p^.offset2));
-  inc(result, sizeof(tsha1digest));
-  inc(result, sizeof(tsha1digest));
+  inc(result, sizeof(p^.checksum1));
+  inc(result, sizeof(p^.checksum2));
 end;
 
 function compare40(p1, p2: pgulpitem): longint;
@@ -274,6 +278,7 @@ end;
 procedure tgulplibrary.librestore(instrm: tstream; p: pgulpitem);
 var
   outpath: rawbytestring;
+  outsize: int64;
 
   procedure librestorefile(instrm: tstream; p: pgulpitem); inline;
   var
@@ -289,8 +294,8 @@ var
 
     if assigned(outstrm) then
     begin
-      if sha1match(libmove(instrm, outstrm,
-        p^.offset2 - p^.offset1), p^.checksum2) = false then
+      outsize := p^.offset2 - p^.offset1;
+      if not sha1match(p^.checksum2, libmove(instrm, outstrm, outsize)) then
         raiseexception(gechecksum, '003016');
       outstrm.destroy;
     end;
@@ -378,7 +383,7 @@ end;
 
 procedure tgulplibrary.libwrite(outstrm: tstream; p: pgulpitem);
 begin
-  outstrm.write(gulpmarker, sizeof(tsha1digest));
+  outstrm.write(gulpmarker, sizeof(gulpmarker));
 
   outstrm.writeansistring(p^.name);
 
@@ -400,8 +405,8 @@ begin
 
   outstrm.write(p^.offset1,   sizeof(p^.offset1));
   outstrm.write(p^.offset2,   sizeof(p^.offset2));
-  outstrm.write(p^.checksum1, sizeof(tsha1digest));
-  outstrm.write(p^.checksum2, sizeof(tsha1digest));
+  outstrm.write(p^.checksum1, sizeof(p^.checksum1));
+  outstrm.write(p^.checksum2, sizeof(p^.checksum2));
 end;
 
 procedure tgulplibrary.libwrite(outstrm: tstream; list: tgulplist);
@@ -440,7 +445,6 @@ begin
 
           if assigned(instrm) then
           begin
-            list[i]^.size      := instrm.size;
             list[i]^.checksum2 := libmove(instrm, outstrm, list[i]^.size);
             instrm.destroy;
           end;
@@ -464,10 +468,9 @@ var
   marker: tsha1digest;
 begin
   result := itemclear(p);
-
-  fillbyte(marker, sizeof(tsha1digest), 0);
-  instrm.read(marker, sizeof(tsha1digest));
-  if sha1match(marker, gulpmarker) = false then
+  marker := nullmarker;
+  instrm.read(marker, sizeof(marker));
+  if not sha1match(marker, gulpmarker)then
     raiseexception(gewrongmarker, '003002');
 
   p^.name := instrm.readansistring;
@@ -490,18 +493,18 @@ begin
 
   instrm.read(p^.offset1,   sizeof(p^.offset1));
   instrm.read(p^.offset2,   sizeof(p^.offset2));
-  instrm.read(p^.checksum1, sizeof(tsha1digest));
-  instrm.read(p^.checksum2, sizeof(tsha1digest));
+  instrm.read(p^.checksum1, sizeof(p^.checksum1));
+  instrm.read(p^.checksum2, sizeof(p^.checksum2));
+
+  if not sha1match(p^.checksum1, itemgetdigest(p)) then
+    raiseexception(gebrokenarchive, '003007');
 
   if (([] = p^.flags)) or (([gfclose] = p^.flags)) then
     raiseexception(gewrongflag, '004001');
   if ((gfdelete in p^.flags)) and ((gfadd in p^.flags)) then
     raiseexception(gewrongflag, '003003');
-
   //if (p^.offset2 - p^.offset1 <> p^.size) then
   //  raiseexception(gebrokenarchive, '003004');
-  if sha1match(p^.checksum1, itemgetdigest(p)) = false then
-    raiseexception(gebrokenarchive, '003007');
 
   dodirseparators(p^.linkname);
   dodirseparators(p^.name);
@@ -521,7 +524,7 @@ begin
   begin
     libread(instrm, p)^.version := version;
     inc(offset, itemgetsize(p));
-    inc(offset, max(0, p^.offset2 - p^.offset1));
+    inc(offset, p^.offset2 - p^.offset1);
 
     if gfclose in p^.flags then
     begin
@@ -554,7 +557,7 @@ begin
   begin
     libread(instrm, p)^.version := version;
     inc(offset, itemgetsize(p));
-    inc(offset, max(0, p^.offset2 - p^.offset1));
+    inc(offset, p^.offset2 - p^.offset1);
 
     if gfclose in p^.flags then
     begin
@@ -856,10 +859,11 @@ end;
 
 procedure tgulpapplication.check(const filename: rawbytestring);
 var
-  i:     longint;
-  list1: tgulplist;
-  null:  tstream;
-  strm:  tstream;
+  i:        longint;
+  list1:    tgulplist;
+  null:     tstream;
+  strm:     tstream;
+  strmsize: int64;
 begin
   fterminated := false;
   showmessage1(gulpdescription);
@@ -875,10 +879,10 @@ begin
     showmessage2(format(gmcheckitem, [list1[i]^.name]));
     if (list1[i]^.offset2 > list1[i]^.offset1) then
     begin
-      strm.seek(list1[i]^.offset1, sobeginning);
-      if sha1match(libmove(strm, null, list1[i]^.offset2 -
-                                       list1[i]^.offset1),
-                                       list1[i]^.checksum2) = false then
+      strm.seek  (list1[i]^.offset1, sobeginning);
+      strmsize := list1[i]^.offset2 - list1[i]^.offset1;
+
+      if not sha1match(list1[i]^.checksum2, libmove(strm, null, strmsize)) then
         raiseexception(gechecksum, '004050');
     end;
   end;

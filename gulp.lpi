@@ -123,28 +123,28 @@ override_dh_auto_install:
       <Unit1>
         <Filename Value="src/gulplibrary.pas"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="2"/>
-        <TopLine Value="1148"/>
-        <CursorPos X="13" Y="1152"/>
+        <TopLine Value="968"/>
+        <CursorPos X="52" Y="988"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit1>
       <Unit2>
         <Filename Value="src/gulpmessages.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="4"/>
-        <TopLine Value="13"/>
-        <CursorPos X="3" Y="32"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="63"/>
+        <CursorPos X="21" Y="25"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit2>
       <Unit3>
         <Filename Value="src/gulpcommon.pas"/>
         <IsPartOfProject Value="True"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="644"/>
-        <CursorPos X="3" Y="683"/>
+        <TopLine Value="72"/>
+        <CursorPos X="33" Y="72"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit3>
@@ -174,11 +174,10 @@ override_dh_auto_install:
       <Unit7>
         <Filename Value="src/gulplist.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="3"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="102"/>
         <CursorPos X="3" Y="140"/>
         <UsageCount Value="201"/>
-        <Loaded Value="True"/>
       </Unit7>
       <Unit8>
         <Filename Value="src/gulpstream.pas"/>
@@ -186,7 +185,7 @@ override_dh_auto_install:
         <EditorIndex Value="-1"/>
         <TopLine Value="18"/>
         <CursorPos X="21" Y="52"/>
-        <UsageCount Value="27"/>
+        <UsageCount Value="36"/>
       </Unit8>
       <Unit9>
         <Filename Value="src/gulpdmc.pas"/>
@@ -194,7 +193,7 @@ override_dh_auto_install:
         <EditorIndex Value="-1"/>
         <TopLine Value="55"/>
         <CursorPos X="33" Y="70"/>
-        <UsageCount Value="27"/>
+        <UsageCount Value="36"/>
       </Unit9>
     </Units>
   </ProjectOptions>

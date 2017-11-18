@@ -1,7 +1,7 @@
 object mainform: Tmainform
   Left = 371
   Height = 540
-  Top = 142
+  Top = 143
   Width = 757
   Caption = 'Gulp - A simple journaling archiver'
   ClientHeight = 540
@@ -2364,10 +2364,10 @@ object mainform: Tmainform
         AnchorSideBottom.Control = logpage
         AnchorSideBottom.Side = asrBottom
         Left = 4
-        Height = 296
+        Height = 465
         Top = 4
         Width = 749
-        Anchors = [akTop, akLeft, akRight]
+        Anchors = [akTop, akLeft, akRight, akBottom]
         BorderSpacing.Left = 4
         BorderSpacing.Top = 4
         BorderSpacing.Right = 4
@@ -2379,19 +2379,6 @@ object mainform: Tmainform
         ReadOnly = True
         ScrollBars = ssAutoBoth
         TabOrder = 0
-      end
-      object logok: TBitBtn
-        Left = 568
-        Height = 26
-        Top = 424
-        Width = 120
-        Caption = 'Ok'
-        Constraints.MaxHeight = 26
-        Constraints.MaxWidth = 120
-        Constraints.MinHeight = 26
-        Constraints.MinWidth = 120
-        OnClick = logokClick
-        TabOrder = 1
       end
     end
   end

@@ -57,7 +57,6 @@ type
   { Tmainform }
 
   Tmainform = class(TForm)
-    logok: TBitBtn;
     openpath: TComboBox;
 
 
@@ -143,7 +142,7 @@ type
 
 
     procedure AboutMenuItemClick(Sender: TObject);
-    procedure logokClick(Sender: TObject);
+
 
 
     procedure BitBtn2Click(Sender: TObject);
@@ -527,7 +526,7 @@ begin
   openpnl2.enabled := fcopenpnl in value;
   revcbox .enabled := fcrevcbox in value;
 
-  logmemo .enabled  := fclogmemo in value;
+  logmemo .enabled  := true;
   logmemo .readonly := true;
 
   openlview.enabled           := fcopenlview in value;
@@ -546,7 +545,7 @@ begin
     begin
       item.imageindex := 3;
       item.stateindex := 3;
-      item.subitems.add(size2str(t.size));
+      item.subitems.add('-');
     end else
     begin
       item.imageindex := 5;
@@ -607,28 +606,7 @@ begin
   freeandnil(aboutform);
 end;
 
-procedure Tmainform.logokClick(Sender: TObject);
-begin
-  if appcommand = acview then
-  begin
-    notebook.pageindex := 1;
-    updatecaption('Gulp UX shows - ' + opendialog.filename);
-    updatebuttons([fchomebtn, fcsyncbtn, fcrestbtn, fcfindbtn,
-                   fcrevcbox, fcopenpnl, fclogmemo, fcopenlview]);
-  end else
-  if appcommand = accheck then
-  begin
-    homebitbtnclick(nil);
-  end else
-  if appcommand = acfix then
-  begin
-    homebitbtnclick(nil);
-  end else
-  if appcommand = acpurge then
-  begin
-    homebitbtnclick(nil);
-  end;
-end;
+
 
 procedure Tmainform.bitbtn2click(sender: tobject);
 begin
@@ -672,9 +650,7 @@ end;
 
 procedure tmainform.restorecancelclick(sender: tobject);
 begin
-  notebook.pageindex := 1;
-  updatebuttons([fchomebtn, fcsyncbtn, fcrestbtn, fcfindbtn,
-                 fcrevcbox, fcopenpnl, fclogmemo, fcopenlview]);
+  homebitbtnclick(sender);
 end;
 
 
@@ -709,6 +685,7 @@ end;
 
 procedure tmainform.syncbitbtnclick(sender: tobject);
 begin
+  appcommand := acsync;
   syncmode.itemindex := 1;
   synclistview.clear;
   syncroot.clear;
@@ -720,6 +697,7 @@ procedure tmainform.restbitbtnclick(sender: tobject);
 var
   i: longint;
 begin
+  appcommand := acrestore;
   restorepath.text := '';
   restoremode.itemindex := 1;
   restorerevision.clear;
@@ -1131,10 +1109,57 @@ end;
 
 procedure Tmainform.homebitbtnclick(sender: tobject);
 begin
-  caption := 'Gulp UX - A simple journaling archiver';
-  notebook.pageindex := 0;
-  updatebuttons([fchomebtn]);
-  clear;
+  if appcommand = acwelcome then
+  begin
+    caption := 'Gulp UX - A simple journaling archiver';
+    notebook.pageindex := 0;
+    updatebuttons([fchomebtn]);
+    clear;
+  end else
+  if appcommand = acsync then
+  begin
+    appcommand := aclist;
+    notebook.pageindex := 1;
+    updatecaption('Gulp UX shows - ' + opendialog.filename);
+    updatebuttons([fchomebtn, fcsyncbtn, fcrestbtn, fcfindbtn,
+                   fcrevcbox, fcopenpnl, fclogmemo, fcopenlview]);
+  end else
+  if appcommand = acrestore then
+  begin
+    appcommand := aclist;
+    notebook.pageindex := 1;
+    updatecaption('Gulp UX shows - ' + opendialog.filename);
+    updatebuttons([fchomebtn, fcsyncbtn, fcrestbtn, fcfindbtn,
+                   fcrevcbox, fcopenpnl, fclogmemo, fcopenlview]);
+  end else
+  if appcommand = accheck then
+  begin
+    appcommand := acwelcome;
+    homebitbtnclick(nil);
+  end else
+  if appcommand = acfix then
+  begin
+    appcommand := acwelcome;
+    homebitbtnclick(nil);
+  end else
+  if appcommand = acpurge then
+  begin
+    appcommand := acwelcome;
+    homebitbtnclick(nil);
+  end else
+  if appcommand = aclist then
+  begin
+    appcommand := acwelcome;
+    homebitbtnclick(nil);
+  end else
+  if appcommand = acview then
+  begin
+    appcommand := aclist;
+    notebook.pageindex := 1;
+    updatecaption('Gulp UX shows - ' + opendialog.filename);
+    updatebuttons([fchomebtn, fcsyncbtn, fcrestbtn, fcfindbtn,
+                   fcrevcbox, fcopenpnl, fclogmemo, fcopenlview]);
+  end;
 end;
 
 end.
