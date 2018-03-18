@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="10"/>
+    <Version Value="11"/>
     <General>
       <Flags>
         <SaveOnlyProjectUnits Value="True"/>
@@ -21,9 +21,10 @@
       <Version Value="2"/>
     </PublishOptions>
     <RunParams>
-      <local>
-        <FormatVersion Value="1"/>
-      </local>
+      <FormatVersion Value="2"/>
+      <Modes Count="1">
+        <Mode0 Name="default"/>
+      </Modes>
     </RunParams>
     <RequiredPackages Count="2">
       <Item1>
@@ -47,7 +48,6 @@
         <ComponentName Value="mainform"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
         <TopLine Value="504"/>
         <CursorPos X="77" Y="511"/>
@@ -59,19 +59,20 @@
       <Unit2>
         <Filename Value="src/gulpcommon.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="259"/>
-        <CursorPos X="26" Y="269"/>
-        <FoldState Value=" T3lY07H"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="89"/>
+        <CursorPos X="12" Y="119"/>
         <UsageCount Value="186"/>
+        <Loaded Value="True"/>
       </Unit2>
       <Unit3>
         <Filename Value="src/gulplibrary.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="665"/>
-        <CursorPos X="38" Y="689"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="350"/>
+        <CursorPos X="19" Y="632"/>
         <UsageCount Value="186"/>
+        <Loaded Value="True"/>
       </Unit3>
       <Unit4>
         <Filename Value="src-ux/gulpabout.pas"/>
@@ -79,10 +80,12 @@
         <ComponentName Value="aboutform"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <EditorIndex Value="2"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="4"/>
         <CursorPos X="17" Y="6"/>
         <UsageCount Value="28"/>
         <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
       </Unit4>
     </Units>
   </ProjectOptions>

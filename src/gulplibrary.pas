@@ -315,7 +315,7 @@ begin
     {$ELSE}
     {$IFDEF MSWINDOWS}
     gulpscanner.deleteany(p^.name);
-    librestorefile(instream, p);
+    librestorefile(instrm, p);
     {$ELSE}
     ...
     {$ENDIF}
@@ -338,8 +338,7 @@ begin
         showwarning(format(gesetmode, [p^.name]));
       {$ELSE}
       {$IFDEF MSWINDOWS}
-      if _setfileattr(p^.name, result and (fahidden or fasysfile or
-        favolumeid or fadirectory or faarchive or fasymlink)) = -1 then
+      if setattr(p^.name, l2sattr(p^.attr)) = -1 then
         showwarning(format(gesetmode, [p^.name]));
       {$ELSE}
       ...
@@ -370,10 +369,10 @@ begin
     showwarning(format(gesetmode, [p^.name]));
   {$ELSE}
   {$IFDEF MSWINDOWS}
-  if setattributes(p^.name, p^.attrs) <> 0 then
+  if setattr(p^.name, l2sattr(p^.attr)) <> 0 then
     showwarning(format(gesetattributes, [p^.name]));
 
-  if settimeutc03(p^.name, p^.mtime) <> 0 then
+  if settimeutc(p^.name, p^.mtime) <> 0 then
     showwarning(format(gesetdatetime, [p^.name]));
   {$ELSE}
   ...
@@ -621,7 +620,7 @@ begin
       result^.size := getsize(filename);
   {$ELSE}
   {$IFDEF MSWINDOWS}
-  if isdirectory(list[i]^.attr) then
+  if isdirectory(result^.attr) then
     result^.size   := 0
   else
     result^.size   := getsize(filename);
