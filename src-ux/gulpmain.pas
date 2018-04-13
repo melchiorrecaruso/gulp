@@ -56,89 +56,87 @@ type
 type
   { Tmainform }
 
-  Tmainform = class(TForm)
-    openpath: TComboBox;
-
-
-    progressbar: TProgressBar;
-    restorepath: TDirectoryEdit;
-    welcomepurge: TSpeedButton;
-    syncok: TBitBtn;
-    restoreok: TBitBtn;
-    synccancel: TBitBtn;
-    restorecancel: TBitBtn;
-    buttonspanel: TPanel;
-    findbtn: TSpeedButton;
-    restorebevel1: TDividerBevel;
-    homebtn: TSpeedButton;
-    revImg: TImage;
-    logmemo: TMemo;
-    restoremodelabel: TLabel;
-    morebtn: TSpeedButton;
-    restorebevel2: TDividerBevel;
-    logpage: TPage;
-    restorepanel2: TPanel;
-    restorepanel4: TPanel;
-    restbtn: TSpeedButton;
-    restoremode: TComboBox;
-    restorerevision: TComboBox;
-    restorerevisionlabel: TLabel;
-    revcbox: TComboBox;
-    welcomecheck: TSpeedButton;
-    welcomefix: TSpeedButton;
-    syncbtn: TSpeedButton;
-    syncroot: TComboBox;
-    syncbevel2: TDividerBevel;
-    syncbevel3: TDividerBevel;
-    syncrootlabel: TLabel;
-    syncexcludefile: TSpeedButton;
-    synclistview: TListView;
-    syncpanel1: TPanel;
-    syncpanel3: TPanel;
-    open2btn: TSpeedButton;
-    openup: TSpeedButton;
-    syncexcludedir: TSpeedButton;
-    syncaddfile: TSpeedButton;
-    syncadddir: TSpeedButton;
-    syncdelete: TSpeedButton;
-    MenuItem10: TMenuItem;
-    MenuItem11: TMenuItem;
-    MenuItem12: TMenuItem;
-    MenuItem13: TMenuItem;
-    AboutMenuItem: TMenuItem;
-    restorepage: TPage;
-    syncpage: TPage;
-    MoreMenu: TPopupMenu;
-    openpnl1: TPanel;
-    openlview: TListView;
-    MenuItem4: TMenuItem;
-    notebook: TNotebook;
-    openfind: TComboBox;
-    welcomenew: TSpeedButton;
-    welcomenoopenlabel: TLabel;
-    welcomeopenlabel: TLabel;
-    welcomeopen: TSpeedButton;
-    openpage: TPage;
-    openpnl2: TPanel;
-    openshape1: TShape;
-    syncmode: TComboBox;
-    syncmodelabel: TLabel;
-    topshape: TShape;
-    welcomepage: TPage;
-    mi_open: TMenuItem;
-    MenuItem2: TMenuItem;
-    MenuItem3: TMenuItem;
-    byNameMenuItem: TMenuItem;
-    MenuItem5: TMenuItem;
-    MenuItem6: TMenuItem;
-    MenuItem7: TMenuItem;
-    MenuItem8: TMenuItem;
-    MenuItem9: TMenuItem;
-    savedialog: TSaveDialog;
-    BottomShape: TShape;
-    images: TImageList;
-    opendialog: TOpenDialog;
-    welcomepanel1: TPanel;
+  tmainform = class(tform)
+    openpath: tcombobox;
+    progressbar: tprogressbar;
+    restorepath: tdirectoryedit;
+    welcomepurge: tspeedbutton;
+    syncok: tbitbtn;
+    restoreok: tbitbtn;
+    synccancel: tbitbtn;
+    restorecancel: tbitbtn;
+    buttonspanel: tpanel;
+    findbtn: tspeedbutton;
+    restorebevel1: tdividerbevel;
+    homebtn: tspeedbutton;
+    revimg: timage;
+    logmemo: tmemo;
+    restoremodelabel: tlabel;
+    morebtn: tspeedbutton;
+    restorebevel2: tdividerbevel;
+    logpage: tpage;
+    restorepanel2: tpanel;
+    restorepanel4: tpanel;
+    restbtn: tspeedbutton;
+    restoremode: tcombobox;
+    restorerevision: tcombobox;
+    restorerevisionlabel: tlabel;
+    revcbox: tcombobox;
+    welcomecheck: tspeedbutton;
+    welcomefix: tspeedbutton;
+    syncbtn: tspeedbutton;
+    syncroot: tcombobox;
+    syncbevel2: tdividerbevel;
+    syncbevel3: tdividerbevel;
+    syncrootlabel: tlabel;
+    syncexcludefile: tspeedbutton;
+    synclistview: tlistview;
+    syncpanel1: tpanel;
+    syncpanel3: tpanel;
+    open2btn: tspeedbutton;
+    openup: tspeedbutton;
+    syncexcludedir: tspeedbutton;
+    syncaddfile: tspeedbutton;
+    syncadddir: tspeedbutton;
+    syncdelete: tspeedbutton;
+    menuitem10: tmenuitem;
+    menuitem11: tmenuitem;
+    menuitem12: tmenuitem;
+    menuitem13: tmenuitem;
+    aboutmenuitem: tmenuitem;
+    restorepage: tpage;
+    syncpage: tpage;
+    moremenu: tpopupmenu;
+    openpnl1: tpanel;
+    openlview: tlistview;
+    menuitem4: tmenuitem;
+    notebook: tnotebook;
+    openfind: tcombobox;
+    welcomenew: tspeedbutton;
+    welcomenoopenlabel: tlabel;
+    welcomeopenlabel: tlabel;
+    welcomeopen: tspeedbutton;
+    openpage: tpage;
+    openpnl2: tpanel;
+    openshape1: tshape;
+    syncmode: tcombobox;
+    syncmodelabel: tlabel;
+    topshape: tshape;
+    welcomepage: tpage;
+    mi_open: tmenuitem;
+    menuitem2: tmenuitem;
+    menuitem3: tmenuitem;
+    bynamemenuitem: tmenuitem;
+    menuitem5: tmenuitem;
+    menuitem6: tmenuitem;
+    menuitem7: tmenuitem;
+    menuitem8: tmenuitem;
+    menuitem9: tmenuitem;
+    savedialog: tsavedialog;
+    bottomshape: tshape;
+    images: timagelist;
+    opendialog: topendialog;
+    welcomepanel1: tpanel;
 
 
     procedure AboutMenuItemClick(Sender: TObject);
@@ -352,19 +350,29 @@ begin
   applist2          := tliteitemlist.create(@compare);
 
   appfolders        := trawbytestringlist.create;
-  // form style
-  font.name           := 'droid sans';
-  logmemo.font.name := 'droid sans';
 
+  // form style
+  {$IFDEF LINUX}
+  font.name         := 'Droid Sans';
+  logmemo.font.name := 'Droid Sans Mono';
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
+  font.name         := 'default';
+  logmemo.font.name := 'courier new';
+  logmemo.font.size := 10;
+  {$ELSE}
+  ...
+  {$ENDIF}
+  {$ENDIF}
 
   welcomenoopenlabel.font.size  := 20;
   welcomenoopenlabel.font.style := [fsbold];
-  welcomeopenlabel.font.size   := 14;
-  welcomeopenlabel.font.style  := [];
+  welcomeopenlabel.font.size    := 12;
+  welcomeopenlabel.font.style   := [];
 
-  openpnl2.autosize      := true;
-  openpnl1.autosize      := false;
-  openpnl1.height        := 1;
+  openpnl2.autosize := true;
+  openpnl1.autosize := false;
+  openpnl1.height   := 1;
 
   homebitbtnclick(sender);
   updatebuttons([]);
@@ -738,6 +746,7 @@ end;
 
 procedure tmainform.welcomenewclick(sender: tobject);
 begin
+  savedialog.filter := 'Gulp Files (*.gulp)|*.gulp';
   if savedialog.execute then
   begin
     savedialog.initialdir := extractfiledir(savedialog.filename);
@@ -750,6 +759,7 @@ end;
 
 procedure tmainform.welcomeopenclick(sender: tobject);
 begin
+  opendialog.filter := 'Gulp Files (*.gulp)|*.gulp';
   if opendialog.execute then
   begin
     opendialog.initialdir := extractfiledir(opendialog.filename);
@@ -767,6 +777,7 @@ end;
 
 procedure tmainform.welcomecheckclick(sender: tobject);
 begin
+  opendialog.filter := 'Gulp Files (*.gulp)|*.gulp';
   if opendialog.execute then
   begin
     opendialog.initialdir := extractfiledir(opendialog.filename);
@@ -783,6 +794,7 @@ end;
 
 procedure tmainform.welcomefixclick(sender: tobject);
 begin
+  opendialog.filter := 'Gulp Files (*.gulp)|*.gulp';
   if opendialog.execute then
   begin
     opendialog.initialdir := extractfiledir(opendialog.filename);
@@ -799,6 +811,7 @@ end;
 
 procedure tmainform.welcomepurgeclick(sender: tobject);
 begin
+  opendialog.filter := 'Gulp Files (*.gulp)|*.gulp';
   if opendialog.execute then
   begin
     opendialog.initialdir := extractfiledir(opendialog.filename);

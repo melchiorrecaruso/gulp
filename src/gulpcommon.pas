@@ -1,6 +1,6 @@
 { Description: Common routines unit.
 
-  Copyright (C) 2014-2017 Melchiorre Caruso <melchiorrecaruso@gmail.com>
+  Copyright (C) 2014-2018 Melchiorre Caruso <melchiorrecaruso@gmail.com>
 
   This source is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free
@@ -53,7 +53,7 @@ type
 
   { gulp item }
 
-  tgulpitem = record
+  tgulpitem = packed record
     name:      rawbytestring;
     flags:     tgulpflags;
     mtime:     tdatetime;

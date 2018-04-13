@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="10"/>
+    <Version Value="11"/>
     <General>
       <Flags>
         <SaveOnlyProjectUnits Value="True"/>
@@ -104,95 +104,93 @@ override_dh_auto_install:
       <IgnoreBinaries Value="False"/>
     </PublishOptions>
     <RunParams>
-      <local>
-        <FormatVersion Value="1"/>
-        <CommandLineParams Value="-p pop.g2"/>
-        <WorkingDirectory Value="/home/quacquero/Repositories"/>
-        <Display Use="True"/>
-      </local>
+      <FormatVersion Value="2"/>
+      <Modes Count="1">
+        <Mode0 Name="default">
+          <local>
+            <CommandLineParams Value="-p pop.g2"/>
+            <WorkingDirectory Value="/home/quacquero/Repositories"/>
+            <Display Use="True"/>
+          </local>
+        </Mode0>
+      </Modes>
     </RunParams>
     <Units Count="10">
       <Unit0>
         <Filename Value="src/gulp.pas"/>
         <IsPartOfProject Value="True"/>
-        <TopLine Value="151"/>
-        <CursorPos X="34" Y="79"/>
+        <IsVisibleTab Value="True"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
         <Filename Value="src/gulplibrary.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="2"/>
-        <TopLine Value="968"/>
-        <CursorPos X="52" Y="988"/>
+        <EditorIndex Value="5"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit1>
       <Unit2>
         <Filename Value="src/gulpmessages.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="3"/>
-        <TopLine Value="63"/>
-        <CursorPos X="21" Y="25"/>
+        <EditorIndex Value="6"/>
+        <CursorPos X="28" Y="18"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit2>
       <Unit3>
         <Filename Value="src/gulpcommon.pas"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="1"/>
-        <TopLine Value="72"/>
-        <CursorPos X="33" Y="72"/>
+        <EditorIndex Value="4"/>
+        <CursorPos X="26" Y="3"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit3>
       <Unit4>
         <Filename Value="src/gulpfixes.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="19"/>
-        <CursorPos X="59" Y="39"/>
+        <EditorIndex Value="3"/>
+        <CursorPos X="26" Y="3"/>
         <UsageCount Value="201"/>
+        <Loaded Value="True"/>
       </Unit4>
       <Unit5>
         <Filename Value="src/gulpscanner.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="85"/>
-        <CursorPos X="34" Y="92"/>
+        <EditorIndex Value="2"/>
+        <CursorPos X="26" Y="3"/>
         <UsageCount Value="201"/>
+        <Loaded Value="True"/>
       </Unit5>
       <Unit6>
         <Filename Value="src/gulpcommandline.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="-1"/>
-        <CursorPos X="26" Y="3"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="106"/>
+        <CursorPos X="42" Y="20"/>
         <UsageCount Value="201"/>
+        <Loaded Value="True"/>
       </Unit6>
       <Unit7>
         <Filename Value="src/gulplist.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="102"/>
-        <CursorPos X="3" Y="140"/>
+        <TopLine Value="67"/>
+        <CursorPos X="26" Y="3"/>
         <UsageCount Value="201"/>
       </Unit7>
       <Unit8>
         <Filename Value="src/gulpstream.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="18"/>
-        <CursorPos X="21" Y="52"/>
+        <CursorPos X="26" Y="3"/>
         <UsageCount Value="36"/>
       </Unit8>
       <Unit9>
         <Filename Value="src/gulpdmc.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="-1"/>
-        <TopLine Value="55"/>
-        <CursorPos X="33" Y="70"/>
+        <CursorPos X="26" Y="3"/>
         <UsageCount Value="36"/>
       </Unit9>
     </Units>

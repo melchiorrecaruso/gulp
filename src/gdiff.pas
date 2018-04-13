@@ -1,6 +1,6 @@
 { Description: The gulp diff utility.
 
-  Copyright (C) 2016 Melchiorre Caruso <melchiorrecaruso@gmail.com>
+  Copyright (C) 2016-2018 Melchiorre Caruso <melchiorrecaruso@gmail.com>
 
   This source is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free
