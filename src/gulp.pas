@@ -43,7 +43,7 @@ uses
   sysutils;
 
 type
-  { slurp shell application }
+  { gulp shell application }
 
   tshellapplication = class
   protected
@@ -217,20 +217,20 @@ type
   begin
     writeln;
     writeln('NAME                                                                      ');
-    writeln('       slurp - A simple journaling archiver.                               ');
+    writeln('       gulp - A simple journaling archiver.                               ');
     writeln('                                                                          ');
     writeln('SYNOPSIS                                                                  ');
-    writeln('       slurp [-] s --synch | r --restore | p --purge | l --list |          ');
+    writeln('       gulp [-] s --synch | r --restore | p --purge | l --list |          ');
     writeln('                c --check | f --fix [ options ...] [ files ...]           ');
     writeln('                                                                          ');
     writeln('DESCRIPTION                                                               ');
-    writeln('       slurp stores and extracts files from a disk archive. A SLURP archive');
+    writeln('       gulp stores and extracts files from a disk archive. A GULP archive ');
     writeln('       is  a  sequence  of timestamped updates, each listing the files and');
     writeln('       directories that have been added, changed,  or  deleted  since  the');
     writeln('       previous  transacted update, normally based on changes to the last-');
     writeln('       modified dates.                                                    ');
     writeln('                                                                          ');
-    writeln('       The first argument to slurp should be a function; either one of  the');
+    writeln('       The first argument to gulp should be a function; either one of  the');
     writeln('       letters srplcfh, or one of the long function names. A function let‐');
     writeln('       ter need be prefixed with ''-'', and can''t  be  combined  with  other');
     writeln('       single-letter  options.  A long function name must be prefixed with');
@@ -268,7 +268,7 @@ type
     writeln('              (e.g. permission denied), then it is skipped. However, other');
     writeln('              files are still added and the update is still valid.        ');
     writeln('                                                                          ');
-    writeln('              Updates are transacted. If slurp is interrupted  before  com‐');
+    writeln('              Updates are transacted. If gulp is interrupted  before  com‐');
     writeln('              pleting  the update, then the archive can be repair with fix');
     writeln('              function.                                                   ');
     writeln('                                                                          ');
@@ -297,7 +297,7 @@ type
     writeln('       -c, --check                                                        ');
     writeln('              check  archive  integrity  by verifying that the data agrees');
     writeln('              with the stored SHA-1 hashes and sizes  and  that  the  data');
-    writeln('              otherwise conforms to the slurp standard.                   ');
+    writeln('              otherwise conforms to the gulp standard.                    ');
     writeln('                                                                          ');
     writeln('       -f, --fix                                                          ');
     writeln('              truncates any data added after last valid update.           ');
@@ -315,28 +315,28 @@ type
     writeln('              with synch, do not mark files in the archive as deleted when');
     writeln('              the  corresponding  external file does not exist. With rest-');
     writeln('              ore, do not delete external files when the corresponding fi-');
-    writeln('              le in  archive does  not exist. This  makes slurp consistent');
+    writeln('              le in  archive does  not exist. This  makes gulp consistent ');
     writeln('              with the behavior of most non-journaling archivers.         ');
     writeln('                                                                          ');
     writeln('       -u, --until                                                        ');
     writeln('              ignore any part of the archive updated after version number.');
     writeln('                                                                          ');
-    writeln('                     slurp -l backup files -until 20                       ');
+    writeln('                     gulp-cli -l backup files -until 20                   ');
     writeln('                                                                          ');
     writeln('              show files added before version 21.                         ');
     writeln('                                                                          ');
     writeln('EXAMPLES                                                                  ');
     writeln('       Create archive from files foo and bar:                             ');
     writeln('                                                                          ');
-    writeln('              slurp -s archive foo bar                                     ');
+    writeln('              gulp-cli -s archive foo bar                                 ');
     writeln('                                                                          ');
     writeln('       List all files in archive:                                         ');
     writeln('                                                                          ');
-    writeln('              slurp -l archive                                             ');
+    writeln('              gulp-cli -l archive                                         ');
     writeln('                                                                          ');
     writeln('       Restore all files from archive:                                    ');
     writeln('                                                                          ');
-    writeln('              slurp -r archive                                             ');
+    writeln('              gulp-cli -r archive                                         ');
     writeln('                                                                          ');
     writeln('EXIT STATUS                                                               ');
     writeln('       Returns 0 if successful or 1 in case of an error.                  ');
@@ -346,7 +346,7 @@ type
     writeln('       up and restoring the operating system.                             ');
     writeln('                                                                          ');
     writeln('AUTHOR                                                                    ');
-    writeln('       slurp is copyright (c) 2014-2016, Melchiorre Caruso. It is  licensed');
+    writeln('       gulp is copyright (c) 2014-2016, Melchiorre Caruso. It is  licensed');
     writeln('       under    GPL    v2.   For   information   on   the   license,   see');
     writeln('       <http://www.gnu.org/copyleft/gpl.html>. Program was written by Mel‐');
     writeln('       chiorre Caruso <melchiorrecaruso at gmail dot com>"                ');
