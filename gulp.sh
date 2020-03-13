@@ -1,23 +1,27 @@
 #!/bin/sh
-echo "*** BUILD GULP DEB PACKCAGE ***"
+echo "*** BUILD GULP-CLI DEB PACKCAGE ***"
 
 mkdir build
 
 lazbuild -B -q -q gulp.lpi
-lazbuild -B -q -q gulp-ux.lpi
-lazbuild -B -q -q gulp-diff.lpi
+lazbuild -B -q -q gulpux.lpi
+lazbuild -B -q -q gulpdiff.lpi
 
-gzip -7 -k -n install/gulp-cli.man
+cd install
 
-cd build
+gzip -7 -k -n gulp-cli.man
 
-equivs-build gulp.equivs
+mv gulp-cli.man.gz  gulp-cli.1.gz
+
+equivs-build gulp-cli.equivs
+
+rm gulp-cli.1.gz
 
 cd ..
+cd build
 
-mv build/gulp_0.4_amd64.deb     gulp_0.4_amd64.deb
-
-rm -f -r build
+rm -f -r bin
+rm -f -r lib
 
 echo "*** END ***"
 

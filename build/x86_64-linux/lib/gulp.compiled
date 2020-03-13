@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<CONFIG>
-  <Compiler Value="/usr/bin/fpc" Date="1454174389"/>
-  <Params Value=" -MObjFPC -Sh -CX -Cg -O4 -XX -vewnhilbq -Fi/home/quacquero/Repos/gulp/build/x86_64-linux/lib -Fu/home/quacquero/Repos/gulp/src -Fu/home/quacquero/Repos/gulp/ -FU/home/quacquero/Repos/gulp/build/x86_64-linux/lib/ -FE/home/quacquero/Repos/gulp/build/x86_64-linux/bin/ src/gulp.pas"/>
-</CONFIG>
