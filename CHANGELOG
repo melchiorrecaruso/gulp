@@ -1,4 +1,4 @@
-gulp (0.4) unstable; urgency=medium
+gulp-cli (0.4) unstable; urgency=medium
      	    
   * new "--verbose" switch. It's show more process info;
   * new "--excludeattr" switch. Avoid operating on files whose attributes 
@@ -9,11 +9,11 @@ gulp (0.4) unstable; urgency=medium
     only (List function);
   * changed file format.
  	    
- -- melchiorre caruso <melchiorrecruso@gmail.com>  Sat, 05 Nov 2016 00:00:00 +0100
+ -- melchiorre caruso <melchiorrecaruso@gmail.com>  Wed, 11 Mar 2020 00:00:00 +0100
 
-gulp (0.3) unstable; urgency=low
+gulp-cli (0.3) unstable; urgency=low
      	    
   * First release!
  	    
- -- melchiorre caruso <melchiorrecruso@gmail.com>  Sun, 06 Mar 2016 00:00:00 +0100
+ -- melchiorre caruso <melchiorrecaruso@gmail.com>  Sun, 06 Mar 2016 00:00:00 +0100
 

@@ -18,7 +18,7 @@
   MA 02111-1307, USA.
 }
 
-program gdiff;
+program gulpdiff;
 
 {$codepage utf8}
 {$mode objfpc}

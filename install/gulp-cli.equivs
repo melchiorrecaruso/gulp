@@ -5,7 +5,7 @@ Section: utils
 Priority: optional
 Standards-Version: 3.9.2
 
-Package: gulp
+Package: gulp-cli
 Version: 0.4
 Maintainer: Melchorre Caruso <melchiorrecaruso@gmail.com>
 Homepage: https://github.com/melchiorrecaruso/gulp
@@ -17,14 +17,14 @@ Depends:
 # Replaces:   <comma-separated list of packages>
 Architecture: amd64
 # Multi-Arch: <one of: foreign|same|allowed>
-Copyright: LICENSE
-Changelog: CHANGELOG
-Readme:    README
+Copyright: ../LICENSE
+Changelog: ../CHANGELOG
+Readme:    ../README.md
 # Extra-Files:         
-Files: gulp      /usr/bin
-       gulpx     /usr/bin
-       gdiff     /usr/bin
-       gulp.1.gz /usr/share/man/man1
+Files: ../build/bin/gulp-cli       /usr/bin
+       ../build/bin/gulp-ux        /usr/bin
+       ../build/bin/gulp-diff      /usr/bin
+                    gulp-cli.1.gz  /usr/share/man/man1
 
 Description: A simple journaling archiver. 
  GULP is a free and open source incremental, journaling command-line archiver 

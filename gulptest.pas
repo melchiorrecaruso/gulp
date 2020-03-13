@@ -1,4 +1,4 @@
-program gtest;
+program gulptest;
 
 uses
   cmem,

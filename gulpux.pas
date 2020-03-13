@@ -18,7 +18,7 @@
   MA 02111-1307, USA.
 }
 
-program gulpx;
+program gulpux;
 
 {$define usecthreads}
 {$mode objfpc}
@@ -40,6 +40,7 @@ uses
 
 begin
   requirederivedformresource := true;
+  Application.Title:='Gulp UX';
   application.initialize;
   application.createform(tmainform, mainform);
   application.run;

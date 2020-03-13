@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="11"/>
+    <Version Value="12"/>
     <General>
       <Flags>
         <SaveOnlyProjectUnits Value="True"/>
@@ -9,9 +9,9 @@
         <MainUnitHasTitleStatement Value="False"/>
         <SaveJumpHistory Value="False"/>
         <SaveFoldState Value="False"/>
+        <CompatibilityMode Value="True"/>
       </Flags>
-      <MainUnit Value="0"/>
-      <Title Value="gdiff"/>
+      <Title Value="gulpdiff"/>
       <UseAppBundle Value="False"/>
     </General>
     <i18n>
@@ -31,7 +31,7 @@
     </RunParams>
     <Units Count="6">
       <Unit0>
-        <Filename Value="src/gdiff.pas"/>
+        <Filename Value="gulpdiff.pas"/>
         <IsPartOfProject Value="True"/>
         <IsVisibleTab Value="True"/>
         <CursorPos X="22" Y="3"/>
@@ -88,11 +88,11 @@
   <CompilerOptions>
     <Version Value="11"/>
     <Target>
-      <Filename Value="build/$(TargetCPU)-$(TargetOS)/bin/gdiff"/>
+      <Filename Value="build/bin/gulp-diff"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <UnitOutputDirectory Value="build/$(TargetCPU)-$(TargetOS)/lib"/>
+      <UnitOutputDirectory Value="build/lib"/>
     </SearchPaths>
     <Parsing>
       <SyntaxOptions>

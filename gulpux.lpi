@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="11"/>
+    <Version Value="12"/>
     <General>
       <Flags>
         <SaveOnlyProjectUnits Value="True"/>
+        <CompatibilityMode Value="True"/>
       </Flags>
-      <MainUnit Value="0"/>
       <AutoCreateForms Value="False"/>
-      <Title Value="gulpx"/>
+      <Title Value="Gulp UX"/>
       <UseXPManifest Value="True"/>
     </General>
     <i18n>
@@ -36,11 +36,10 @@
     </RequiredPackages>
     <Units Count="5">
       <Unit0>
-        <Filename Value="src-ux/gulpx.pas"/>
+        <Filename Value="gulpux.pas"/>
         <IsPartOfProject Value="True"/>
-        <IsVisibleTab Value="True"/>
-        <TopLine Value="10"/>
-        <CursorPos X="3" Y="37"/>
+        <TopLine Value="7"/>
+        <CursorPos X="117" Y="26"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit0>
@@ -51,7 +50,7 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="18"/>
+        <TopLine Value="789"/>
         <CursorPos X="24" Y="829"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
@@ -70,7 +69,7 @@
         <Filename Value="src/gulplibrary.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="2"/>
-        <TopLine Value="161"/>
+        <TopLine Value="318"/>
         <CursorPos Y="358"/>
         <UsageCount Value="187"/>
         <Loaded Value="True"/>
@@ -81,6 +80,7 @@
         <ComponentName Value="aboutform"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
+        <IsVisibleTab Value="True"/>
         <EditorIndex Value="4"/>
         <CursorPos X="21" Y="19"/>
         <UsageCount Value="29"/>
@@ -92,12 +92,12 @@
   <CompilerOptions>
     <Version Value="11"/>
     <Target>
-      <Filename Value="build/$(TargetCPU)-$(TargetOS)/bin/gulpx"/>
+      <Filename Value="build/bin/gulp-ux"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
       <OtherUnitFiles Value="src;src-ux"/>
-      <UnitOutputDirectory Value="build/$(TargetCPU)-$(TargetOS)/lib"/>
+      <UnitOutputDirectory Value="build/lib"/>
     </SearchPaths>
     <Parsing>
       <SyntaxOptions>

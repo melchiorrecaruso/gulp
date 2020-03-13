@@ -4,19 +4,10 @@ echo "*** BUILD GULP DEB PACKCAGE ***"
 mkdir build
 
 lazbuild -B -q -q gulp.lpi
-lazbuild -B -q -q gulpx.lpi
-lazbuild -B -q -q gdiff.lpi
+lazbuild -B -q -q gulp-ux.lpi
+lazbuild -B -q -q gulp-diff.lpi
 
-gzip -7 -k -n install/gulp.man
-
-mv build/x86_64-linux/bin/gulp  build/gulp
-mv build/x86_64-linux/bin/gulpx build/gulpx
-mv build/x86_64-linux/bin/gdiff build/gdiff
-mv install/gulp.man.gz          build/gulp.1.gz
-cp install/CHANGELOG            build/CHANGELOG 
-cp install/LICENSE              build/LICENSE 
-cp install/README               build/README 
-cp install/gulp.equivs          build/gulp.equivs 
+gzip -7 -k -n install/gulp-cli.man
 
 cd build
 
