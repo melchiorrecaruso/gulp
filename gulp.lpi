@@ -103,6 +103,11 @@ override_dh_auto_install:
       <Version Value="2"/>
     </PublishOptions>
     <RunParams>
+      <local>
+        <CommandLineParams Value="-p pop.g2"/>
+        <WorkingDirectory Value="/home/quacquero/Repositories"/>
+        <Display Use="True"/>
+      </local>
       <FormatVersion Value="2"/>
       <Modes Count="1">
         <Mode0 Name="default">
@@ -119,7 +124,7 @@ override_dh_auto_install:
         <Filename Value="src/gulp.pas"/>
         <IsPartOfProject Value="True"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="204"/>
+        <TopLine Value="28"/>
         <CursorPos X="88" Y="227"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
