@@ -102,7 +102,7 @@ begin
     if sr.attr and gulpnotsupported = 0 then
     begin
 
-      if sr.attr and fadirectory > 0 then
+      if sr.attr and fadirectory <> 0 then
       begin
         if (sr.name <> '..') and (sr.name <> '.') then
         begin
