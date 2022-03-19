@@ -20,7 +20,6 @@
 
 program gulp;
 
-{$codepage utf8}
 {$mode objfpc}
 {$H+}
 

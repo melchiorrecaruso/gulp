@@ -20,13 +20,11 @@
 
 program gulpdiff;
 
-{$codepage utf8}
 {$mode objfpc}
 {$H+}
 
 uses
   gulpcommon,
-  gulplibrary,
   gulpmessages,
   gulpscanner,
   sha1,

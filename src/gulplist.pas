@@ -165,10 +165,10 @@ end;
 function compare(item1, item2: prawbytestringitem): longint;
 begin
   {$IFDEF UNIX}
-  result := ansicomparestr(item1^.fstring, item2^.fstring);
+  result := comparestr(item1^.fstring, item2^.fstring);
   {$ELSE}
   {$IFDEF MSWINDOWS}
-  result := ansicomparetext(item1^.fstring, item2^.fstring);
+  result := comparetext(item1^.fstring, item2^.fstring);
   {$ELSE}
   {$ENDIF}
   {$ENDIF}

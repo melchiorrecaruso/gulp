@@ -213,10 +213,10 @@ end;
 function compare40(p1, p2: pgulpitem): longint;
 begin
   {$IFDEF LINUX}
-  result := ansicomparestr(p1^.name, p2^.name);
+  result := comparestr(p1^.name, p2^.name);
   {$ELSE}
   {$IFDEF MSWINDOWS}
-  result := ansicomparetext(p1^.name, p2^.name);
+  result := comparetext(p1^.name, p2^.name);
   {$ELSE}
   ...
   {$ENDIF}

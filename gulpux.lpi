@@ -38,8 +38,9 @@
       <Unit0>
         <Filename Value="gulpux.pas"/>
         <IsPartOfProject Value="True"/>
-        <TopLine Value="7"/>
-        <CursorPos X="117" Y="26"/>
+        <IsVisibleTab Value="True"/>
+        <TopLine Value="10"/>
+        <CursorPos X="17" Y="20"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit0>
@@ -50,7 +51,6 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="789"/>
         <CursorPos X="24" Y="829"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
@@ -80,7 +80,6 @@
         <ComponentName Value="aboutform"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="4"/>
         <CursorPos X="21" Y="19"/>
         <UsageCount Value="29"/>
