@@ -278,13 +278,13 @@ end;
 function s2lattr(attr: longint): tgulpattributes;
 begin
   result :=[];
-  if fareadonly  and attr > 0 then include(result, gareadonly);
-  if fahidden    and attr > 0 then include(result, gahidden);
-  if fasysfile   and attr > 0 then include(result, gasysfile);
-  if favolumeid  and attr > 0 then include(result, gavolumeid);
-  if fadirectory and attr > 0 then include(result, gadirectory);
-  if faarchive   and attr > 0 then include(result, gaarchive);
-  if fasymlink   and attr > 0 then include(result, gasymlink);
+  if fareadonly  and attr <> 0 then include(result, gareadonly);
+  if fahidden    and attr <> 0 then include(result, gahidden);
+  if fasysfile   and attr <> 0 then include(result, gasysfile);
+  if favolumeid  and attr <> 0 then include(result, gavolumeid);
+  if fadirectory and attr <> 0 then include(result, gadirectory);
+  if faarchive   and attr <> 0 then include(result, gaarchive);
+  if fasymlink   and attr <> 0 then include(result, gasymlink);
 end;
 
 function getattr(var sr: tsearchrec): longint;
@@ -302,7 +302,7 @@ begin
   begin
     result := sr.attr;
   end else
-    result := -1;
+    result := 0;
   sysutils.findclose(sr);
 end;
 
