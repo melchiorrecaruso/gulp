@@ -24,6 +24,7 @@ program gulpdiff;
 {$H+}
 
 uses
+  dateutils,
   gulpcommon,
   gulpmessages,
   gulpscanner,
@@ -38,12 +39,12 @@ var
   dig2: TSHA1Digest;
 
 begin
-  writeln('GDIFF v0.4 diff utility, copyright (c) 2016 Melchiorre Caruso.');
+  writeln('Gulp-DIFF v0.4 diff utility, copyright (c) 2016 Melchiorre Caruso.');
   if (paramcount <> 2) or
      (directoryexists(paramstr(1)) = false) or
      (directoryexists(paramstr(2)) = false) then
   begin
-    writeln('Usage: gdiff directory1 directory2');
+    writeln('Usage: gulp-diff directory1 directory2');
     writeln('Compare two DIRECTORIES file by file.');
   end else
   begin
@@ -88,7 +89,7 @@ begin
           end;
         end;
 
-        if gettimeutc(scan[1][i]) <> gettimeutc(scan[2][j]) then
+        if comparedatetime(gettimeutc(scan[1][i]), gettimeutc(scan[2][j])) <> 0 then
         begin
           writeln;
           writeln(format('(MTIME %s) "%s"', [time2str(gettimeutc(scan[1][i])), scan[1][i]]));
