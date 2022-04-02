@@ -751,7 +751,7 @@ begin
       showmessage2(format(gmsyncitem, [scan[i]]));
       libappend(list2, libnew2(scan[i], fstimeutc));
     end else
-    if gettimeutc(scan[i]) <> list1[j]^.mtime then
+    if comparedatetime(gettimeutc(scan[i]), list1[j]^.mtime) <> 0 then
     begin
       showmessage2(format(gmsyncitem, [scan[i]]));
       libappend(list2, libnew1(scan[i], fstimeutc));
@@ -830,7 +830,7 @@ begin
     if isincluded(p) and (isexcluded(p) = false) then
     begin
       j := scan.find(p^.name);
-      if (j = -1) or (gettimeutc(scan[j]) <> p^.mtime) then
+      if (j = -1) or (comparedatetime(gettimeutc(scan[j]), p^.mtime) <> 0) then
       begin
         showmessage2(format(gmrestoreitem, [p^.name]));
         librestore(strm, p);
