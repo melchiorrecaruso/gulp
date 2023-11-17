@@ -125,23 +125,24 @@ override_dh_auto_install:
         <Filename Value="src/gulp.pas"/>
         <IsPartOfProject Value="True"/>
         <IsVisibleTab Value="True"/>
-        <CursorPos X="60" Y="256"/>
+        <TopLine Value="222"/>
+        <CursorPos X="79" Y="240"/>
         <UsageCount Value="200"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
         <Filename Value="src/gulplibrary.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="5"/>
-        <TopLine Value="1078"/>
-        <CursorPos X="34" Y="1106"/>
+        <EditorIndex Value="7"/>
+        <TopLine Value="43"/>
+        <CursorPos X="15" Y="125"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit1>
       <Unit2>
         <Filename Value="src/gulpmessages.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="7"/>
+        <EditorIndex Value="9"/>
         <CursorPos Y="24"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
@@ -149,18 +150,18 @@ override_dh_auto_install:
       <Unit3>
         <Filename Value="src/gulpcommon.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="4"/>
-        <TopLine Value="94"/>
-        <CursorPos Y="24"/>
+        <EditorIndex Value="5"/>
+        <TopLine Value="349"/>
+        <CursorPos X="15" Y="513"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit3>
       <Unit4>
         <Filename Value="src/gulpfixes.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="3"/>
-        <TopLine Value="3"/>
-        <CursorPos Y="24"/>
+        <EditorIndex Value="4"/>
+        <TopLine Value="32"/>
+        <CursorPos X="10" Y="31"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit4>
@@ -168,7 +169,8 @@ override_dh_auto_install:
         <Filename Value="src/gulpscanner.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="2"/>
-        <CursorPos Y="24"/>
+        <TopLine Value="21"/>
+        <CursorPos X="3" Y="40"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit5>
@@ -183,32 +185,35 @@ override_dh_auto_install:
       <Unit7>
         <Filename Value="src/gulplist.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="6"/>
-        <TopLine Value="147"/>
-        <CursorPos X="39" Y="179"/>
+        <EditorIndex Value="8"/>
+        <TopLine Value="34"/>
+        <CursorPos X="72" Y="30"/>
         <UsageCount Value="201"/>
         <Loaded Value="True"/>
       </Unit7>
       <Unit8>
         <Filename Value="src/gulpstream.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="-1"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="19"/>
         <CursorPos X="26" Y="3"/>
-        <UsageCount Value="42"/>
+        <UsageCount Value="43"/>
+        <Loaded Value="True"/>
       </Unit8>
       <Unit9>
         <Filename Value="src/gulpdmc.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="-1"/>
+        <EditorIndex Value="6"/>
         <CursorPos X="26" Y="3"/>
-        <UsageCount Value="42"/>
+        <UsageCount Value="43"/>
+        <Loaded Value="True"/>
       </Unit9>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
     <Version Value="11"/>
     <Target>
-      <Filename Value="build/bin/gulp-cli"/>
+      <Filename Value="build/bin/gulp"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
@@ -224,9 +229,8 @@ override_dh_auto_install:
     </Parsing>
     <CodeGeneration>
       <SmartLinkUnit Value="True"/>
-      <RelocatableUnit Value="True"/>
       <Optimizations>
-        <OptimizationLevel Value="4"/>
+        <OptimizationLevel Value="3"/>
       </Optimizations>
     </CodeGeneration>
     <Linking>

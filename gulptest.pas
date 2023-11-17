@@ -39,7 +39,7 @@ begin
 
   // start timer
   start := now;
-  writeln('gulp v 0.1 an dmc file compressor, (c) 2017');
+  writeln('gulp-test ver. 0.1 an dmc file compressor, (c) 2017');
   writeln('by melchiorre caruso (italy)');
 
   // compress
@@ -48,10 +48,10 @@ begin
 
     // open files
     rs := treadbufstream.create(
-          tfilestream.create(paramstr(2), fmopenread or fmsharedenywrite));
+            tfilestream.create(paramstr(2), fmopenread or fmsharedenywrite));
 
     ws := twritebufstream.create(
-          tfilestream.create(paramstr(3), fmcreate));
+            tfilestream.create(paramstr(3), fmcreate));
 
     en := tdmccompressionstream.create(ws, 2, 24, (4*1024*1024*1024) div sizeof(tdmcnode));
 

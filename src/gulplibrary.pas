@@ -122,7 +122,7 @@ const
   nullmarker : tsha1digest = (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
 
   gulpdescription =
-    'GULP v0.4 journaling archiver, copyright (c) 2014-2017 Melchiorre Caruso.'
+    'GULP v0.5 journaling archiver, copyright (c) 2014-2017 Melchiorre Caruso.'
     + lineending +
     'GULP archiver for user-level incremental backups with rollback capability.';
 

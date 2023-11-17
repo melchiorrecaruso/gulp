@@ -1,11 +1,11 @@
 object mainform: Tmainform
-  Left = 371
+  Left = 405
   Height = 540
-  Top = 143
-  Width = 757
+  Top = 139
+  Width = 741
   Caption = 'Gulp - A simple journaling archiver'
   ClientHeight = 540
-  ClientWidth = 757
+  ClientWidth = 741
   Color = clNone
   Constraints.MinHeight = 540
   Constraints.MinWidth = 625
@@ -13,7 +13,7 @@ object mainform: Tmainform
   OnDestroy = FormDestroy
   ParentFont = True
   SessionProperties = 'Width;Height;WindowState'
-  LCLVersion = '1.9.0.0'
+  LCLVersion = '2.3.0.0'
   object notebook: TNotebook
     AnchorSideLeft.Control = Owner
     AnchorSideTop.Control = topshape
@@ -24,7 +24,7 @@ object mainform: Tmainform
     Left = 0
     Height = 473
     Top = 51
-    Width = 757
+    Width = 741
     PageIndex = 0
     Anchors = [akTop, akLeft, akRight, akBottom]
     Color = clNone
@@ -35,12 +35,12 @@ object mainform: Tmainform
         Left = 0
         Height = 473
         Top = 0
-        Width = 757
+        Width = 741
         Align = alClient
         Anchors = []
         BevelOuter = bvNone
         ClientHeight = 473
-        ClientWidth = 757
+        ClientWidth = 741
         Color = clNone
         ParentColor = False
         TabOrder = 0
@@ -50,7 +50,7 @@ object mainform: Tmainform
           AnchorSideTop.Control = welcomenoopenlabel
           AnchorSideTop.Side = asrBottom
           AnchorSideRight.Side = asrBottom
-          Left = 287
+          Left = 279
           Height = 15
           Top = 56
           Width = 182
@@ -59,13 +59,13 @@ object mainform: Tmainform
           Caption = 'Aprire un file per iniziare a lavorare'
           ParentColor = False
         end
-        object welcomenew: TSpeedButton
+        object NewBtn: TSpeedButton
           AnchorSideLeft.Control = welcomeopenlabel
           AnchorSideTop.Control = welcomeopenlabel
           AnchorSideTop.Side = asrBottom
           AnchorSideRight.Control = welcomeopenlabel
           AnchorSideRight.Side = asrBottom
-          Left = 287
+          Left = 279
           Height = 58
           Top = 87
           Width = 182
@@ -368,15 +368,15 @@ object mainform: Tmainform
           }
           Margin = 5
           Spacing = 10
-          OnClick = welcomenewClick
+          OnClick = NewBtnClick
         end
-        object welcomeopen: TSpeedButton
+        object OpenBtn: TSpeedButton
           AnchorSideLeft.Control = welcomeopenlabel
-          AnchorSideTop.Control = welcomenew
+          AnchorSideTop.Control = NewBtn
           AnchorSideTop.Side = asrBottom
           AnchorSideRight.Control = welcomeopenlabel
           AnchorSideRight.Side = asrBottom
-          Left = 287
+          Left = 279
           Height = 58
           Top = 151
           Width = 182
@@ -678,14 +678,14 @@ object mainform: Tmainform
           }
           Margin = 5
           Spacing = 10
-          OnClick = welcomeopenClick
+          OnClick = OpenBtnClick
         end
         object welcomenoopenlabel: TLabel
           AnchorSideLeft.Control = welcomepanel1
           AnchorSideLeft.Side = asrCenter
           AnchorSideTop.Control = welcomepanel1
           AnchorSideRight.Side = asrBottom
-          Left = 331
+          Left = 323
           Height = 15
           Top = 35
           Width = 95
@@ -694,13 +694,13 @@ object mainform: Tmainform
           Caption = 'Nessun file aperto'
           ParentColor = False
         end
-        object welcomecheck: TSpeedButton
+        object CheckBtn: TSpeedButton
           AnchorSideLeft.Control = welcomeopenlabel
-          AnchorSideTop.Control = welcomeopen
+          AnchorSideTop.Control = OpenBtn
           AnchorSideTop.Side = asrBottom
           AnchorSideRight.Control = welcomeopenlabel
           AnchorSideRight.Side = asrBottom
-          Left = 287
+          Left = 279
           Height = 58
           Top = 234
           Width = 182
@@ -1002,15 +1002,15 @@ object mainform: Tmainform
           }
           Margin = 5
           Spacing = 10
-          OnClick = welcomecheckClick
+          OnClick = CheckBtnClick
         end
-        object welcomefix: TSpeedButton
+        object FixBtn: TSpeedButton
           AnchorSideLeft.Control = welcomeopenlabel
-          AnchorSideTop.Control = welcomecheck
+          AnchorSideTop.Control = CheckBtn
           AnchorSideTop.Side = asrBottom
-          AnchorSideRight.Control = welcomeopen
+          AnchorSideRight.Control = OpenBtn
           AnchorSideRight.Side = asrBottom
-          Left = 287
+          Left = 279
           Height = 58
           Top = 298
           Width = 182
@@ -1312,15 +1312,15 @@ object mainform: Tmainform
           }
           Margin = 5
           Spacing = 10
-          OnClick = welcomefixClick
+          OnClick = FixBtnClick
         end
-        object welcomepurge: TSpeedButton
+        object PurgeBtn: TSpeedButton
           AnchorSideLeft.Control = welcomeopenlabel
-          AnchorSideTop.Control = welcomefix
+          AnchorSideTop.Control = FixBtn
           AnchorSideTop.Side = asrBottom
           AnchorSideRight.Control = welcomeopenlabel
           AnchorSideRight.Side = asrBottom
-          Left = 287
+          Left = 279
           Height = 59
           Top = 362
           Width = 182
@@ -1621,7 +1621,7 @@ object mainform: Tmainform
           }
           Margin = 5
           Spacing = 10
-          OnClick = welcomepurgeClick
+          OnClick = PurgeBtnClick
         end
       end
     end
@@ -1632,7 +1632,7 @@ object mainform: Tmainform
         Left = 0
         Height = 410
         Top = 63
-        Width = 757
+        Width = 741
         Align = alBottom
         Anchors = [akTop, akLeft, akRight, akBottom]
         AutoSort = False
@@ -1661,17 +1661,17 @@ object mainform: Tmainform
           end        
           item
             Caption = 'Path'
-            Width = 257
+            Width = 241
           end>
         ColumnClick = False
         Enabled = False
         MultiSelect = True
         OwnerData = True
-        PopupMenu = PopupMenu
+        PopupMenu = PopupMenu1
         ReadOnly = True
         RowSelect = True
         ScrollBars = ssAutoBoth
-        SmallImages = images
+        SmallImages = Images
         TabOrder = 0
         ViewStyle = vsReport
         OnData = openlviewData
@@ -1685,12 +1685,12 @@ object mainform: Tmainform
         Left = 0
         Height = 31
         Top = 0
-        Width = 757
+        Width = 741
         Anchors = [akTop, akLeft, akRight]
         AutoSize = True
         BevelOuter = bvNone
         ClientHeight = 31
-        ClientWidth = 757
+        ClientWidth = 741
         Color = clForm
         ParentColor = False
         TabOrder = 1
@@ -1704,7 +1704,7 @@ object mainform: Tmainform
           Left = 150
           Height = 23
           Top = 4
-          Width = 457
+          Width = 441
           Anchors = [akTop, akLeft, akRight]
           BorderSpacing.Left = 150
           BorderSpacing.Top = 4
@@ -1724,12 +1724,12 @@ object mainform: Tmainform
         Left = 0
         Height = 31
         Top = 31
-        Width = 757
+        Width = 741
         Anchors = [akTop, akLeft, akRight]
         AutoSize = True
         BevelOuter = bvNone
         ClientHeight = 31
-        ClientWidth = 757
+        ClientWidth = 741
         Color = clForm
         ParentColor = False
         TabOrder = 2
@@ -1833,7 +1833,7 @@ object mainform: Tmainform
           Left = 52
           Height = 23
           Top = 4
-          Width = 693
+          Width = 677
           Anchors = [akTop, akLeft, akRight]
           BorderSpacing.Left = 12
           BorderSpacing.Top = 4
@@ -1855,7 +1855,7 @@ object mainform: Tmainform
         Left = 0
         Height = 1
         Top = 62
-        Width = 757
+        Width = 741
         Anchors = [akTop, akLeft, akRight]
         Constraints.MaxHeight = 1
         Constraints.MinHeight = 1
@@ -1863,12 +1863,12 @@ object mainform: Tmainform
       end
     end
     object syncpage: TPage
-      object syncok: TBitBtn
+      object SyncOk: TBitBtn
         AnchorSideRight.Control = syncpage
         AnchorSideRight.Side = asrBottom
         AnchorSideBottom.Control = syncpage
         AnchorSideBottom.Side = asrBottom
-        Left = 625
+        Left = 609
         Height = 26
         Top = 435
         Width = 120
@@ -1880,25 +1880,8 @@ object mainform: Tmainform
         Constraints.MaxWidth = 120
         Constraints.MinHeight = 26
         Constraints.MinWidth = 120
-        OnClick = restoreokClick
+        OnClick = SyncOkClick
         TabOrder = 0
-      end
-      object synccancel: TBitBtn
-        AnchorSideTop.Control = syncok
-        AnchorSideRight.Control = syncok
-        AnchorSideBottom.Control = syncok
-        AnchorSideBottom.Side = asrBottom
-        Left = 493
-        Height = 26
-        Top = 435
-        Width = 120
-        Anchors = [akTop, akRight, akBottom]
-        BorderSpacing.Right = 12
-        Caption = 'Cancel'
-        Constraints.MaxWidth = 120
-        Constraints.MinWidth = 120
-        OnClick = restorecancelClick
-        TabOrder = 1
       end
       object syncpanel1: TPanel
         AnchorSideLeft.Control = syncpage
@@ -1906,27 +1889,27 @@ object mainform: Tmainform
         AnchorSideTop.Side = asrBottom
         AnchorSideRight.Control = syncpage
         AnchorSideRight.Side = asrBottom
-        AnchorSideBottom.Control = syncok
+        AnchorSideBottom.Control = SyncOk
         Left = 12
-        Height = 313
-        Top = 82
-        Width = 733
+        Height = 321
+        Top = 74
+        Width = 717
         Anchors = [akTop, akLeft, akRight, akBottom]
         BorderSpacing.Left = 12
         BorderSpacing.Top = 12
         BorderSpacing.Right = 12
         BorderSpacing.Bottom = 40
         BevelOuter = bvNone
-        ClientHeight = 313
-        ClientWidth = 733
-        TabOrder = 2
-        object syncadddir: TSpeedButton
+        ClientHeight = 321
+        ClientWidth = 717
+        TabOrder = 1
+        object SyncAddDir: TSpeedButton
           AnchorSideLeft.Side = asrBottom
           AnchorSideRight.Control = syncpanel1
           AnchorSideRight.Side = asrBottom
           AnchorSideBottom.Control = syncpanel1
           AnchorSideBottom.Side = asrBottom
-          Left = 613
+          Left = 597
           Height = 26
           Top = 25
           Width = 120
@@ -1938,7 +1921,7 @@ object mainform: Tmainform
           Constraints.MinHeight = 26
           Constraints.MinWidth = 120
           Caption = 'Aggiungi cartella'
-          OnClick = SpeedButton5Click
+          OnClick = SyncAddDirClick
         end
         object syncbevel2: TDividerBevel
           AnchorSideLeft.Control = syncpanel1
@@ -1946,21 +1929,21 @@ object mainform: Tmainform
           AnchorSideRight.Control = syncpanel1
           AnchorSideRight.Side = asrBottom
           Left = 0
-          Height = 17
+          Height = 15
           Top = 0
-          Width = 733
+          Width = 717
           Caption = 'Includi file e cartelle'
           Anchors = [akTop, akLeft, akRight]
           Font.Style = [fsBold]
           ParentFont = False
         end
-        object syncexcludedir: TSpeedButton
-          AnchorSideLeft.Control = syncadddir
-          AnchorSideTop.Control = syncadddir
+        object SyncExcludeDir: TSpeedButton
+          AnchorSideLeft.Control = SyncAddDir
+          AnchorSideTop.Control = SyncAddDir
           AnchorSideTop.Side = asrBottom
-          AnchorSideRight.Control = syncadddir
+          AnchorSideRight.Control = SyncAddDir
           AnchorSideRight.Side = asrBottom
-          Left = 613
+          Left = 597
           Height = 26
           Top = 56
           Width = 120
@@ -1970,15 +1953,15 @@ object mainform: Tmainform
           Constraints.MaxHeight = 26
           Constraints.MinHeight = 26
           Caption = 'Escludi cartella'
-          OnClick = syncexcludedirClick
+          OnClick = SyncExcludeDirClick
         end
-        object syncaddfile: TSpeedButton
-          AnchorSideLeft.Control = syncadddir
-          AnchorSideTop.Control = syncexcludedir
+        object SyncAddFile: TSpeedButton
+          AnchorSideLeft.Control = SyncAddDir
+          AnchorSideTop.Control = SyncExcludeDir
           AnchorSideTop.Side = asrBottom
-          AnchorSideRight.Control = syncadddir
+          AnchorSideRight.Control = SyncAddDir
           AnchorSideRight.Side = asrBottom
-          Left = 613
+          Left = 597
           Height = 26
           Top = 94
           Width = 120
@@ -1988,15 +1971,15 @@ object mainform: Tmainform
           Constraints.MaxHeight = 26
           Constraints.MinHeight = 26
           Caption = 'Aggiungi file'
-          OnClick = syncaddfileClick
+          OnClick = SyncAddFileClick
         end
-        object syncdelete: TSpeedButton
-          AnchorSideLeft.Control = syncadddir
-          AnchorSideTop.Control = syncexcludefile
+        object SyncDelete: TSpeedButton
+          AnchorSideLeft.Control = SyncAddDir
+          AnchorSideTop.Control = SyncExcludeFile
           AnchorSideTop.Side = asrBottom
-          AnchorSideRight.Control = syncadddir
+          AnchorSideRight.Control = SyncAddDir
           AnchorSideRight.Side = asrBottom
-          Left = 613
+          Left = 597
           Height = 26
           Top = 163
           Width = 120
@@ -2006,78 +1989,78 @@ object mainform: Tmainform
           Constraints.MaxHeight = 26
           Constraints.MinHeight = 26
           Caption = 'Cancella'
-          OnClick = syncdeleteClick
+          OnClick = SyncDeleteClick
         end
-        object syncroot: TComboBox
-          AnchorSideLeft.Control = syncrootlabel
+        object SyncRoot: TComboBox
+          AnchorSideLeft.Control = SyncRootLabel
           AnchorSideLeft.Side = asrBottom
-          AnchorSideTop.Control = synclistview
+          AnchorSideTop.Control = SyncListView
           AnchorSideTop.Side = asrBottom
-          AnchorSideRight.Control = synclistview
+          AnchorSideRight.Control = SyncListView
           AnchorSideRight.Side = asrBottom
-          Left = 96
-          Height = 31
+          Left = 89
+          Height = 23
           Top = 201
-          Width = 507
+          Width = 498
           Anchors = [akTop, akLeft, akRight]
           BorderSpacing.Left = 15
           BorderSpacing.Top = 12
           BorderStyle = bsSingle
           Constraints.MinHeight = 29
-          ItemHeight = 0
-          OnChange = syncrootcbChangeBounds
+          ItemHeight = 15
+          OnChange = SyncRootChangeBounds
           Style = csDropDownList
           TabOrder = 0
         end
-        object syncrootlabel: TLabel
-          AnchorSideLeft.Control = synclistview
-          AnchorSideTop.Control = syncroot
-          AnchorSideBottom.Control = syncroot
+        object SyncRootLabel: TLabel
+          AnchorSideLeft.Control = SyncListView
+          AnchorSideTop.Control = SyncRoot
+          AnchorSideBottom.Control = SyncRoot
           AnchorSideBottom.Side = asrBottom
           Left = 0
-          Height = 31
+          Height = 23
           Top = 201
-          Width = 81
+          Width = 74
           Anchors = [akTop, akLeft, akBottom]
           Caption = 'Base directory'
           Layout = tlCenter
           ParentColor = False
         end
-        object synclistview: TListView
+        object SyncListView: TListView
           AnchorSideLeft.Control = syncpanel1
           AnchorSideTop.Control = syncbevel2
           AnchorSideTop.Side = asrBottom
-          AnchorSideRight.Control = syncadddir
-          AnchorSideBottom.Control = syncdelete
+          AnchorSideRight.Control = SyncAddDir
+          AnchorSideBottom.Control = SyncDelete
           AnchorSideBottom.Side = asrBottom
           Left = 0
-          Height = 160
-          Top = 29
-          Width = 603
+          Height = 162
+          Top = 27
+          Width = 587
           Anchors = [akTop, akLeft, akRight, akBottom]
           AutoSort = False
           BorderSpacing.Top = 12
           Columns = <          
             item
               AutoSize = True
-              Width = 601
+              Width = 0
             end>
           MultiSelect = True
           RowSelect = True
           ScrollBars = ssAutoBoth
           ShowColumnHeaders = False
-          SmallImages = images
+          SmallImages = Images
           TabOrder = 1
           ViewStyle = vsReport
-          OnEdited = synclistviewEdited
+          OnEdited = SyncListViewEdited
         end
-        object syncexcludefile: TSpeedButton
-          AnchorSideLeft.Control = syncadddir
-          AnchorSideTop.Control = syncaddfile
+        object SyncExcludeFile: TSpeedButton
+          AnchorSideLeft.Control = SyncAddDir
+          AnchorSideTop.Control = SyncAddFile
           AnchorSideTop.Side = asrBottom
-          AnchorSideRight.Control = syncadddir
+          AnchorSideRight.Control = SyncAddDir
           AnchorSideRight.Side = asrBottom
-          Left = 613
+          Left = 597
           Height = 26
           Top = 125
           Width = 120
@@ -2086,7 +2069,7 @@ object mainform: Tmainform
           Constraints.MaxHeight = 26
           Constraints.MinHeight = 26
           Caption = 'Excludi file'
-          OnClick = syncexcludefileClick
+          OnClick = SyncExcludeFileClick
         end
       end
       object syncpanel3: TPanel
@@ -2095,35 +2078,35 @@ object mainform: Tmainform
         AnchorSideRight.Control = syncpage
         AnchorSideRight.Side = asrBottom
         Left = 12
-        Height = 58
+        Height = 50
         Top = 12
-        Width = 733
+        Width = 717
         Anchors = [akTop, akLeft, akRight]
         AutoSize = True
         BorderSpacing.Left = 12
         BorderSpacing.Top = 12
         BorderSpacing.Right = 12
         BevelOuter = bvNone
-        ClientHeight = 58
-        ClientWidth = 733
-        TabOrder = 3
-        object syncmode: TComboBox
-          AnchorSideLeft.Control = syncmodelabel
+        ClientHeight = 50
+        ClientWidth = 717
+        TabOrder = 2
+        object SyncMode: TComboBox
+          AnchorSideLeft.Control = SyncModeLabel
           AnchorSideLeft.Side = asrBottom
           AnchorSideTop.Control = syncbevel3
           AnchorSideTop.Side = asrBottom
           AnchorSideRight.Control = syncpanel3
           AnchorSideRight.Side = asrBottom
-          Left = 166
-          Height = 29
-          Top = 29
-          Width = 567
+          Left = 160
+          Height = 23
+          Top = 27
+          Width = 557
           Anchors = [akTop, akLeft, akRight]
           BorderSpacing.Left = 15
           BorderSpacing.Top = 12
           BorderStyle = bsSingle
           Constraints.MinHeight = 29
-          ItemHeight = 0
+          ItemHeight = 15
           ItemIndex = 0
           Items.Strings = (
             'Sincroniza contenuto backup'
@@ -2133,15 +2116,15 @@ object mainform: Tmainform
           TabOrder = 0
           Text = 'Sincroniza contenuto backup'
         end
-        object syncmodelabel: TLabel
+        object SyncModeLabel: TLabel
           AnchorSideLeft.Control = syncpanel3
-          AnchorSideTop.Control = syncmode
-          AnchorSideBottom.Control = syncmode
+          AnchorSideTop.Control = SyncMode
+          AnchorSideBottom.Control = SyncMode
           AnchorSideBottom.Side = asrBottom
           Left = 0
-          Height = 29
-          Top = 29
-          Width = 151
+          Height = 23
+          Top = 27
+          Width = 145
           Anchors = [akTop, akLeft, akBottom]
           Caption = 'Modalità di aggiornamento'
           Layout = tlCenter
@@ -2153,9 +2136,9 @@ object mainform: Tmainform
           AnchorSideRight.Control = syncpanel3
           AnchorSideRight.Side = asrBottom
           Left = 0
-          Height = 17
+          Height = 15
           Top = 0
-          Width = 733
+          Width = 717
           Caption = 'Opzioni sincronizzazione'
           Anchors = [akTop, akLeft, akRight]
           Font.Style = [fsBold]
@@ -2169,7 +2152,7 @@ object mainform: Tmainform
         AnchorSideRight.Side = asrBottom
         AnchorSideBottom.Control = restorepage
         AnchorSideBottom.Side = asrBottom
-        Left = 625
+        Left = 609
         Height = 26
         Top = 435
         Width = 120
@@ -2185,46 +2168,29 @@ object mainform: Tmainform
         OnClick = restoreokClick
         TabOrder = 0
       end
-      object restorecancel: TBitBtn
-        AnchorSideTop.Control = restoreok
-        AnchorSideRight.Control = restoreok
-        AnchorSideBottom.Control = restoreok
-        AnchorSideBottom.Side = asrBottom
-        Left = 493
-        Height = 26
-        Top = 435
-        Width = 120
-        Anchors = [akTop, akRight, akBottom]
-        BorderSpacing.Right = 12
-        Caption = 'Cancel'
-        Constraints.MaxWidth = 120
-        Constraints.MinWidth = 120
-        OnClick = restorecancelClick
-        TabOrder = 1
-      end
       object restorepanel2: TPanel
         AnchorSideLeft.Control = restorepage
         AnchorSideTop.Control = restorepage
         AnchorSideRight.Control = restorepage
         AnchorSideRight.Side = asrBottom
         Left = 12
-        Height = 58
+        Height = 50
         Top = 12
-        Width = 733
+        Width = 717
         Anchors = [akTop, akLeft, akRight]
         AutoSize = True
         BorderSpacing.Left = 12
         BorderSpacing.Top = 12
         BorderSpacing.Right = 12
         BevelOuter = bvNone
-        ClientHeight = 58
-        ClientWidth = 733
-        TabOrder = 2
+        ClientHeight = 50
+        ClientWidth = 717
+        TabOrder = 1
         object restorebevel1: TDividerBevel
           Left = 0
-          Height = 17
+          Height = 15
           Top = 0
-          Width = 733
+          Width = 717
           Caption = 'Cartella di destinazione'
           Align = alTop
           Font.Style = [fsBold]
@@ -2237,9 +2203,9 @@ object mainform: Tmainform
           AnchorSideRight.Control = restorepanel2
           AnchorSideRight.Side = asrBottom
           Left = 0
-          Height = 29
-          Top = 29
-          Width = 733
+          Height = 23
+          Top = 27
+          Width = 717
           OnAcceptDirectory = restorepathAcceptDirectory
           ShowHidden = False
           ButtonWidth = 23
@@ -2257,23 +2223,23 @@ object mainform: Tmainform
         AnchorSideRight.Control = restorepage
         AnchorSideRight.Side = asrBottom
         Left = 12
-        Height = 99
-        Top = 82
-        Width = 733
+        Height = 85
+        Top = 74
+        Width = 717
         Anchors = [akTop, akLeft, akRight]
         AutoSize = True
         BorderSpacing.Left = 12
         BorderSpacing.Top = 12
         BorderSpacing.Right = 12
         BevelOuter = bvNone
-        ClientHeight = 99
-        ClientWidth = 733
-        TabOrder = 3
+        ClientHeight = 85
+        ClientWidth = 717
+        TabOrder = 2
         object restorebevel2: TDividerBevel
           Left = 0
-          Height = 17
+          Height = 15
           Top = 0
-          Width = 733
+          Width = 717
           Caption = 'Opzioni'
           Align = alTop
           Font.Style = [fsBold]
@@ -2285,9 +2251,9 @@ object mainform: Tmainform
           AnchorSideBottom.Control = restorerevision
           AnchorSideBottom.Side = asrBottom
           Left = 10
-          Height = 29
-          Top = 29
-          Width = 100
+          Height = 23
+          Top = 27
+          Width = 94
           Anchors = [akTop, akLeft, akBottom]
           BorderSpacing.Left = 10
           Caption = 'Fino alla revisione'
@@ -2300,9 +2266,9 @@ object mainform: Tmainform
           AnchorSideBottom.Control = restoremode
           AnchorSideBottom.Side = asrBottom
           Left = 10
-          Height = 29
-          Top = 70
-          Width = 102
+          Height = 23
+          Top = 62
+          Width = 97
           Anchors = [akTop, akLeft, akBottom]
           BorderSpacing.Left = 10
           BorderSpacing.Right = 10
@@ -2316,14 +2282,14 @@ object mainform: Tmainform
           AnchorSideTop.Side = asrBottom
           AnchorSideRight.Control = restorepanel4
           AnchorSideRight.Side = asrBottom
-          Left = 127
-          Height = 29
-          Top = 29
-          Width = 606
+          Left = 122
+          Height = 23
+          Top = 27
+          Width = 595
           Anchors = [akTop, akLeft, akRight]
           BorderSpacing.Top = 12
           Constraints.MinHeight = 29
-          ItemHeight = 0
+          ItemHeight = 15
           Items.Strings = (
             ''
           )
@@ -2337,15 +2303,15 @@ object mainform: Tmainform
           AnchorSideTop.Side = asrBottom
           AnchorSideRight.Control = restorepanel4
           AnchorSideRight.Side = asrBottom
-          Left = 127
-          Height = 29
-          Top = 70
-          Width = 606
+          Left = 122
+          Height = 23
+          Top = 62
+          Width = 595
           Anchors = [akTop, akLeft, akRight]
           BorderSpacing.Left = 15
           BorderSpacing.Top = 12
           Constraints.MinHeight = 29
-          ItemHeight = 0
+          ItemHeight = 15
           Items.Strings = (
             'Sincroniza contenuto della cartella di destinazione'
             'Aggiorna contenuto della cartella di destinazione'
@@ -2366,7 +2332,7 @@ object mainform: Tmainform
         Left = 4
         Height = 465
         Top = 4
-        Width = 749
+        Width = 733
         Anchors = [akTop, akLeft, akRight, akBottom]
         BorderSpacing.Left = 4
         BorderSpacing.Top = 4
@@ -2390,38 +2356,14 @@ object mainform: Tmainform
     Left = 0
     Height = 50
     Top = 0
-    Width = 757
+    Width = 741
     Anchors = [akTop, akLeft, akRight]
     AutoSize = True
     BevelOuter = bvNone
     ClientHeight = 50
-    ClientWidth = 757
+    ClientWidth = 741
     TabOrder = 1
-    object revcbox: TComboBox
-      AnchorSideLeft.Control = revImg
-      AnchorSideLeft.Side = asrBottom
-      AnchorSideTop.Control = homebtn
-      AnchorSideRight.Control = morebtn
-      AnchorSideBottom.Control = homebtn
-      AnchorSideBottom.Side = asrBottom
-      Left = 569
-      Height = 23
-      Top = 10
-      Width = 120
-      Anchors = [akTop, akRight, akBottom]
-      AutoSize = False
-      BorderSpacing.Left = 6
-      BorderSpacing.Right = 24
-      BorderStyle = bsSingle
-      Constraints.MaxWidth = 120
-      Constraints.MinWidth = 120
-      ItemHeight = 15
-      OnChange = revcboxChange
-      ParentColor = True
-      Style = csDropDownList
-      TabOrder = 0
-    end
-    object homebtn: TSpeedButton
+    object HomeBtn: TSpeedButton
       AnchorSideLeft.Control = buttonspanel
       AnchorSideTop.Control = buttonspanel
       Left = 20
@@ -2512,12 +2454,12 @@ object mainform: Tmainform
         0000000000000000000000000000000000000000000000000000000000000000
         0000000000000000000000000000000000000000000000000000
       }
-      OnClick = HomeBitBtnClick
+      OnClick = HomeBtnClick
     end
-    object syncbtn: TSpeedButton
-      AnchorSideLeft.Control = homebtn
+    object SyncBtn: TSpeedButton
+      AnchorSideLeft.Control = HomeBtn
       AnchorSideLeft.Side = asrBottom
-      AnchorSideTop.Control = homebtn
+      AnchorSideTop.Control = HomeBtn
       Left = 140
       Height = 32
       Top = 10
@@ -2604,15 +2546,15 @@ object mainform: Tmainform
         34FF5E4934FF5E4934FF5E4934FF5E4934FF5E4934FF00000000000000000000
         0000000000000000000000000000000000000000000000000000
       }
-      OnClick = SyncBitBtnClick
+      OnClick = SyncBtnClick
     end
-    object morebtn: TSpeedButton
-      AnchorSideTop.Control = homebtn
+    object MoreBtn: TSpeedButton
+      AnchorSideTop.Control = HomeBtn
       AnchorSideRight.Control = buttonspanel
       AnchorSideRight.Side = asrBottom
-      AnchorSideBottom.Control = homebtn
+      AnchorSideBottom.Control = HomeBtn
       AnchorSideBottom.Side = asrBottom
-      Left = 713
+      Left = 697
       Height = 32
       Top = 10
       Width = 32
@@ -2698,19 +2640,19 @@ object mainform: Tmainform
       }
       OnClick = BitBtn2Click
     end
-    object findbtn: TSpeedButton
-      AnchorSideLeft.Control = restbtn
+    object FindBtn: TSpeedButton
+      AnchorSideLeft.Control = RestoreBtn
       AnchorSideLeft.Side = asrBottom
-      AnchorSideTop.Control = homebtn
-      AnchorSideBottom.Control = homebtn
+      AnchorSideTop.Control = HomeBtn
+      AnchorSideBottom.Control = HomeBtn
       AnchorSideBottom.Side = asrBottom
-      Left = 338
+      Left = 340
       Height = 32
       Top = 10
       Width = 96
       Anchors = [akTop, akLeft, akBottom]
       AutoSize = True
-      BorderSpacing.Left = 6
+      BorderSpacing.Left = 4
       Constraints.MaxWidth = 96
       Constraints.MinWidth = 96
       Caption = 'Find'
@@ -2790,60 +2732,21 @@ object mainform: Tmainform
         0000000000000000000000000000000000000000000000000000000000000000
         0000000000000000000000000000000000000000000000000000
       }
-      OnClick = findbtnClick
+      OnClick = FindBtnClick
     end
-    object revImg: TImage
-      AnchorSideTop.Control = homebtn
-      AnchorSideRight.Control = revcbox
-      AnchorSideBottom.Control = homebtn
-      AnchorSideBottom.Side = asrBottom
-      Left = 539
-      Height = 32
-      Top = 10
-      Width = 24
-      Anchors = [akTop, akRight, akBottom]
-      AutoSize = True
-      Center = True
-      Picture.Data = {
-        1754506F727461626C654E6574776F726B47726170686963E902000089504E47
-        0D0A1A0A0000000D4948445200000018000000180806000000E0773DF8000000
-        0473424954080808087C086488000000097048597300000B1300000B1301009A
-        9C180000028B494441544889C5554B4C1351143DF3A6855AF9B48202068A5271
-        4142C01035264DDC2A216E5CB873EF12A38044217EA236107626C69526B85257
-        92981A50A004420D249500A1D250DA42CBD799295878F37321348CF44301E3D9
-        CC7DEF9E77CFBDF7DDBC01FE077A9C43C3DD7D834369F047BBFB06BFC5F3E912
-        9CB9C010269D9CCE25E26B04C21DCF9E2BC3FD7727B7D6A13A9BBA97E8135BDF
-        F91B576472F1B2BDF0F6BDE66D1FD949945DCE0651E0637B54565206A7B21CB3
-        454120B2CBD994B002B22630114A01BF178C0A442845DE11435281081501BF17
-        50D43FFC3541D32BCD22546753A9AC202044C00028C9C9829E655354B09B5FD4
-        35108BBBEB92335802AB393769D074F824A1E790A069D132C7EF696A5221DF94
-        1B8BFBCF2B882BE01E9B807B6C625FF69E040E1307BA839F1C0FD7E808660241
-        8822855E9F81D396124C7AA6CE3E696CFC011CA0453D7D0378FBE13D1CBD2E38
-        BEBA515D510D47AF1B9F7B5D00C38EB4B6B75F03123F762932E730393D05A7CB
-        035EF80500C8C93622BA4131EE0922185EC9BE5453DE79DF6EAF892B50555991
-        D4FED4F3055EDF622CF8DFE08528A67D217D7969614B5C81ED36545556C4B567
-        037EF802CB49AB9C0BF306ABA5A0765F2D1225091B9B54B337139A83BDF9D656
-        056B78FAA213842526CD142D2CAFA8AC2EB5E6CBD76FE0E8FF8E689426E41C35
-        66C276FECCAA668AFC73F382244929054E594A505A9C9F9473B2C82CAA0CF351
-        936E845BBF39CE795E81E044B2C3E61C13AC96E3585CE2B1CAADEFF21F3365C1
-        5A9C4755C2B4A6F5E3DD89076D6D57555979E79D5DCA0C2E70BAE88608A3418F
-        E202B354569ABFC980BDFEB8E98E63DF0200D0DAD1514637A5472C616A194272
-        5545E1A1A85DAC41DFF2B0BEDE0700BF017B7331ED8A98FD570000000049454E
-        44AE426082
-      }
-    end
-    object restbtn: TSpeedButton
-      AnchorSideLeft.Control = syncbtn
+    object RestoreBtn: TSpeedButton
+      AnchorSideLeft.Control = SyncBtn
       AnchorSideLeft.Side = asrBottom
-      AnchorSideTop.Control = homebtn
-      AnchorSideBottom.Control = homebtn
+      AnchorSideTop.Control = HomeBtn
+      AnchorSideBottom.Control = HomeBtn
       AnchorSideBottom.Side = asrBottom
-      Left = 236
+      Left = 240
       Height = 32
       Top = 10
       Width = 96
       Anchors = [akTop, akLeft, akBottom]
       AutoSize = True
+      BorderSpacing.Left = 4
       Constraints.MaxWidth = 96
       Constraints.MinHeight = 32
       Constraints.MinWidth = 96
@@ -2924,7 +2827,68 @@ object mainform: Tmainform
         0000000000005D4C331E5D4C331E000000000000000000000000000000000000
         0000000000000000000000000000000000000000000000000000
       }
-      OnClick = RestBitBtnClick
+      OnClick = RestoreBtnClick
+    end
+    object RevisionBox: TComboBox
+      AnchorSideTop.Control = MoreBtn
+      AnchorSideRight.Control = MoreBtn
+      AnchorSideBottom.Control = MoreBtn
+      AnchorSideBottom.Side = asrBottom
+      Left = 563
+      Height = 23
+      Top = 15
+      Width = 128
+      Anchors = [akTop, akRight, akBottom]
+      BorderSpacing.Top = 5
+      BorderSpacing.Right = 6
+      ItemHeight = 15
+      OnChange = revisionboxchange
+      Style = csDropDownList
+      TabOrder = 0
+    end
+    object RevisionImage: TImage
+      AnchorSideTop.Control = MoreBtn
+      AnchorSideRight.Control = RevisionBox
+      AnchorSideBottom.Control = MoreBtn
+      AnchorSideBottom.Side = asrBottom
+      Left = 525
+      Height = 32
+      Top = 10
+      Width = 32
+      Anchors = [akTop, akRight, akBottom]
+      BorderSpacing.Right = 6
+      Center = True
+      Picture.Data = {
+        1754506F727461626C654E6574776F726B477261706869633D03000089504E47
+        0D0A1A0A0000000D4948445200000018000000180806000000E0773DF8000000
+        1974455874536F6674776172650041646F626520496D616765526561647971C9
+        653C000002DF4944415478DAAC56414F1341147EB3DDB6DBD2487B900302A52D
+        95A618836913958404387251127F007FC13F80117E05E1C4D1C4833D71A33795
+        2846C552B192582BC1180311125B6B77C7F7DECED6D21652D2BE643A6FA63BDF
+        B7DFF766A61525214000707B81ED8194B7B14B60FBF85488ADBB70719CB746AA
+        2614C163CC27684146CAD1D9DDDD543699DCBE27C417E820CE5993438247BA69
+        0F6E869797EF43AD06339B9B50281460667A3A756D6E2ED50941CB1A5D87E2D2
+        928BBED3FFDACF7864A502B25C869F2727905F5C84E0C80858A7A79DE0B7AC11
+        3E1F20AE8709FED8CFB865B50A356CB7D26988C7E310E8EFE77127D1BC4677B9
+        0071DD368194ACC0420526B6C0DA1A783219A8CCCE427963037E4D4DC1D59595
+        0B0974AC633018E49C30341C23AEAD40BDA3C7520A8AF3F3E0EFEB83DFABABDC
+        5BEBEB501B1880CB840B15541D8B540D74B2884842EA4DBC0DBDD5A1554E4824
+        405C9D0709BB3D943D0EC24CF09BDBA41A1F0C29A11721B00688A4B1356A4EB3
+        10DCB22C7896CDD689A8976ABE5DDE3CA6585C58004D636CEDFF9B635D88C054
+        0FC562318846A39C534F63276F9C8F44222DF384415884299B1598F836DD0661
+        90458E827A0D88B9669A100A85E0E8E88827293F3E3E661BDAE5644B734E1802
+        2D6AA90113A8C5C9E1619EFC502CC28D7098F3B7FBFB30A9AC7ABDB707E9F171
+        CE5FE672706782EF4978BEB3C3189A6DF51905AE468BAC86DD74D99C309C1AB4
+        5540912F95EC43E676430E55902D86C703EF5005E53EC3806D5441B6F8F162DB
+        4215CE2E220CBDAD02FC82FCA3B83E38C8FDDEC101248686ECCB9DEC1A1DE59C
+        8826C7C63827A27422C1F9AB7C9E3178EBB653D02B8BCC330AEC2DE56DACC1E7
+        C3C3FA824FA8C252F3BBCA2E8AF7A8C2B1E58DB2EB4C0D84F03281DAF93E4B1D
+        9200DEA05D9D033A68A40A3199E03B7EE065EC736341FD5D823B415844F08308
+        2A5206CB427C4B19C613E861E02FDA57C4BE420530C09663A87F2FBD08DA8E65
+        E2F927C00085062F053BD5AC7E0000000049454E44AE426082
+      }
+      StretchOutEnabled = False
+      StretchInEnabled = False
     end
   end
   object topshape: TShape
@@ -2936,7 +2900,7 @@ object mainform: Tmainform
     Left = 0
     Height = 1
     Top = 50
-    Width = 757
+    Width = 741
     Anchors = [akTop, akLeft, akRight]
     Constraints.MaxHeight = 1
     Constraints.MinHeight = 1
@@ -2951,223 +2915,70 @@ object mainform: Tmainform
     Left = 0
     Height = 16
     Top = 524
-    Width = 757
+    Width = 741
     Anchors = [akLeft, akRight, akBottom]
     Enabled = False
     Smooth = True
     TabOrder = 2
     Visible = False
   end
-  object opendialog: TOpenDialog
-    left = 88
-    top = 344
+  object OpenDialog: TOpenDialog
+    Left = 120
+    Top = 232
   end
-  object images: TImageList
-    left = 88
-    top = 224
+  object Images: TImageList
+    Left = 120
+    Top = 176
     Bitmap = {
-      4C69060000001000000010000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      00006FC92F3071CB2D8071CC2EA66FCA2EA570CC2E7F6ECD2C2E000000000000
-      000000000000000000000000000000000000000000000000000072CC33146FC9
-      2DB571CC2EFF71CC2EFF71CC2EFF71CC2EFF71CC2EFF71CC2EFF70CB2EB171C6
-      2A12000000000000000000000000000000000000000072CC33146ECB2EE271CC
-      2EFF71CC2EFF71CC2EFF71CC2EFF71CC2EFF71CC2EFF71CC2EFF71CC2EFF70CB
-      2CDF78D22D11000000000000000000000000000000006DC72BC171CC2EFF71CC
-      2EFF71CC2EFF71CC2EFFC6E2ADFFC4E1AAFF71CC2EFF71CC2EFF71CC2EFF71CC
-      2EFF6FC92DBA00000000000000000000000073C8323371CC2EFF71CC2EFF71CC
-      2EFF71CC2EFF71CC2EFFC4DEACFFC2DDA9FF71CC2EFF71CC2EFF71CC2EFF71CC
-      2EFF71CC2EFF71CB2D2D00000000000000006CC32CA771CC2EFF71CC2EFF71CC
-      2EFF71CC2EFF71CC2EFFC4DEACFFC2DDA9FF71CC2EFF71CC2EFF71CC2EFF71CC
-      2EFF71CC2EFF6CC52CA000000000000000006DC52BD971CC2EFF71CC2EFFC8E4
-      AEFFC8E4AEFFC8E4AEFFE2EAD7FFE2EAD7FFC8E4AEFFC8E4AEFFC8E4AEFF71CC
-      2EFF71CC2EFF6CC52CD400000000000000006BC42CE171CC2EFF71CC2EFFC0D9
-      A8FFC0D9A8FFC0D9A8FFE2E9D6FFE0E8D5FFC0D9A8FFC0D9A8FFC0D9A8FF71CC
-      2EFF71CC2EFF6CC42ADD000000000000000069C12BCE71CC2EFF71CC2EFF6CC2
-      2CFF6CC22CFF6CC22CFFC4DDACFFC1DCA9FF6CC22CFF6CC22CFF6CC22CFF71CC
-      2EFF71CC2EFF6ABF2BC9000000000000000066B9288471CC2EFF71CC2EFF71CC
-      2EFF71CC2EFF71CC2EFFC4DEACFFC2DDA9FF71CC2EFF71CC2EFF71CC2EFF71CC
-      2EFF71CC2EFF65B6297B00000000000000005DAE28136AC12AFC71CC2EFF71CC
-      2EFF71CC2EFF71CC2EFFC4DEACFFC2DDA9FF71CC2EFF71CC2EFF71CC2EFF71CC
-      2EFF6ABF29FA5FAF1F1000000000000000000000000063B2277B6EC72DFF71CC
-      2EFF71CC2EFF71CC2EFF69BE2BFF69BF2BFF71CC2EFF71CC2EFF71CC2EFF6EC6
-      2DFF63B127730000000000000000000000000000000000FF000160B126976BC2
-      2BFF71CC2EFF71CC2EFF71CC2EFF71CC2EFF71CC2EFF71CC2EFF6BC12BFF61B0
-      289200FF00010000000000000000000000000000000000000000000000005FAF
-      275362B228DC68BD2AFF6AC12BFF6BC12CFF68BC2AFF63B125DA60AE264F0000
-      0000000000000000000000000000000000000000000000000000000000000000
-      000000FF00015DAE282660AF274D61AE284C60AC292500FF0001000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      00003A4AE4303B4BE7803A4BE6A63C4BE6A53C4CE67F3C4DE82E000000000000
-      00000000000000000000000000000000000000000000000000003F4CE5143B4C
-      E5B53C4CE7FF3C4CE7FF3C4CE7FF3C4CE7FF3C4CE7FF3C4CE7FF3B49E5B13846
-      E21200000000000000000000000000000000000000003F4CE5143A4AE5E23C4C
-      E7FF3C4CE7FF3C4CE7FF3C4CE7FF3C4CE7FF3C4CE7FF3C4CE7FF3C4CE7FF3B4B
-      E3DF3C4BE111000000000000000000000000000000003A48E3C13C4CE7FF3C4C
-      E7FF515FE8FF3C4CE7FF3C4CE7FF3C4CE7FF3C4CE7FF515FE8FF3C4CE7FF3C4C
-      E7FF394AE2BA0000000000000000000000003C4BE1333C4CE7FF3C4CE7FF4E5D
-      E7FFE9E9EBFF949CE9FF3C4CE7FF3C4CE7FF969DE8FFE8E8EBFF4C5AE7FF3C4C
-      E7FF3C4CE7FF3E4FE22D00000000000000003546DDA73C4CE7FF3C4CE7FF3A4A
-      E3FF8088D5FFF1F0ECFF969EE9FF969DE8FFF1F0ECFF7D86D4FF3B4AE4FF3C4C
-      E7FF3C4CE7FF3746DDA000000000000000003746DBD93C4CE7FF3C4CE7FF3C4C
-      E7FF3949E0FF848BD6FFF1F0ECFFF1F0ECFF8089D5FF3949E1FF3C4CE7FF3C4C
-      E7FF3C4CE7FF3745DED400000000000000003746DAE13C4CE7FF3C4CE7FF3C4C
-      E7FF3C4CE7FF8E96E4FFF0EFECFFF0EFECFF8B93E5FF3C4CE7FF3C4CE7FF3C4C
-      E7FF3C4CE7FF3747DCDD00000000000000003544D7CE3C4CE7FF3C4CE7FF3C4C
-      E7FF929AE8FFF0EFECFF7F87D4FF7F87D4FFF0EFECFF8F97E8FF3C4CE7FF3C4C
-      E7FF3C4CE7FF3544D6C90000000000000000323FCE843C4CE7FF3C4CE7FF4C5B
-      E5FFE3E3E9FF7E86D4FF3949E0FF3949E0FF7F87D4FFE3E3E9FF4B5AE5FF3C4C
-      E7FF3C4CE7FF2F40CB7B00000000000000002835BB133444D8FC3C4CE7FF3B4B
-      E5FF3E4CD0FF3949E1FF3C4CE7FF3C4CE7FF3949E0FF3F4CD0FF3C4BE6FF3C4C
-      E7FF3645D9FA2F3FBF100000000000000000000000002D3AC47B3949E0FF3C4C
-      E7FF3C4CE7FF3C4CE7FF3C4CE7FF3C4CE7FF3C4CE7FF3C4CE7FF3C4CE7FF3949
-      DFFF2E3BC573000000000000000000000000000000000000FF012A3BC2973646
-      D9FF3C4CE7FF3C4CE7FF3C4CE7FF3C4CE7FF3C4CE7FF3C4CE7FF3646D9FF2D39
-      C5920000FF010000000000000000000000000000000000000000000000002B3A
-      BE532E3DC7DC3342D3FF3645D9FF3645D9FF3342D3FF2C3AC5DA293ABE4F0000
-      0000000000000000000000000000000000000000000000000000000000000000
-      00000000FF012835C2262B38C04D2B39BF4C2937C0250000FF01000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      0000000000000000000000000000000000000000000000000000000000000000
-      00000000000000000000000000000FC3F0550FC4F1AA0DC3F1AC0DC3F1AC0DC3
-      F1AC0DC3F1AC0DC3F1AC0DC3F1AC0DC3F1AC0DC3F1AC259DB5BF84918DF06877
-      6EF0259EB9BE0FC4F1AA0FC5EF540FC2EEFC0FC4F1FF0FC4F1FF0FC4F1FF0FC4
-      F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF2A99B0FF867B6DFF6958
-      44FF299BB3FF0FC4F1FF0FC1EFFC0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4
-      F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF2A99B0FF877B6DFF6857
-      44FF299BB3FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4
-      F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF2A99B0FF92877AFF7266
-      55FF299BB3FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4
-      F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF2A99B0FF93887BFF7366
-      55FF299BB3FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4
-      F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF2A99B0FF867B6DFF6958
-      44FF299BB3FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4
-      F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF2A99B0FF877B6DFF6857
-      44FF299BB3FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4
-      F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF2A99B0FF92877AFF7266
-      55FF299BB3FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4
-      F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF2A99B0FF93887BFF7366
-      55FF299BB3FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4
-      F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF2A9BB2FF867B6DFF6958
-      44FF289CB5FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4
-      F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF17B8DEFF6D7268FF5E65
-      5AFF16B9E0FF0FC4F1FF0FC4F1FF12BAF0FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4
-      F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4F1FF0FC4
-      F1FF0FC4F1FF0FC4F1FF12BAEFFF1A8FEBFF1C95E9FF1C95E9FF1C95E9FF1C95
-      E9FF1C95E9FF1C95E9FF1C95E9FF1C95E9FF1C95E9FF1C95E9FF1C95E9FF1C95
-      E9FF1C95E9FF1C95E9FF1B8EECFF1A87EAE71892EEFF1892EEFF1892EEFF1892
-      EEFF1892EEFF1892EEFF1892EEFF1892EEFF1892EEFF1892EEFF1892EEFF1892
-      EEFF1892EEFF1892EEFF1B85E8E52179E817227FE652217FE654217FE654217F
-      E654217FE654217FE654217FE654217FE654217FE654217FE654217FE654217F
-      E654217FE654227FE6522479E61500000000B87F2A36B97F2858B97F2858B97F
-      2858B97F2858B981274D7F7F0002000000000000000000000000000000000000
-      0000000000000000000000000000B6812B35B77F29FEB98029FFB98029FFB980
-      29FFB98029FFB98029FFB77F29C4BA8229250000000000000000000000000000
-      0000000000000000000000000000B97F2858BC8E48FFBE975CFFBE975CFFBE97
-      5CFFBE975CFFBE975CFFBE975CFFBE975CFFBE975CFFBE975CFFBE975CFFBE97
-      5CFFBE975CFFBB8E4BE3BC852C17C89547C4D4A662FFD5A661FFD5A661FFD5A6
-      61FFD5A661FFD5A661FFD5A661FFD5A661FFD5A661FFD5A661FFD5A661FFD5A6
-      61FFD5A661FFD4A662FFC79247C1DA9835FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFD99835FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDA9833FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDA9734FFC4872DE7D09030FFCF9030FFCF9030FFCF90
-      30FFCF9030FFCF9030FFCF9030FFCF9030FFCF9030FFCF9030FFCF9030FFCF90
-      30FFCF9030FFD09030FFC2862CE5BC852C17B77F2852B97F2A54B97F2A54B97F
-      2A54B97F2A54B97F2A54B97F2A54B97F2A54B97F2A54B97F2A54B97F2A54B97F
-      2A54B97F2A54B77F2852B685241500000000B87F2A36B97F2858B97F2858B97F
-      2858B97F2858B981274D7F7F0002000000000000000000000000000000000000
-      0000000000000000000000000000B6812B35B77F29FEB98029FFB98029FFB980
-      29FFB98029FFB98029FFB77F29C4BA8229250000000000000000000000000000
-      0000000000000000000000000000B97F2858BC8E48FFBE975CFFBE975CFFBE97
-      5CFFBE975CFFBE975CFFBE975CFFBE975CFFBE975CFFBE975CFFBE975CFFBE97
-      5CFFBE975CFFBB8E4BE3BC852C17C89547C4D4A662FFD5A661FFD5A661FFD5A6
-      61FFD5A661FFD5A661FFD5A661FFD5A661FFD5A661FFD5A661FFD5A661FFD5A6
-      61FFD5A661FFD4A662FFC79247C1DA9835FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFD99835FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDA9833FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB9834FFDB98
-      34FFDB9834FFDB9834FFDA9734FFC4872DE7D09030FFCF9030FFCF9030FFCF90
-      30FFCF9030FFCF9030FFCF9030FFCF9030FFCF9030FFCF9030FFCF9030FFCF90
-      30FFCF9030FFD09030FFC2862CE5BC852C17B77F2852B97F2A54B97F2A54B97F
-      2A54B97F2A54B97F2A54B97F2A54B97F2A54B97F2A54B97F2A54B97F2A54B97F
-      2A54B97F2A54B77F2852B68524150000000000000000CBC1C119C6C3BD56C7C2
-      BC58C7C2BC58C7C2BC58C7C2BC58C7C2BC58C7C2BC58B8AFA71D000000000000
-      00000000000000000000000000000000000000000000C4C1B9E8C7C3BDFFC7C3
-      BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFABA89BF6B8AFA71D0000
-      00000000000000000000000000000000000000000000C7C3BDFFC7C3BDFFC7C3
-      BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFA6A595FFABA89BF6B8AF
-      A71D0000000000000000000000000000000000000000C7C3BDFFC7C3BDFFC7C3
-      BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFA7A697FFA6A595FFABA8
-      9BF6B8AFA71D00000000000000000000000000000000C7C3BDFFC7C3BDFFC7C3
-      BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFBCB9B0FFB1AFA3FFB1B0
-      A2FFB6B1A6E700000000000000000000000000000000C7C3BDFFC7C3BDFFB1AE
-      A3FFB1AEA3FFB1AEA3FFB1AEA3FFB1AEA3FFB1AEA3FFB1AEA3FFB1AEA3FFC7C3
-      BDFFC7C3BDFF00000000000000000000000000000000C7C3BDFFC7C3BDFFC7C3
-      BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3
-      BDFFC7C3BDFF00000000000000000000000000000000C7C3BDFFC7C3BDFFB1AE
-      A3FFB1AEA3FFB1AEA3FFB1AEA3FFB1AEA3FFB1AEA3FFB1AEA3FFB1AEA3FFC7C3
-      BDFFC7C3BDFF00000000000000000000000000000000C7C3BDFFC7C3BDFFC7C3
-      BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3
-      BDFFC7C3BDFF00000000000000000000000000000000C7C3BDFFC7C3BDFFB1AE
-      A3FFB1AEA3FFB1AEA3FFB1AEA3FFB1AEA3FFB1AEA3FFB1AEA3FFB1AEA3FFC7C3
-      BDFFC7C3BDFF00000000000000000000000000000000C7C3BDFFC7C3BDFFC7C3
-      BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3
-      BDFFC7C3BDFF00000000000000000000000000000000C7C3BDFFC7C3BDFFB1AE
-      A3FFB1AEA3FFB1AEA3FFB1AEA3FFB1AEA3FFB1AEA3FFB1AEA3FFB1AEA3FFC7C3
-      BDFFC7C3BDFF00000000000000000000000000000000C7C3BDFFC7C3BDFFC7C3
-      BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3
-      BDFFC7C3BDFF00000000000000000000000000000000C7C3BDFFC7C3BDFFC7C3
-      BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3
-      BDFFC7C3BDFF00000000000000000000000000000000C3BEB7FFC7C3BDFFC7C3
-      BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3BDFFC7C3
-      BDFFC1BEB7FF00000000000000000000000000000000ABA899A8AEADA0FEB1AF
-      A2FFB1AFA2FFB1AFA2FFB1AFA2FFB1AFA2FFB1AFA2FFB1AFA2FFB1AFA2FFAEAD
-      A0FEAAA79CA30000000000000000
+      4C7A060000001000000010000000D80400000000000078DAED966D4C536714C7
+      71DF17367463D32D8B8B40DBDB162214A430591604A16546C58DB03940A3E145
+      40E0C3E6C8565C787131C3AD0EAA038D9150109152165E8A40B9A5505819331B
+      E08ABCB6145A2152BEEC83219EDDA7E65EFA425B5AFCB0179EE49F3C3DF7FCCE
+      79CEBDCF3FA997D78B5FB9438141796A5651DE305B9CFB0BBBF6FC305B90F32B
+      93ED8ACB1F0EDE953BC46A2538D848E7D56C69DE00C3C7119BA3666B1DB1EB35
+      98335FFCCE7AD596CF5661B86DEE80F61E28E71AEC6A1067ECB4640B06F7076F
+      D44B39DD088AA93B1B9F45CD6291FCB93E669DBBFCB97EE62DEAECFD98868C0F
+      CE3751D23E7E689665CC821F25F92C25738E8CF76AEA29698DE3306B18B38A51
+      BC923145F219383642C5154C4ACAA946C027EF58C5C8BC4C393644F26765B462
+      77E73FD3462F24F9934DB49D9938636DB37CA69CFE3445F2CE2B96DFF0744B40
+      618E8A659597D18341861CB38AE50CB0E0B434A0C0EE0282D78E54A9BF284B81
+      39BC7B59380669CD3421CA75E4811449C0F1532DB4C9F46E066412F9593813D2
+      BB18444FBF89D426FF239B3220519F7827FEA9928084B4261A3FB591EEE7ACE7
+      8B5EDCF8F9A008DE621197B7208EE42DD446F2170491090697FE8FE2EB7745F0
+      F5AD91FC45D84811717AE98118AD8F23961BAFD73A62A91A3CDD4C246FCECEFF
+      DCC33A9CCC399A62B0E32C63E1F15A2BFF13F582C9671F9E5C04A371097EAC36
+      52F995370C60302C013F79BDDEC1235ACAFF9C98A93A32CE8DD741D1A5315835
+      2D43E54DA39945FBAF4A4721227E9EE2C362A628FF87C53CD2589E353C6E168A
+      2F8F9B39A4A26FC788D89CD53C6187A647D7F98939DB79CB2BE7C1B4B26CD6E5
+      AB7ABBF711163B49F99F13FD70C4F299F027839913948D9A85F65744D6EF9413
+      3D4EF97F7FD4483119E77FA2079DCE085F13F3A23990500D14E325AF9F23F07D
+      35E57F1AE7FECE90E83FD79E7F5F3D1CE43FB09A17D5882262C45D34FF0E3DA4
+      791A1825B7F23F8BAB2C4479AEEE4F78DC0CB023FA0B3630DD0E468442141AA3
+      71C8A267ACF07E21CA75E4018CDB739CFD9E6A32F8833FD039CD427B26B77F82
+      CEEDD99CFF89FA348EC21F3BD09B8085CBF9F4B05E3F673DB7B2BCFB4C27BC95
+      AB0D2FF7AD363A93DF8D5679F10FDF99D23FCF31F9DD94F520C6BB7F25D15BF1
+      648DD8832B31AE374369613664244503BDEAE7E7717C65532CC997117CFAC716
+      BC1B42BCB0EC4BC83F7BC263FEEAA54228D8026F37BF9BFCBF7AFEAA166A7E5A
+      75ABDBBC6FC73464E7A7C3676792E175D92C15F7E934B95D6B9D5D81DD5796E0
+      AD0AA347DA53BE0CBBCB1E2FBE217C029E684F8941BFF782C1F75DC1C2B1BD82
+      85447784987D17165E431EEE10304265025A92952E062408045E2FB9F27FDB45
+      8CD32EA03F9315D1C156445CD9F90DF1DFC3C942BDBACA0F438FE853B774BF9C
+      A7EB2A61FA0E56C42A47C5A7604C9CE69610A312C6E213D738F0E85A8847D26C
+      81DDD67F4313D7823D674521A02C632D3EF83E087E735388519432F5C803ED02
+      DA31998091E88E10D356B26FDBFFDBFEDFD6FFDCFF68A971FCCD81BEEE8F548A
+      AEA48DD421A97BDB998F95B8CCA0EAEB0647BA5B5FF597B31ACE5824716D85D3
+      1AAEF83AB1C8690D577C97AC19A4921A9036DF8636A978D1112F6DAA712A32CF
+      DDFEB6DAEEFFCFECEF29DFD7D3BE691627726DF9BBF5D7EB9BEEDD7A2695DC06
+      6742390D75D53524F737D134B73E
     }
   end
-  object savedialog: TSaveDialog
-    left = 88
-    top = 280
+  object SaveDialog: TSaveDialog
+    Left = 40
+    Top = 232
   end
-  object PopupMenu: TPopupMenu
-    left = 88
-    top = 472
+  object PopupMenu1: TPopupMenu
+    Left = 216
+    Top = 176
     object mi_open: TMenuItem
       Caption = 'Open'
       OnClick = mi_openClick
@@ -3201,8 +3012,8 @@ object mainform: Tmainform
     end
   end
   object MoreMenu: TPopupMenu
-    left = 88
-    top = 408
+    Left = 40
+    Top = 176
     object MenuItem10: TMenuItem
       Caption = 'MenuItem10'
     end

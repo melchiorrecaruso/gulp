@@ -1,6 +1,6 @@
 { Description: X application unit.
 
-  Copyright (C) 2014-2018 Melchiorre Caruso <melchiorrecaruso@gmail.com>
+  Copyright (C) 2014-2022 Melchiorre Caruso <melchiorrecaruso@gmail.com>
 
   This source is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free
@@ -18,31 +18,29 @@
   MA 02111-1307, USA.
 }
 
-program gulpux;
+program GulpUX;
 
-{$define usecthreads}
-{$mode objfpc}
-{$h+}
+{$Mode Objfpc} {$H+}
+{$Define UsecThreads}
 
 uses
-{$ifdef unix}
-{$ifdef usecthreads}
-  cthreads,
-  cmem,
-{$endif}
-{$endif}
-  interfaces,
-  forms,
-  gulpmain,
-  gulpabout;
+{$ifdef Unix}
+{$ifdef UsecThreads}
+  cThreads,
+  cMem,
+ {$endif}
+ {$endif}
+  Interfaces,
+  Forms,
+  GulpMain,
+  GulpAbout;
 
-{$r *.res}
+{$R *.res}
 
 begin
-  requirederivedformresource := true;
-  Application.Title:='Gulp UX';
-  application.initialize;
-  application.createform(tmainform, mainform);
-  application.run;
+  RequireDerivedFormResource := True;
+  Application.Title := 'Gulp-UX';
+  Application.Initialize;
+  Application.CreateForm(tmainform, mainform);
+  Application.Run;
 end.
-

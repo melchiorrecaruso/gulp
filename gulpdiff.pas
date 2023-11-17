@@ -39,7 +39,7 @@ var
   dig2: TSHA1Digest;
 
 begin
-  writeln('Gulp-DIFF v0.4 diff utility, copyright (c) 2016 Melchiorre Caruso.');
+  writeln('Gulp-DIFF v0.5 diff utility, copyright (c) 2016 Melchiorre Caruso.');
   if (paramcount <> 2) or
      (directoryexists(paramstr(1)) = false) or
      (directoryexists(paramstr(2)) = false) then

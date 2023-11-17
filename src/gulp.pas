@@ -1,6 +1,6 @@
 { Description: Shell application unit.
 
-  Copyright (C) 2014-2018 Melchiorre Caruso <melchiorrecaruso@gmail.com>
+  Copyright (C) 2014-2022 Melchiorre Caruso <melchiorrecaruso@gmail.com>
 
   This source is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free
@@ -216,7 +216,7 @@ type
   begin
     writeln;
     writeln('NAME                                                                      ');
-    writeln('       gulp - A simple journaling archiver.                               ');
+    writeln('       gulp - A simple user level journaling archiver.                    ');
     writeln('                                                                          ');
     writeln('SYNOPSIS                                                                  ');
     writeln('       gulp [-] s --synch | r --restore | p --purge | l --list |          ');
@@ -230,7 +230,7 @@ type
     writeln('       modified dates.                                                    ');
     writeln('                                                                          ');
     writeln('       The first argument to gulp should be a function; either one of  the');
-    writeln('       letters srplcfh, or one of the long function names. A function let‐');
+    writeln('       letters srplcfh, or one of the long function names. A function let-');
     writeln('       ter need be prefixed with ''-'', and can''t  be  combined  with  other');
     writeln('       single-letter  options.  A long function name must be prefixed with');
     writeln('       ''--''.  Some options take a parameter; with the  single-letter  form');
@@ -320,22 +320,22 @@ type
     writeln('       -u, --until                                                        ');
     writeln('              ignore any part of the archive updated after version number.');
     writeln('                                                                          ');
-    writeln('                     gulp-cli -l backup files -until 20                   ');
+    writeln('                     gulp -l backup files -until 20                       ');
     writeln('                                                                          ');
     writeln('              show files added before version 21.                         ');
     writeln('                                                                          ');
     writeln('EXAMPLES                                                                  ');
     writeln('       Create archive from files foo and bar:                             ');
     writeln('                                                                          ');
-    writeln('              gulp-cli -s archive foo bar                                 ');
+    writeln('              gulp -s archive foo bar                                     ');
     writeln('                                                                          ');
     writeln('       List all files in archive:                                         ');
     writeln('                                                                          ');
-    writeln('              gulp-cli -l archive                                         ');
+    writeln('              gulp -l archive                                             ');
     writeln('                                                                          ');
     writeln('       Restore all files from archive:                                    ');
     writeln('                                                                          ');
-    writeln('              gulp-cli -r archive                                         ');
+    writeln('              gulp -r archive                                             ');
     writeln('                                                                          ');
     writeln('EXIT STATUS                                                               ');
     writeln('       Returns 0 if successful or 1 in case of an error.                  ');
@@ -345,7 +345,7 @@ type
     writeln('       up and restoring the operating system.                             ');
     writeln('                                                                          ');
     writeln('AUTHOR                                                                    ');
-    writeln('       gulp is copyright (c) 2014-2016, Melchiorre Caruso. It is  licensed');
+    writeln('       gulp is copyright (c) 2014-2022, Melchiorre Caruso. It is  licensed');
     writeln('       under    GPL    v2.   For   information   on   the   license,   see');
     writeln('       <http://www.gnu.org/copyleft/gpl.html>. Program was written by Mel‐');
     writeln('       chiorre Caruso <melchiorrecaruso at gmail dot com>"                ');
