@@ -729,6 +729,7 @@ var
   scan:  tscanner;
   size:  int64 = 0;
   strm:  tstream;
+  archivepath: rawbytestring;
 begin
   fterminated := false;
   showmessage1(gulpdescription);
@@ -761,8 +762,10 @@ begin
     if isarchiveddir(list1, fexclude[i]) then
       fexclude.add(includetrailingpathdelimiter(fexclude[i]) + '*');
   fexclude.add(filename);
+  // never archive the archive itself, whatever form its path was given in
+  archivepath := expandfilename(filename);
   for i := scan.count - 1 downto 0 do
-    if isexcluded(scan[i]) then
+    if isexcluded(scan[i]) or (expandfilename(scan[i]) = archivepath) then
       scan.delete(i);
 
   list2 := tgulplist.create(@compare42);
