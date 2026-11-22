@@ -269,6 +269,38 @@ begin
     end;
 end;
 
+procedure replacefile(const tmpname, filename: rawbytestring);
+{$IFNDEF UNIX}
+var
+  bakname: rawbytestring;
+{$ENDIF}
+begin
+  {$IFDEF UNIX}
+  // rename(2) atomically replaces the destination
+  if renamefile(tmpname, filename) = false then
+  begin
+    sysutils.deletefile(tmpname);
+    raiseexception(gerenamefile, tmpname);
+  end;
+  {$ELSE}
+  // the destination cannot be overwritten: move the original aside first
+  // and put it back if the new archive cannot take its place
+  bakname := gettempfilename(extractfiledir(expandfilename(filename)), '');
+  if renamefile(filename, bakname) = false then
+  begin
+    sysutils.deletefile(tmpname);
+    raiseexception(gerenamefile, filename);
+  end;
+  if renamefile(tmpname, filename) = false then
+  begin
+    renamefile(bakname, filename);
+    sysutils.deletefile(tmpname);
+    raiseexception(gerenamefile, tmpname);
+  end;
+  sysutils.deletefile(bakname);
+  {$ENDIF}
+end;
+
 { gulp library class }
 
 function tgulplibrary.libmove(instrm, outstrm: tstream; size: int64): tsha1digest;
@@ -1016,8 +1048,11 @@ begin
   list1  := tgulplist.create(@compare40);
   libread(instrm, list1, $ffffffff);
 
-  outname := gettempfilename(extractfiledir(filename), '');
+  // the temporary file must be in the same directory as the archive, so it
+  // can be renamed over it (extractfiledir('') would select the system temp)
+  outname := gettempfilename(extractfiledir(expandfilename(filename)), '');
   outstrm := tfilestream.create(outname, fmcreate);
+  try
   if list1.count > 0 then
   begin
     for i := 0 to list1.count - 1 do
@@ -1049,16 +1084,18 @@ begin
     outstrm.seek(0, soend);
   end;
   size := instrm.size - outstrm.size;
+  except
+    // keep the original archive untouched and remove the temporary file
+    freeandnil(outstrm);
+    sysutils.deletefile(outname);
+    raise;
+  end;
 
   libclear  (list1);
   freeandnil(list1);
   freeandnil(instrm);
   freeandnil(outstrm);
-  if deletefile(filename) = false then
-    raiseexception(gedeletefile, filename)
-  else
-  if renamefile(outname, filename) = false then
-    raiseexception(gerenamefile, outname);
+  replacefile(outname, filename);
 
   showmessage1(format(gmpurgefinish, [size]));
   fterminated := true;
