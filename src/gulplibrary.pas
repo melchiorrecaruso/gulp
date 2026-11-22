@@ -49,6 +49,7 @@ type
 
   tgulplibrary = class(tgulpinterface)
   protected
+    flastversion: longword;
     function  libmove   (instrm,  outstrm: tstream; size: int64): tsha1digest;
     function  librestore(instrm:  tstream; p:    pgulpitem): boolean;
     procedure librestore(                  p:    pgulpitem);
@@ -598,6 +599,8 @@ begin
     p := new(pgulpitem);
   end;
   dispose(p);
+  // number of complete updates in the archive
+  flastversion := version - 1;
   if offset <> size then
     raiseexception(gebrokenarchive, '003011');
 end;
@@ -650,6 +653,8 @@ begin
     end;
   end;
   dispose(p);
+  // number of complete updates in the archive
+  flastversion := version - 1;
   if offset <> size then
     raiseexception(gebrokenarchive, '003014');
 end;
@@ -1152,7 +1157,6 @@ begin
   for i := 0 to list1.count - 1 do
   begin
     p := list1[i];
-    j := max(j, p^.version);
     if isincluded(p) and (isexcluded(p) = false) then
       if fonlyversion = 0 then
       begin
@@ -1171,7 +1175,7 @@ begin
   freeandnil(strm);
 
   showmessage1(format(gmlistfinish, [c]));
-  showmessage1(format(gmlistlastversion, [j]));
+  showmessage1(format(gmlistlastversion, [flastversion]));
   fterminated := true;
 end;
 
@@ -1226,7 +1230,6 @@ begin
   for i := 0 to list1.count - 1 do
   begin
     p := list1[i];
-    j := max(j, p^.version);
     if isincluded(p) and (isexcluded(p) = false) then
       if fonlyversion = 0 then
       begin
@@ -1253,7 +1256,7 @@ begin
   freeandnil(strm);
 
   showmessage1(format(gmlistfinish, [c]));
-  showmessage1(format(gmlistlastversion, [j]));
+  showmessage1(format(gmlistlastversion, [flastversion]));
   fterminated := true;
 end;
 

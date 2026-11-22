@@ -78,7 +78,7 @@ const
   gmlist            = 'Listing the content of "%s"';
   gmview            = 'Viewing the content of "%s"';
   gmlistfinish      = 'Finished (%u listed items)';
-  gmlistlastversion = 'Lastest version %u';
+  gmlistlastversion = 'Last version %u';
 
   procedure raiseexception(const m, n: rawbytestring);
   procedure raiseexception(const m: rawbytestring);
