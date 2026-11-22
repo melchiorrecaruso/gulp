@@ -118,7 +118,7 @@ type
     app.onshowwarning  := @showmessage;
 
     try
-      s := checkoptions('-s: -r: -p: -l: -c: -f: -u: -i: -e: h         ',
+      s := checkoptions('-s: -r: -p: -l: -c: -f: -u: -i: -e: -h        ',
         '--synch: --restore: --purge:   --list:    --check:    --fix:  ' +
         '--until: --include: --exclude: --help     --verbose   --only: ' +
         '--excludeattr: --excludemode:  --nodelete --forcepath         ',
