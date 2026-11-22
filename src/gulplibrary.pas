@@ -825,8 +825,11 @@ begin
          (pos(includetrailingpathdelimiter(itempath), archivepath) = 1) or
          filenamematch(scan[i], fexclude) then continue;
 
+      // only paths within the requested include patterns are candidates
+      if isincluded(scan[i]) = false then continue;
+
       j := libfind(list1, scan[i]);
-      if (j = -1) or (isincluded(list1[j]) = false) or isexcluded(list1[j]) then
+      if (j = -1) then
       begin
         showmessage2(format(gmdeleteitem, [scan[i]]));
         deleteany(scan[i]);
