@@ -1,6 +1,6 @@
 { Description: Main library unit.
 
-  Copyright (C) 2014-2018 Melchiorre Caruso <melchiorrecaruso@gmail.com>
+  Copyright (C) 2014-2026 Melchiorre Caruso <melchiorrecaruso@gmail.com>
 
   This source is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free
@@ -125,7 +125,7 @@ const
   nullmarker : tsha1digest = (0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
 
   gulpdescription =
-    'GULP v0.5 journaling archiver, copyright (c) 2014-2022 Melchiorre Caruso.'
+    'GULP v0.5 journaling archiver, copyright (c) 2014-2026 Melchiorre Caruso.'
     + lineending +
     'GULP archiver for user-level incremental backups with rollback capability.';
 

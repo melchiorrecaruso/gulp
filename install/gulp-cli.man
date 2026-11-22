@@ -147,4 +147,4 @@ Returns 0 if successful or 1 in case of an error.
 The archive format does not save sufficient information for backing up and restoring the operating system.
 .SH AUTHOR
 .B gulp
-is copyright (C) 2014-2022, Melchiorre Caruso. It is licensed under GPL v2. For information on the license, see <http://www.gnu.org/copyleft/gpl.html>. Program was written by Melchiorre Caruso <melchiorrecaruso at gmail dot com>
+is copyright (C) 2014-2026, Melchiorre Caruso. It is licensed under GPL v2. For information on the license, see <http://www.gnu.org/copyleft/gpl.html>. Program was written by Melchiorre Caruso <melchiorrecaruso at gmail dot com>

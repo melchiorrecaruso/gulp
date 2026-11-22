@@ -269,4 +269,4 @@ A **GULP** archive is a sequence of timestamped updates, each listing the files 
 
 ##Credits
 
-**GULP** is copyright (c) 2014-2022, Melchiorre Caruso. It is  licensed under The GNU General Public License v2. For information on the license, see [GPLv2](http://www.gnu.org/copyleft/gpl.html) . Program was written by Melchiorre Caruso,  melchiorrecaruso (at) gmail (dot) com
+**GULP** is copyright (c) 2014-2026, Melchiorre Caruso. It is  licensed under The GNU General Public License v2. For information on the license, see [GPLv2](http://www.gnu.org/copyleft/gpl.html) . Program was written by Melchiorre Caruso,  melchiorrecaruso (at) gmail (dot) com

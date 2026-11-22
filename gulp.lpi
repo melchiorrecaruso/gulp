@@ -22,7 +22,7 @@
       <EnableI18N LFM="False"/>
     </i18n>
     <CustomData Count="13">
-      <Item0 Name="lazpackager/copyright" Value="2014-2016 Melchiorre Caruso"/>
+      <Item0 Name="lazpackager/copyright" Value="2014-2026 Melchiorre Caruso"/>
       <Item1 Name="lazpackager/deb/ppa" Value="ppa:melchiorrecaruso/ppa"/>
       <Item2 Name="lazpackager/deb/series" Value="xenial"/>
       <Item3 Name="lazpackager/deb/tpl_changelog" Value="?PACKAGE_NAME? (?FULLVERSION?) ?SERIES?; urgency=low

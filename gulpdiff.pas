@@ -1,6 +1,6 @@
 { Description: The gulp diff utility.
 
-  Copyright (C) 2016-2018 Melchiorre Caruso <melchiorrecaruso@gmail.com>
+  Copyright (C) 2016-2026 Melchiorre Caruso <melchiorrecaruso@gmail.com>
 
   This source is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free
@@ -39,7 +39,7 @@ var
   dig2: TSHA1Digest;
 
 begin
-  writeln('Gulp-DIFF v0.5 diff utility, copyright (c) 2016 Melchiorre Caruso.');
+  writeln('Gulp-DIFF v0.5 diff utility, copyright (c) 2016-2026 Melchiorre Caruso.');
   if (paramcount <> 2) or
      (directoryexists(paramstr(1)) = false) or
      (directoryexists(paramstr(2)) = false) then

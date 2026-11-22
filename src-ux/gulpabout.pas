@@ -1,6 +1,6 @@
 { Description: Abount form unit.
 
-  Copyright (C) 2014-2022 Melchiorre Caruso <melchiorrecaruso@gmail.com>
+  Copyright (C) 2014-2026 Melchiorre Caruso <melchiorrecaruso@gmail.com>
 
   This source is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free

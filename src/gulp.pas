@@ -1,6 +1,6 @@
 { Description: Shell application unit.
 
-  Copyright (C) 2014-2022 Melchiorre Caruso <melchiorrecaruso@gmail.com>
+  Copyright (C) 2014-2026 Melchiorre Caruso <melchiorrecaruso@gmail.com>
 
   This source is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free
@@ -432,7 +432,7 @@ type
     writeln('       up and restoring the operating system.');
     writeln;
     writeln('AUTHOR');
-    writeln('       gulp is copyright (c) 2014-2022, Melchiorre Caruso. It is licensed');
+    writeln('       gulp is copyright (c) 2014-2026, Melchiorre Caruso. It is licensed');
     writeln('       under GPL v2. For information on the license, see');
     writeln('       <http://www.gnu.org/copyleft/gpl.html>. Program was written by');
     writeln('       Melchiorre Caruso <melchiorrecaruso at gmail dot com>');

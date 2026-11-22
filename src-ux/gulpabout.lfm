@@ -237,7 +237,7 @@ object aboutform: Taboutform
     Alignment = taCenter
     Anchors = [akTop, akLeft, akRight]
     BorderSpacing.Top = 10
-    Caption = 'Copyright 2015-2022 Melchiorre Caruso'
+    Caption = 'Copyright 2015-2026 Melchiorre Caruso'
     Layout = tlCenter
     ParentColor = False
   end
