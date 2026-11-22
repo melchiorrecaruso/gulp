@@ -778,6 +778,8 @@ var
   list2: tgulplist;
   p:     pgulpitem;
   scan:  tscanner;
+  archivepath: rawbytestring;
+  itempath:    rawbytestring;
   size:  int64 = 0;
   strm:  tstream;
 begin
@@ -786,6 +788,7 @@ begin
   showmessage1(format(gmrestore, [filename]));
 
   strm  := tfilestream.create(filename, fmopenread or fmsharedenywrite);
+  archivepath := expandfilename(filename);
   list1 := tgulplist.create(@compare40);
   list2 := tgulplist.create(@compare40);
   if funtilversion = 0 then
@@ -816,6 +819,12 @@ begin
   if fnodelete = false then
     for i := scan.count - 1 downto 0 do
     begin
+      // never delete the archive, a directory containing it, or excluded paths
+      itempath := expandfilename(scan[i]);
+      if (itempath = archivepath) or
+         (pos(includetrailingpathdelimiter(itempath), archivepath) = 1) or
+         filenamematch(scan[i], fexclude) then continue;
+
       j := libfind(list1, scan[i]);
       if (j = -1) or (isincluded(list1[j]) = false) or isexcluded(list1[j]) then
       begin
