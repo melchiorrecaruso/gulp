@@ -61,7 +61,7 @@ type
     inherited create;
     defaultformatsettings.longdateformat  := 'yyyy-mm-dd';
     defaultformatsettings.shortdateformat := 'yyyy-mm-dd';
-    exitcode := 255;
+    exitcode := 1;
   end;
 
   destructor tshellapplication.destroy;
