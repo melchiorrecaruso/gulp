@@ -422,8 +422,10 @@ begin
   if settimeutc(p^.name, p^.mtime) <> 0 then
     showwarning(format(gesetdatetime, [p^.name]));
 
-  if setmode(p^.name, l2smode(p^.mode)) <> 0 then
-    showwarning(format(gesetmode, [p^.name]));
+  // permissions of a symbolic link are not used on Linux
+  if issymlink(p^.attr) = false then
+    if setmode(p^.name, l2smode(p^.mode)) <> 0 then
+      showwarning(format(gesetmode, [p^.name]));
   {$ELSE}
   {$IFDEF MSWINDOWS}
   if setattr(p^.name, l2sattr(p^.attr)) <> 0 then

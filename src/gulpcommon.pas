@@ -517,12 +517,32 @@ begin
 end;
 
 function settimeutc(const filename: rawbytestring; timeutc: tdatetime): longint;
+{$IFDEF LINUX}
+const
+  at_fdcwd            = -100;
+  at_symlink_nofollow = $100;
+  utime_omit          = (1 shl 30) - 2;
+var
+  times: array[0..1] of timespec;
+  systempath: rawbytestring;
+{$ENDIF}
 begin
   {$IFDEF LINUX}
   if issymlink(filename) = false then
     result := filesetdate(filename, datetimetofiledate(universaltime2local(timeutc)))
   else
-    result := -1;
+  begin
+    // set the time of the link itself; the RTL utimensat ignores the flags
+    // argument, so the syscall is invoked directly
+    times[0].tv_sec  := 0;
+    times[0].tv_nsec := utime_omit;   // leave access time unchanged
+    // same conversion used by filesetdate for regular files (unix file date)
+    times[1].tv_sec  := datetimetofiledate(universaltime2local(timeutc));
+    times[1].tv_nsec := 0;
+    systempath := tosinglebytefilesystemencodedfilename(filename);
+    result := do_syscall(syscall_nr_utimensat, tsysparam(at_fdcwd),
+      tsysparam(pchar(systempath)), tsysparam(@times), tsysparam(at_symlink_nofollow));
+  end;
   {$ELSE}
   {$IFDEF MSWINDOWS}
   result := filesetdate(filename, datetimetofiledate(universaltime2local(timeutc)));
