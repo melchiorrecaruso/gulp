@@ -83,6 +83,7 @@ type
     function isincluded(const item: pgulpitem): boolean; overload;
     function isexcluded(const filename: rawbytestring): boolean; overload;
     function isincluded(const filename: rawbytestring): boolean; overload;
+    function isarchiveddir(list: tgulplist; const filename: rawbytestring): boolean;
   public
     constructor create;
     destructor destroy; override;
@@ -742,8 +743,10 @@ begin
   size := strm.seek(0, soend);
 
   scan := tscanner.create;
+  // a directory pattern includes its content, also when the directory
+  // exists only in the archive (so its deletion is fully recorded)
   for i := finclude.count - 1 downto 0 do
-    if directoryexists(finclude[i]) = true then
+    if isarchiveddir(list1, finclude[i]) then
       finclude.add(includetrailingpathdelimiter(finclude[i]) + '*');
   if finclude.count = 0 then
     finclude.add('*');
@@ -755,7 +758,7 @@ begin
   end;
 
   for i := fexclude.count - 1 downto 0 do
-    if directoryexists(fexclude[i]) = true then
+    if isarchiveddir(list1, fexclude[i]) then
       fexclude.add(includetrailingpathdelimiter(fexclude[i]) + '*');
   fexclude.add(filename);
   for i := scan.count - 1 downto 0 do
@@ -765,7 +768,10 @@ begin
   list2 := tgulplist.create(@compare42);
   if fnodelete = false then
     for i := 0 to list1.count - 1 do
-      if scan.find(list1[i]^.name) = -1 then
+      // only items within the include patterns and not excluded can be
+      // marked as deleted
+      if isincluded(list1[i]) and (isexcluded(list1[i]) = false) and
+         (scan.find(list1[i]^.name) = -1) then
       begin
         showmessage2(format(gmdeleteitem, [list1[i]^.name]));
         libappend(list2, libnew1(list1[i]^.name, fstimeutc));
@@ -1209,6 +1215,18 @@ begin
   showmessage1(format(gmlistfinish, [c]));
   showmessage1(format(gmlistlastversion, [j]));
   fterminated := true;
+end;
+
+function tgulpapplication.isarchiveddir(list: tgulplist; const filename: rawbytestring): boolean;
+var
+  j: longint;
+begin
+  result := directoryexists(filename);
+  if result = false then
+  begin
+    j := libfind(list, filename);
+    result := (j <> -1) and isdirectory(list[j]^.attr);
+  end;
 end;
 
 function tgulpapplication.isincluded(const filename: rawbytestring): boolean;
