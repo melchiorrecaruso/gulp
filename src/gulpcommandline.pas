@@ -36,36 +36,74 @@ function getoptionvalue(const shortopt, longopt: rawbytestring): rawbytestring;
 
 implementation
 
+// Looks for an option name as a whole token in a space separated option
+// list, where a trailing ':' marks an option that needs an argument.
+// Returns -1 if not found, 0 if found without argument, 1 if found with argument.
+function findoption(const name, options: rawbytestring): longint;
+var
+  i, j: longint;
+  token: rawbytestring;
+begin
+  result := -1;
+  if name = '' then exit;
+  i := 1;
+  while i <= length(options) do
+  begin
+    while (i <= length(options)) and (options[i] = ' ') do inc(i);
+    j := i;
+    while (j <= length(options)) and (options[j] <> ' ') do inc(j);
+    token := copy(options, i, j - i);
+    if token = name then
+      exit(0)
+    else
+    if token = name + ':' then
+      exit(1);
+    i := j;
+  end;
+end;
+
 function checkoptions(const shortopts, longopts: rawbytestring;
   filemasks: trawbytestringlist): rawbytestring;
 var
   i: longint = 1;
   s: rawbytestring;
 
+  // true if a command line argument is one of the known options
+  function isoption(const arg: rawbytestring): boolean;
+  var
+    name: rawbytestring;
+  begin
+    name := arg;
+    if pos('=', name) > 0 then
+      setlength(name, pos('=', name) - 1);
+    result := (findoption(name, shortopts) <> -1) or
+              (findoption(name, longopts)  <> -1);
+  end;
+
   function checkoption(const options: rawbytestring): rawbytestring;
+  var
+    k: longint;
   begin
     result := '';
-    if pos(s, options) > 0 then
+    k := findoption(s, options);
+    if k = -1 then
+      result := format('Invalid option at position %d: "%s"', [i, s])
+    else
+    if (k = 1) and (s[2] = '-') then
     begin
-      if (options[pos(s, options) + length(s)] = ':') and (s[2] = '-') then
-      begin
-        s := paramstr(i);
-        if pos('=' ,s ) = length(s) then
-          result := format('Option at position %d does not allow an argument: "%s"', [i, s]);
-      end else
-      if (options[pos(s, options) + length(s)] = ':') then
-      begin
-        inc(i);
-        if (i > paramcount) then
-          result := format('Option at position %d does not allow an argument: "%s"', [i - 1, s])
-        else
-        if (pos(paramstr(i), shortopts) > 0) or (pos(paramstr(i), longopts) > 0) then
-          result := format('Option at position %d needs an argument : "%s"',[i - 1, s]);
-      end else
-      if options[pos(s, options) + length(s)] <> ' ' then
-        result := format('Invalid option at position %d: "%s"', [i, s]);
+      s := paramstr(i);
+      if pos('=' ,s ) = length(s) then
+        result := format('Option at position %d does not allow an argument: "%s"', [i, s]);
     end else
-      result := format('Invalid option at position %d: "%s"', [i, s]);
+    if (k = 1) then
+    begin
+      inc(i);
+      if (i > paramcount) then
+        result := format('Option at position %d does not allow an argument: "%s"', [i - 1, s])
+      else
+      if isoption(paramstr(i)) then
+        result := format('Option at position %d needs an argument : "%s"',[i - 1, s]);
+    end;
   end;
 
 begin
@@ -73,7 +111,7 @@ begin
   while (i <= paramcount) and (result = '') do
   begin
     s := paramstr(i);
-    if s[1] = '-' then
+    if (length(s) > 0) and (s[1] = '-') then
     begin
       if length(s) <= 2 then
         result := checkoption(shortopts)
@@ -101,7 +139,7 @@ begin
   while (i <= paramcount) and (result = false) do
   begin
     s := paramstr(i);
-    if s = shortopt then
+    if (shortopt <> '') and (s = shortopt) then
       result := true
     else
     begin
@@ -123,7 +161,7 @@ begin
   while (i <= paramcount) and (result = '') do
   begin
     s := paramstr(i);
-    if s = shortopt then
+    if (shortopt <> '') and (s = shortopt) then
       result := paramstr(i + 1)
     else
     begin
