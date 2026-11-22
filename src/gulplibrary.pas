@@ -743,7 +743,7 @@ function tgulplibrary.libchanged(const filename: rawbytestring; p: pgulpitem): b
 var
   attr: longint;
 begin
-  attr   := getattr(filename);
+  attr := getattr(filename);
   result := (issymlink(attr)   <> issymlink(p^.attr))   or
             (isdirectory(attr) <> isdirectory(p^.attr)) or
             (comparedatetime(gettimeutc(filename), p^.mtime) <> 0);
@@ -803,7 +803,7 @@ begin
   fonlyversion  := 0;
   if assigned(fpipe) then
     fpipe.clear;
-  fstimeutc     := localtime2universal(now);
+  fstimeutc     := recodemillisecond(utcnow, 0);
   fterminated   := true;
   funtilversion := $ffffffff;
 end;

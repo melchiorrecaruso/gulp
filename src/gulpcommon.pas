@@ -499,10 +499,22 @@ end;
 { common time routines }
 
 function gettimeutc(var sr: tsearchrec): tdatetime;
+{$IFDEF MSWINDOWS}
+var
+  utc: windows.tsystemtime;
+{$ENDIF}
 begin
-  {$IFDEF UNIX}
+  {$IF DEFINED(UNIX)}
   // on Unix the file date is already a UTC Unix timestamp
   result := unixtodatetime(sr.time);
+  {$ELSEIF DEFINED(MSWINDOWS)}
+  // Use the UTC FILETIME, at the same whole-second precision as Unix.
+  if filetimetosystemtime(sr.finddata.ftlastwritetime, utc) then
+  begin
+    utc.wmilliseconds := 0;
+    result := systemtimetodatetime(utc);
+  end else
+    result := 0;
   {$ELSE}
   result := localtime2universal(filedatetodatetime(sr.time));
   {$ENDIF}
@@ -523,7 +535,7 @@ begin
 end;
 
 function settimeutc(const filename: rawbytestring; timeutc: tdatetime): longint;
-{$IFDEF LINUX}
+{$IF DEFINED(LINUX)}
 const
   at_fdcwd            = -100;
   at_symlink_nofollow = $100;
@@ -531,6 +543,11 @@ const
 var
   times: array[0..1] of timespec;
   systempath: rawbytestring;
+{$ELSEIF DEFINED(MSWINDOWS)}
+var
+  utc: windows.tsystemtime;
+  filetime: tfiletime;
+  handle: thandle;
 {$ENDIF}
 begin
   {$IFDEF LINUX}
@@ -551,7 +568,33 @@ begin
   end;
   {$ELSE}
   {$IFDEF MSWINDOWS}
-  result := filesetdate(filename, datetimetofiledate(universaltime2local(timeutc)));
+  datetimetosystemtime(timeutc, utc);
+  utc.wmilliseconds := 0;
+  if not systemtimetofiletime(utc, filetime) then
+    exit(getlastoserror);
+
+  // Open the existing file or directory to update its metadata.
+  handle := createfilew(
+    pwidechar(unicodestring(filename)),
+    file_write_attributes,
+    file_share_read or file_share_write or file_share_delete,
+    nil,
+    open_existing,
+    file_flag_backup_semantics, // Required for directories.
+    0
+  );
+  if handle = invalid_handle_value then
+    exit(getlastoserror);
+
+  try
+    // Leave creation and access times unchanged.
+    if windows.setfiletime(handle, nil, nil, @filetime) then
+      result := 0
+    else
+      result := getlastoserror;
+  finally
+    closehandle(handle);
+  end;
   {$ELSE}
   ...
   {$ENDIF}

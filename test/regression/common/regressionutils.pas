@@ -160,7 +160,7 @@ begin
     begin
       fields.DelimitedText := Trim(lines[i]);
       if (fields.Count >= 3) and (fields[1] = AMarker) then
-        names.Add(fields[fields.Count - 1]);
+        names.Add(StringReplace(fields[fields.Count - 1], PathDelim, '/', [rfReplaceAll]));
     end;
     names.Sort;
     names.Delimiter := ' ';

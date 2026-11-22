@@ -13,6 +13,6 @@ symlink/test_symlink.lpr|unix
 changedetect/test_changedetect.lpr|unix
 atomicrestore/test_atomicrestore.lpr|core
 trailingslash/test_trailingslash.lpr|core
-utctime/test_utctime.lpr|unix
+utctime/test_utctime.lpr|core
 gulpdiff/test_gulpdiff.lpr|core|gulpdiff
 gulpdiff/test_gulpdiff_unix.lpr|unix|gulpdiff

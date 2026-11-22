@@ -31,15 +31,39 @@ function universaltime2local(ut: tdatetime): tdatetime;
 function universaltime2local(ut: tdatetime; tzoffset: longint): tdatetime;
 function localtime2universal(lt: tdatetime): tdatetime;
 function localtime2universal(lt: tdatetime; tzoffset: longint): tdatetime;
+function utcnow: tdatetime;
 
 implementation
+
+{$IFDEF MSWINDOWS}
+uses windows;
+
+// A nil time zone selects the current Windows time zone and its DST rules.
+function systemtimetotzspecificlocaltimeex(zone: pointer;
+  utc, local: psystemtime): longbool;
+  stdcall; external 'kernel32' name 'SystemTimeToTzSpecificLocalTimeEx';
+function tzspecificlocaltimetosystemtimeex(zone: pointer;
+  local, utc: psystemtime): longbool;
+  stdcall; external 'kernel32' name 'TzSpecificLocalTimeToSystemTimeEx';
+{$ENDIF}
 
 // The offset in effect at the given date is used (DST aware), not the
 // current one: using the current offset makes converted times change by
 // one hour when the system switches between standard and daylight time.
 function universaltime2local(ut: tdatetime): tdatetime;
+{$IFDEF MSWINDOWS}
+var
+  utc, local: windows.tsystemtime;
+{$ENDIF}
 begin
+  {$IFDEF MSWINDOWS}
+  datetimetosystemtime(ut, utc);
+  if not systemtimetotzspecificlocaltimeex(nil, @utc, @local) then
+    raiseLastOSError;
+  result := systemtimetodatetime(local);
+  {$ELSE}
   result := sysutils.universaltimetolocal(ut);
+  {$ENDIF}
 end;
 
 function universaltime2local(ut: tdatetime; tzoffset: longint): tdatetime;
@@ -55,8 +79,19 @@ begin
 end;
 
 function localtime2universal(lt: tdatetime): tdatetime;
+{$IFDEF MSWINDOWS}
+var
+  local, utc: windows.tsystemtime;
+{$ENDIF}
 begin
+  {$IFDEF MSWINDOWS}
+  datetimetosystemtime(lt, local);
+  if not tzspecificlocaltimetosystemtimeex(nil, @local, @utc) then
+    raiseLastOSError;
+  result := systemtimetodatetime(utc);
+  {$ELSE}
   result := sysutils.localtimetouniversal(lt);
+  {$ENDIF}
 end;
 
 function localtime2universal(lt: tdatetime; tzoffset: longint): tdatetime;
@@ -68,6 +103,21 @@ begin
     result := lt + encodetime(abs(tzoffset) div 60, abs(tzoffset) mod 60, 0, 0)
   else
     result := lt;
+end;
+
+function utcnow: tdatetime;
+{$IFDEF MSWINDOWS}
+var
+  utc: windows.tsystemtime;
+{$ENDIF}
+begin
+  {$IFDEF MSWINDOWS}
+  // Read UTC directly: local time is ambiguous when the clocks go back.
+  windows.getsystemtime(utc);
+  result := systemtimetodatetime(utc);
+  {$ELSE}
+  result := localtime2universal(now);
+  {$ENDIF}
 end;
 
 end.
