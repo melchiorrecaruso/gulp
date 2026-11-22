@@ -119,6 +119,7 @@ type
     app:   tgulpapplication;
     files: trawbytestringlist;
     i:     longint;
+    operationcount: longint;
     s:     rawbytestring;
     start: tdatetime;
   begin
@@ -139,6 +140,16 @@ type
 
       if s = '' then
       begin
+        operationcount := length(getoptionvalues('-s', '--synch')) +
+          length(getoptionvalues('-r', '--restore')) +
+          length(getoptionvalues('-p', '--purge')) +
+          length(getoptionvalues('-c', '--check')) +
+          length(getoptionvalues('-f', '--fix')) +
+          length(getoptionvalues('-l', '--list'));
+        if hasoption('-h', '--help') then inc(operationcount);
+        if operationcount > 1 then
+          raise exception.create('Specify only one main operation');
+
         for i := 0 to files.count - 1 do
           app.include.add(normalizepath(files[i]));
 

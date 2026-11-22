@@ -12,8 +12,11 @@ begin
   Check(Pos(AMessage, output) > 0, ADescription + ': message "' + AMessage + '"');
 end;
 
+const
+  Operations: array[0..5] of string = ('-s', '-r', '-p', '-c', '-f', '-l');
 var
   output: string;
+  i, j: integer;
 begin
   EnterNewDir('work');
   WriteTextFile('in', 'i');
@@ -61,6 +64,18 @@ begin
   CheckError(['-s', 'empty.gulp', '-e', ''], 'needs an argument', 'empty exclude');
   Check(not FileExists('empty.gulp'), 'invalid sync does not create archive');
   CheckError(['-s', ''], 'needs an argument', 'empty archive name');
+
+  // #21: reject every pair before opening either archive.
+  for i := low(Operations) to high(Operations) do
+    for j := low(Operations) to high(Operations) do
+      CheckError([Operations[i], 'conflict.gulp', Operations[j], 'other.gulp'],
+        'only one main operation', 'conflicting operations');
+  CheckError(['--list=i.gulp', '--synch=conflict.gulp'],
+    'only one main operation', 'conflicting long operations');
+  CheckError(['-s', 'conflict.gulp', '-h'],
+    'only one main operation', 'help with a modifying operation');
+  Check(not FileExists('conflict.gulp'), 'conflict does not create first archive');
+  Check(not FileExists('other.gulp'), 'conflict does not create second archive');
 
   WriteLn('PASS: command line options, arguments, messages and exit codes');
 end.
