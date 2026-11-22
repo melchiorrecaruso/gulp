@@ -1255,7 +1255,10 @@ begin
           showitem(tobject(p));
           inc(c);
         end else
-          if p^.version = fonlyversion then
+          // Keep the change history for --only, but also respect --until.
+          // Zero retains its existing meaning of unrestricted history.
+          if (p^.version = fonlyversion) and
+             ((funtilversion = 0) or (p^.version <= funtilversion)) then
           begin
             showitem(p);
             inc(c);

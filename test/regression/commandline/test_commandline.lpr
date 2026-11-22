@@ -90,5 +90,26 @@ begin
   GulpOk(['-l', 'i.gulp', '--until=last']);
   GulpOk(['-l', 'i.gulp', '--until=0']);
 
+  // #23: --only and --until intersect, preserving ADD/DEL history.
+  WriteTextFile('versioned', 'old');
+  GulpOk(['-s', 'versions.gulp', 'versioned']);
+  WriteTextFile('versioned', 'new longer');
+  GulpOk(['-s', 'versions.gulp', 'versioned']);
+  Check(RunGulp(['-l', 'versions.gulp', '--only=2', '--until=1'], output) = 0,
+    'combined version filters succeed');
+  Check(Pos('0 listed items', output) > 0, 'until excludes newer only version');
+  Check(RunGulp(['-l', 'versions.gulp', '--until=1', '--only=2'], output) = 0,
+    'reversed version filters succeed');
+  Check(Pos('0 listed items', output) > 0, 'filter order does not matter');
+  Check(RunGulp(['-l', 'versions.gulp', '--only=2', '--until=2'], output) = 0,
+    'inclusive version boundary succeeds');
+  Check(Pos('2 listed items', output) > 0, 'boundary retains both ADD and DEL');
+  Check(RunGulp(['-l', 'versions.gulp', '--only=1', '--until=2'], output) = 0,
+    'earlier only version succeeds');
+  Check(Pos('1 listed items', output) > 0, 'earlier version retains original ADD');
+  Check(RunGulp(['-l', 'versions.gulp', '--only=2', '--until=0'], output) = 0,
+    'zero history sentinel succeeds');
+  Check(Pos('2 listed items', output) > 0, 'zero retains unrestricted history');
+
   WriteLn('PASS: command line options, arguments, messages and exit codes');
 end.
