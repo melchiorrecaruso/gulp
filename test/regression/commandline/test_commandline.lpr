@@ -77,5 +77,18 @@ begin
   Check(not FileExists('conflict.gulp'), 'conflict does not create first archive');
   Check(not FileExists('other.gulp'), 'conflict does not create second archive');
 
+  // #22: validate the version before any operation; retain unsigned range.
+  CheckError(['-r', 'i.gulp', '--until=-2'], 'Invalid version', 'negative until');
+  Check(FileExists('unrelated'), 'invalid version does not restore or delete');
+  CheckError(['-l', 'i.gulp', '--only=-1'], 'Invalid version', 'negative only');
+  CheckError(['-l', 'i.gulp', '-u', '-2147483649'], 'Invalid version', 'negative short until');
+  CheckError(['-l', 'i.gulp', '--until=4294967296'], 'Invalid version', 'until overflow');
+  CheckError(['-l', 'i.gulp', '--only=4294967296'], 'Invalid version', 'only overflow');
+  CheckError(['-l', 'i.gulp', '--until=garbage'], 'Invalid version', 'nonnumeric version');
+  GulpOk(['-l', 'i.gulp', '--until=4294967295']);
+  GulpOk(['-l', 'i.gulp', '--only=4294967295']);
+  GulpOk(['-l', 'i.gulp', '--until=last']);
+  GulpOk(['-l', 'i.gulp', '--until=0']);
+
   WriteLn('PASS: command line options, arguments, messages and exit codes');
 end.

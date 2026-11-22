@@ -106,6 +106,17 @@ type
   end;
 
   procedure tshellapplication.run;
+  function parseversion(const value, option: rawbytestring): longword;
+  var
+    version: int64;
+  begin
+    if not trystrtoint64(value, version) then
+      raise exception.createfmt('Invalid version for %s: "%s"', [option, value]);
+    if (version < 0) or (version > high(longword)) then
+      raise exception.createfmt('Invalid version for %s: "%s"', [option, value]);
+    result := longword(version);
+  end;
+
   // A trailing path delimiter does not change the meaning of a path:
   // "dir/" is the same as "dir" (the directory and all its content).
   function normalizepath(const path: rawbytestring): rawbytestring;
@@ -169,14 +180,14 @@ type
             app.include.add(normalizepath(s));
         if hasoption('', '--only') = true then
         begin
-          app.onlyversion := strtoint(getoptionvalue('', '--only'));
+          app.onlyversion := parseversion(getoptionvalue('', '--only'), '--only');
         end;
         if hasoption('-u', '--until') = true then
         begin
           if getoptionvalue('-u', '--until') = 'last' then
             app.untilversion := $ffffffff
           else
-            app.untilversion := strtoint(getoptionvalue('-u', '--until'));
+            app.untilversion := parseversion(getoptionvalue('-u', '--until'), '--until');
         end;
         if hasoption('', '--verbose') then
         begin
