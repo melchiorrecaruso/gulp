@@ -1,0 +1,16 @@
+# Source relative to test/regression | execution mode
+# core: all systems; unix: Unix only (explicitly skipped elsewhere)
+restorearchive/test_restorearchive.lpr|core
+restoreinclude/test_restoreinclude.lpr|core
+unreadable/test_unreadable.lpr|unix
+deletedir/test_deletedir.lpr|core
+syncinclude/test_syncinclude.lpr|core
+selfarchive/test_selfarchive.lpr|core
+purge/test_purge.lpr|core
+commandline/test_commandline.lpr|core
+lastversion/test_lastversion.lpr|core
+symlink/test_symlink.lpr|unix
+changedetect/test_changedetect.lpr|unix
+atomicrestore/test_atomicrestore.lpr|core
+trailingslash/test_trailingslash.lpr|core
+utctime/test_utctime.lpr|unix

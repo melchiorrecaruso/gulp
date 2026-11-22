@@ -1,2 +1,5 @@
 build/**
 install/gulp-cli_0.4_amd64.deb
+
+# Local/CI regression compiler output and results
+/.regression-build/
