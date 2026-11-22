@@ -225,7 +225,9 @@ var
   s:    tscanner;
 begin
   s := tscanner.create;
-  s.add(dirname);
+  // scan the directory content recursively (children sort after parents,
+  // so walking the list backwards deletes the deepest items first)
+  s.add(includetrailingpathdelimiter(dirname) + '*');
 
   for i := s.count -1 downto 0 do
   begin

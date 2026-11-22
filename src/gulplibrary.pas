@@ -50,7 +50,7 @@ type
   tgulplibrary = class(tgulpinterface)
   protected
     function  libmove   (instrm,  outstrm: tstream; size: int64): tsha1digest;
-    procedure librestore(instrm:  tstream; p:    pgulpitem);
+    function  librestore(instrm:  tstream; p:    pgulpitem): boolean;
     procedure librestore(                  p:    pgulpitem);
     procedure libwrite  (outstrm: tstream; p:    pgulpitem);
     procedure libwrite  (outstrm: tstream; list: tgulplist);
@@ -289,15 +289,16 @@ begin
   sha1final(context, result);
 end;
 
-procedure tgulplibrary.librestore(instrm: tstream; p: pgulpitem);
+function tgulplibrary.librestore(instrm: tstream; p: pgulpitem): boolean;
 var
   outpath: rawbytestring;
   outsize: int64;
 
-  procedure librestorefile(instrm: tstream; p: pgulpitem); inline;
+  function librestorefile(instrm: tstream; p: pgulpitem): boolean; inline;
   var
     outstrm: tstream;
   begin
+    result := false;
     instrm.seek(p^.offset1, sobeginning);
     try
       outstrm := tfilestream.create(p^.name, fmcreate);
@@ -312,10 +313,12 @@ var
       if not sha1match(p^.checksum2, libmove(instrm, outstrm, outsize)) then
         raiseexception(gechecksum, '003016');
       outstrm.destroy;
+      result := true;
     end;
   end;
 
 begin
+  result  := true;
   outpath := extractfiledir(p^.name);
   if (outpath <> '') and (forcedirectories(outpath) = false) then
     raiseexception(gecreatepath, outpath);
@@ -325,11 +328,14 @@ begin
     {$IFDEF LINUX}
     gulpscanner.deleteany(p^.name);
     if setsymlink(p^.name, p^.linkname) <> 0 then
+    begin
       showwarning(format(gerestorelink, [p^.name]));
+      result := false;
+    end;
     {$ELSE}
     {$IFDEF MSWINDOWS}
     gulpscanner.deleteany(p^.name);
-    librestorefile(instrm, p);
+    result := librestorefile(instrm, p);
     {$ELSE}
     ...
     {$ENDIF}
@@ -344,7 +350,10 @@ begin
     begin
       gulpscanner.deleteany(p^.name);
       if createdir(p^.name) = false then
+      begin
         showwarning(format(gerestoredir, [p^.name]));
+        result := false;
+      end;
     end else
     begin
       {$IFDEF LINUX}
@@ -363,7 +372,7 @@ begin
   end else
   begin
     gulpscanner.deleteany(p^.name);
-    librestorefile(instrm, p);
+    result := librestorefile(instrm, p);
   end;
 end;
 
@@ -871,9 +880,12 @@ begin
       if (j = -1) or (comparedatetime(gettimeutc(scan[j]), p^.mtime) <> 0) then
       begin
         showmessage2(format(gmrestoreitem, [p^.name]));
-        librestore(strm, p);
-        inc(size, p^.offset2 - p^.offset1);
-        list2.add(p);
+        // apply metadata only to items that have been actually restored
+        if librestore(strm, p) then
+        begin
+          inc(size, p^.offset2 - p^.offset1);
+          list2.add(p);
+        end;
       end;
     end;
   end;
