@@ -38,6 +38,7 @@ uses
   gulpcommon,
   gulpfixes,
   gulplibrary,
+  gulplist,
   gulpmessages,
   sysutils;
 
@@ -105,13 +106,25 @@ type
   end;
 
   procedure tshellapplication.run;
+  // A trailing path delimiter does not change the meaning of a path:
+  // "dir/" is the same as "dir" (the directory and all its content).
+  function normalizepath(const path: rawbytestring): rawbytestring;
+  begin
+    result := path;
+    while (length(result) > 1) and (result[length(result)] in allowdirectoryseparators) do
+      setlength(result, length(result) - 1);
+  end;
+
   var
     app:   tgulpapplication;
+    files: trawbytestringlist;
+    i:     longint;
     s:     rawbytestring;
     start: tdatetime;
   begin
     start := now;
     app   := tgulpapplication.create;
+    files := trawbytestringlist.create;
     app.onshowitem     := @showitem;
     app.onshowmessage1 := @showmessage;
     app.onshowmessage2 := nil;
@@ -122,18 +135,16 @@ type
         '--synch: --restore: --purge:   --list:    --check:    --fix:  ' +
         '--until: --include: --exclude: --help     --verbose   --only: ' +
         '--excludeattr: --excludemode:  --nodelete --forcepath         ',
-        app.include);
+        files);
 
       if s = '' then
       begin
+        for i := 0 to files.count - 1 do
+          app.include.add(normalizepath(files[i]));
+
         for s in getoptionvalues('-e', '--exclude') do
           if s <> '' then
-          begin
-            if s[length(s)] = pathdelim then
-              app.exclude.add(s + '*')
-            else
-              app.exclude.add(s);
-          end;
+            app.exclude.add(normalizepath(s));
         if hasoption('', '--excludeattr') = true then
         begin
           app.excludeattr := str2attr(getoptionvalue('', '--excludeattr'));
@@ -144,12 +155,7 @@ type
         end;
         for s in getoptionvalues('-i', '--include') do
           if s <> '' then
-          begin
-            if s[length(s)] = pathdelim then
-              app.include.add(s + '*')
-            else
-              app.include.add(s);
-          end;
+            app.include.add(normalizepath(s));
         if hasoption('', '--only') = true then
         begin
           app.onlyversion := strtoint(getoptionvalue('', '--only'));
@@ -202,6 +208,7 @@ type
           format('An exception was raised: "%s"', [e.message]));
     end;
 
+    files.destroy;
     app.destroy;
     writeln(#13, #13: 80, 'Elapsed ',
       format('%0.2f', [(now - start) * (24 * 60 * 60)]), ' sec');
@@ -320,7 +327,8 @@ type
     writeln('       Operation modifiers:');
     writeln;
     writeln('       -e, --exclude=pattern');
-    writeln('              exclude files in pattern. Can be repeated.');
+    writeln('              exclude files in pattern. Can be repeated. A directory');
+    writeln('              excludes all its content; a trailing slash is ignored.');
     writeln;
     writeln('       --excludeattr=attributes');
     writeln('              exclude files with any of the attributes, given with the');
@@ -334,7 +342,8 @@ type
     writeln('              allow files with absolute path names.');
     writeln;
     writeln('       -i, --include=pattern');
-    writeln('              include files in pattern. Can be repeated.');
+    writeln('              include files in pattern. Can be repeated. A directory');
+    writeln('              includes all its content; a trailing slash is ignored.');
     writeln;
     writeln('       --nodelete');
     writeln('              with synch, do not mark files in the archive as deleted when');

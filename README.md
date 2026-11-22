@@ -130,7 +130,7 @@ Truncates any data added after last valid update.
 ## Options
 
 #### Exclude pattern (*-e*, *--exclude=PATTERN*)
-Avoid operating on files whose names match filename pattern PATTERN. The option prevents any file or member whose name matches the shell wildcard (pattern) from being operated on. Multiple exclude options are supported. 
+Avoid operating on files whose names match filename pattern PATTERN. The option prevents any file or member whose name matches the shell wildcard (pattern) from being operated on. Multiple exclude options are supported. A directory excludes all its content; a trailing slash is ignored ("dir" and "dir/" are the same). 
 
 >**Example** :
 >
@@ -164,7 +164,7 @@ It's recommended store files in archive with relative path names. This option fo
 
 #### Include option (*-i*, *--include=PATTERN*)
 Operating on files whose names match filename pattern PATTERN.
-Multiple include options are supported. 
+Multiple include options are supported. A directory includes all its content; a trailing slash is ignored ("dir" and "dir/" are the same). 
 
 >**Example** :
 >

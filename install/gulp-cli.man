@@ -66,7 +66,7 @@ Operation modifiers:
 
 .BR \-e ", " --exclude=\fIpattern\fR
 .RS
-exclude files in pattern. Can be repeated.
+exclude files in pattern. Can be repeated. A directory excludes all its content; a trailing slash is ignored.
 .RE
 
 .BR \--excludeattr=\fIattributes\fR
@@ -86,7 +86,7 @@ allow files with absolute path names.
 
 .BR \-i ", " --include=\fIpattern\fR
 .RS
-include files in pattern. Can be repeated.
+include files in pattern. Can be repeated. A directory includes all its content; a trailing slash is ignored.
 .RE
 
 .BR \--nodelete
