@@ -111,5 +111,20 @@ begin
     'zero history sentinel succeeds');
   Check(Pos('2 listed items', output) > 0, 'zero retains unrestricted history');
 
+  // #24: validate octal digits and overflow before touching files.
+  CheckError(['-r', 'i.gulp', '--excludemode=8'], 'Invalid octal mode', 'octal digit 8');
+  Check(FileExists('unrelated'), 'invalid mode does not restore or delete');
+  CheckError(['-l', 'i.gulp', '--excludemode=9'], 'Invalid octal mode', 'octal digit 9');
+  CheckError(['-l', 'i.gulp', '--excludemode=128'], 'Invalid octal mode', 'mixed invalid octal');
+  CheckError(['-l', 'i.gulp', '--excludemode=-1'], 'Invalid octal mode', 'negative mode');
+  CheckError(['-l', 'i.gulp', '--excludemode=abc'], 'Invalid octal mode', 'nonnumeric mode');
+  CheckError(['-l', 'i.gulp', '--excludemode=20000000000'], 'Invalid octal mode', 'mode overflow');
+  CheckError(['-s', 'invalid-mode.gulp', '--excludemode=8'], 'Invalid octal mode', 'invalid sync mode');
+  Check(not FileExists('invalid-mode.gulp'), 'invalid mode does not create archive');
+  GulpOk(['-l', 'i.gulp', '--excludemode=0']);
+  GulpOk(['-l', 'i.gulp', '--excludemode=10']);
+  GulpOk(['-l', 'i.gulp', '--excludemode=0755']);
+  GulpOk(['-l', 'i.gulp', '--excludemode=17777777777']);
+
   WriteLn('PASS: command line options, arguments, messages and exit codes');
 end.

@@ -117,6 +117,26 @@ type
     result := longword(version);
   end;
 
+  function parsemode(const value: rawbytestring): longint;
+  var
+    digit: char;
+    mode: longint;
+  begin
+    if value = '' then
+      raise exception.create('Invalid octal mode for --excludemode');
+    mode := 0;
+    for digit in value do
+    begin
+      if not (digit in ['0'..'7']) then
+        raise exception.createfmt('Invalid octal mode for --excludemode: "%s"', [value]);
+      if mode > (high(longint) - (ord(digit) - ord('0'))) div 8 then
+        raise exception.createfmt('Invalid octal mode for --excludemode: "%s"', [value]);
+      mode := mode * 8 + (ord(digit) - ord('0'));
+    end;
+    // Preserve the platform-specific interpretation after validating input.
+    result := str2mode(value);
+  end;
+
   // A trailing path delimiter does not change the meaning of a path:
   // "dir/" is the same as "dir" (the directory and all its content).
   function normalizepath(const path: rawbytestring): rawbytestring;
@@ -173,7 +193,7 @@ type
         end;
         if hasoption('', '--excludemode') = true then
         begin
-          app.excludemode := str2mode(getoptionvalue('', '--excludemode'));
+          app.excludemode := parsemode(getoptionvalue('', '--excludemode'));
         end;
         for s in getoptionvalues('-i', '--include') do
           if s <> '' then
