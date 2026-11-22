@@ -188,6 +188,7 @@ type
 implementation
 
 uses
+  dateutils,
   {$IFDEF LINUX}
   baseunix,
   syscall,
@@ -499,7 +500,12 @@ end;
 
 function gettimeutc(var sr: tsearchrec): tdatetime;
 begin
+  {$IFDEF UNIX}
+  // on Unix the file date is already a UTC Unix timestamp
+  result := unixtodatetime(sr.time);
+  {$ELSE}
   result := localtime2universal(filedatetodatetime(sr.time));
+  {$ENDIF}
 end;
 
 function gettimeutc(const filename: rawbytestring): tdatetime;
@@ -529,15 +535,15 @@ var
 begin
   {$IFDEF LINUX}
   if issymlink(filename) = false then
-    result := filesetdate(filename, datetimetofiledate(universaltime2local(timeutc)))
+    // on Unix the file date is a UTC Unix timestamp
+    result := filesetdate(filename, datetimetounix(timeutc))
   else
   begin
     // set the time of the link itself; the RTL utimensat ignores the flags
     // argument, so the syscall is invoked directly
     times[0].tv_sec  := 0;
     times[0].tv_nsec := utime_omit;   // leave access time unchanged
-    // same conversion used by filesetdate for regular files (unix file date)
-    times[1].tv_sec  := datetimetofiledate(universaltime2local(timeutc));
+    times[1].tv_sec  := datetimetounix(timeutc);
     times[1].tv_nsec := 0;
     systempath := tosinglebytefilesystemencodedfilename(filename);
     result := do_syscall(syscall_nr_utimensat, tsysparam(at_fdcwd),

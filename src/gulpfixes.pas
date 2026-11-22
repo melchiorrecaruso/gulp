@@ -34,9 +34,12 @@ function localtime2universal(lt: tdatetime; tzoffset: longint): tdatetime;
 
 implementation
 
+// The offset in effect at the given date is used (DST aware), not the
+// current one: using the current offset makes converted times change by
+// one hour when the system switches between standard and daylight time.
 function universaltime2local(ut: tdatetime): tdatetime;
 begin
-  result := universaltime2local(ut, -getlocaltimeoffset);
+  result := sysutils.universaltimetolocal(ut);
 end;
 
 function universaltime2local(ut: tdatetime; tzoffset: longint): tdatetime;
@@ -53,7 +56,7 @@ end;
 
 function localtime2universal(lt: tdatetime): tdatetime;
 begin
-  result := localtime2universal(lt, -getlocaltimeoffset);
+  result := sysutils.localtimetouniversal(lt);
 end;
 
 function localtime2universal(lt: tdatetime; tzoffset: longint): tdatetime;
