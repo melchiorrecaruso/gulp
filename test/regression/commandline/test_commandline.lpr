@@ -54,5 +54,13 @@ begin
   Check(RunGulp(['-x']) = 1, 'an invalid option returns exit code 1');
   Check(RunGulp(['-l', 'l.gulp']) = 0, 'success returns exit code 0');
 
+  // #20: an empty short-option value must never broaden a restore.
+  WriteTextFile('unrelated', 'keep me');
+  CheckError(['-r', 'i.gulp', '-i', ''], 'needs an argument', 'empty include');
+  Check(FileExists('unrelated'), 'invalid restore preserves unrelated files');
+  CheckError(['-s', 'empty.gulp', '-e', ''], 'needs an argument', 'empty exclude');
+  Check(not FileExists('empty.gulp'), 'invalid sync does not create archive');
+  CheckError(['-s', ''], 'needs an argument', 'empty archive name');
+
   WriteLn('PASS: command line options, arguments, messages and exit codes');
 end.

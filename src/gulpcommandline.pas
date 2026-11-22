@@ -108,7 +108,7 @@ var
     if (k = 1) then
     begin
       inc(i);
-      if (i > paramcount) then
+      if (i > paramcount) or (paramstr(i) = '') then
         result := format('Option at position %d needs an argument: "%s"', [i - 1, s])
       else
       if isoption(paramstr(i)) then
