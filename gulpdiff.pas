@@ -37,6 +37,7 @@ var
   scan: array[1..2] of tscanner;
   dig1: TSHA1Digest;
   dig2: TSHA1Digest;
+  readok: boolean;
 
 begin
   writeln('Gulp-DIFF v0.5 diff utility, copyright (c) 2016-2026 Melchiorre Caruso.');
@@ -46,9 +47,10 @@ begin
   begin
     writeln('Usage: gulp-diff directory1 directory2');
     writeln('Compare two DIRECTORIES file by file.');
+    exitcode := 2;
   end else
   begin
-
+    try
     for i := 1 to 2 do
     begin
       scan[i] := tscanner.create;
@@ -65,28 +67,41 @@ begin
       j := scan[2].find(s);
       if j <> -1 then
       begin
-        if (filegetattr(scan[1][i]) and fadirectory = 0) and
-           (filegetattr(scan[2][j]) and fadirectory = 0) then
+        // Compare link targets below, never hash the files they point to.
+        if isregular(getattr(scan[1][i])) and
+           isregular(getattr(scan[2][j])) then
         begin
 
+          readok := true;
           try
             dig1 := sha1file(scan[1][i], 4096);
           except
-            writeln(format(gereadstream, [scan[1][i]]));
+            on E: Exception do
+            begin
+              writeln(format(gereadstream, [scan[1][i]]));
+              readok := false;
+              exitcode := 2;
+            end;
           end;
 
           try
             dig2 := sha1file(scan[2][j], 4096);
           except
-            writeln(format(gereadstream, [scan[2][j]]));
+            on E: Exception do
+            begin
+              writeln(format(gereadstream, [scan[2][j]]));
+              readok := false;
+              exitcode := 2;
+            end;
           end;
 
-          if sha1match(dig1, dig2) = false then
-          begin
-            writeln;
-            writeln(format('(DATA) "%s', [scan[1][i]]));
-            writeln(format('(DATA) "%s', [scan[2][j]]));
-          end;
+          if readok then
+            if sha1match(dig1, dig2) = false then
+            begin
+              writeln;
+              writeln(format('(DATA) "%s"', [scan[1][i]]));
+              writeln(format('(DATA) "%s"', [scan[2][j]]));
+            end;
         end;
 
         if comparedatetime(gettimeutc(scan[1][i]), gettimeutc(scan[2][j])) <> 0 then
@@ -154,14 +169,15 @@ begin
 
         scan[2].delete(j);
       end else
-        writeln(format('"%s" not founded in "%s"', [scan[1] [i], paramstr(2)]));
+        writeln(format('"%s" not found in "%s"', [scan[1][i], paramstr(2)]));
 
     end;
 
     for j := 0 to scan[2].count - 1 do
-      writeln(format('"%s" not founded in "%s"', [scan[2] [j], paramstr(1)]));
-
-    for j := 1 to 2 do
-      scan[j].destroy;
+      writeln(format('"%s" not found in "%s"', [scan[2][j], paramstr(1)]));
+    finally
+      for j := 1 to 2 do
+        scan[j].free;
+    end;
   end;
 end.

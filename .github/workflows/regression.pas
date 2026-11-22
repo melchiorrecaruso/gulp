@@ -4,7 +4,7 @@ program Regression;
 uses {$IFDEF UNIX}BaseUnix,{$ENDIF} Classes, SysUtils, StrUtils, Process;
 
 var
-  Root, BuildDir, FPC, OnlyPrefix, GulpExe: string;
+  Root, BuildDir, FPC, OnlyPrefix, GulpExe, GulpDiffExe: string;
   TestTimeout: QWord = 120000;
   Passed, Failed, Skipped, Selected: integer;
 
@@ -115,31 +115,41 @@ begin
   RemoveDir(APath);
 end;
 
-procedure BuildGulp;
+procedure BuildProgram(const ASource, AName: string; ADebug: boolean;
+  out AExecutable: string);
 var
   args: TStringList;
   outputDir, unitsDir: string;
 begin
-  outputDir := BuildDir+PathDelim+'gulp';
+  outputDir := BuildDir+PathDelim+AName;
   unitsDir := outputDir+PathDelim+'units';
   if not ForceDirectories(unitsDir) then
     raise Exception.Create('Cannot create '+unitsDir);
-  GulpExe := outputDir+PathDelim+'gulp'+{$IFDEF WINDOWS}'.exe'{$ELSE}''{$ENDIF};
+  AExecutable := outputDir+PathDelim+AName+{$IFDEF WINDOWS}'.exe'{$ELSE}''{$ENDIF};
   args := TStringList.Create;
   try
-    WriteLn('BUILD: src/gulp.pas');
+    WriteLn('BUILD: ',ASource);
+    if ADebug then
+    begin
+      args.Add('-B');
+      args.Add('-gl');
+      args.Add('-gh');
+      args.Add('-Cr');
+      args.Add('-Co');
+      args.Add('-Ci');
+    end;
     args.Add('-Fu'+Root+PathDelim+'src');
     args.Add('-FU'+unitsDir);
-    args.Add('-o'+GulpExe);
-    args.Add(Root+PathDelim+'src'+PathDelim+'gulp.pas');
+    args.Add('-o'+AExecutable);
+    args.Add(Root+PathDelim+NativePath(ASource));
     if not Execute(FPC,args,Root,outputDir+PathDelim+'build.log',600000) then
-      raise Exception.Create('Cannot build gulp (logs: '+outputDir+')');
+      raise Exception.Create('Cannot build '+AName+' (logs: '+outputDir+')');
   finally
     args.Free;
   end;
 end;
 
-procedure RunTest(const ASource, AMode: string);
+procedure RunTest(const ASource, AMode, ATarget: string);
 var
   source, executable, name, outputDir, resultsDir, unitsDir: string;
   args: TStringList;
@@ -147,6 +157,8 @@ var
 begin
   if (AMode <> 'core') and (AMode <> 'unix') then
     raise Exception.Create('Unknown regression mode: '+AMode);
+  if (ATarget <> 'gulp') and (ATarget <> 'gulpdiff') then
+    raise Exception.Create('Unknown regression target: '+ATarget);
   source := ExpandFileName(Root+PathDelim+'test'+PathDelim+'regression'+PathDelim+NativePath(ASource));
   if not FileExists(source) then
     raise Exception.Create('Missing test source: '+source);
@@ -181,7 +193,10 @@ begin
     begin
       WriteLn('RUN: ',ASource);
       args.Clear;
-      args.Add(GulpExe);
+      if ATarget = 'gulpdiff' then
+        args.Add(GulpDiffExe)
+      else
+        args.Add(GulpExe);
       success := Execute(executable,args,resultsDir,outputDir+PathDelim+'run.log',TestTimeout);
     end;
     if success then
@@ -214,15 +229,20 @@ begin
       manifest.LoadFromFile(fileName);
       fields.StrictDelimiter := true;
       fields.Delimiter := '|';
-      BuildGulp;
+      BuildProgram('src/gulp.pas','gulp',false,GulpExe);
+      BuildProgram('gulpdiff.pas','gulpdiff',true,GulpDiffExe);
       for i := 0 to manifest.Count-1 do
       begin
         line := Trim(manifest[i]);
         if (line = '') or (line[1] = '#') then continue;
         fields.DelimitedText := line;
-        if fields.Count <> 2 then raise Exception.Create('Invalid manifest line: '+line);
+        if (fields.Count <> 2) and (fields.Count <> 3) then
+          raise Exception.Create('Invalid manifest line: '+line);
         if (OnlyPrefix <> '') and not AnsiStartsStr(OnlyPrefix,fields[0]) then continue;
-        RunTest(Trim(fields[0]),Trim(fields[1]));
+        if fields.Count = 2 then
+          RunTest(Trim(fields[0]),Trim(fields[1]),'gulp')
+        else
+          RunTest(Trim(fields[0]),Trim(fields[1]),Trim(fields[2]));
       end;
       if Selected = 0 then raise Exception.Create('No regression test selected');
     finally

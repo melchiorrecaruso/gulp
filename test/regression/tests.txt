@@ -1,4 +1,4 @@
-# Source relative to test/regression | execution mode
+# Source relative to test/regression | execution mode | optional target (default: gulp)
 # core: all systems; unix: Unix only (explicitly skipped elsewhere)
 restorearchive/test_restorearchive.lpr|core
 restoreinclude/test_restoreinclude.lpr|core
@@ -14,3 +14,5 @@ changedetect/test_changedetect.lpr|unix
 atomicrestore/test_atomicrestore.lpr|core
 trailingslash/test_trailingslash.lpr|core
 utctime/test_utctime.lpr|unix
+gulpdiff/test_gulpdiff.lpr|core|gulpdiff
+gulpdiff/test_gulpdiff_unix.lpr|unix|gulpdiff
