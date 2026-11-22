@@ -102,18 +102,21 @@ var
       begin
         s := paramstr(i);
         if pos('=' ,s ) = length(s) then
-          result := format('Option at position %d does not allow an argument: "%s"', [i, s]);
+          result := format('Option at position %d needs an argument: "%s"', [i, s]);
       end;
     end else
     if (k = 1) then
     begin
       inc(i);
       if (i > paramcount) then
-        result := format('Option at position %d does not allow an argument: "%s"', [i - 1, s])
+        result := format('Option at position %d needs an argument: "%s"', [i - 1, s])
       else
       if isoption(paramstr(i)) then
-        result := format('Option at position %d needs an argument : "%s"',[i - 1, s]);
-    end;
+        result := format('Option at position %d needs an argument: "%s"',[i - 1, s]);
+    end else
+    if (s[2] = '-') and (pos('=', paramstr(i)) > 0) then
+      // long option without argument given in the form --option=value
+      result := format('Option at position %d does not allow an argument: "%s"', [i, paramstr(i)]);
   end;
 
 begin
