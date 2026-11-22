@@ -45,6 +45,8 @@ If you have problems with permissions don't forget to prefix with `sudo`
 To use the newly installed Gulp, quit and restart all running Gulp instances.
 
 ##Usage
+Show the program version with `gulp --version`.
+
 The first argument to gulp should be a function; either one of the letters or one of the long function names. A function letter needs to be prefixed with "-", and can't be combined with other single letter options. A long function name must be prefixed with "--".  Some options take a parameter; with the single-letter form these must be given as separate arguments. With the long form, they must be given by appending "=value" to the option.
 
 ```sh
@@ -52,6 +54,7 @@ SYNOPSIS
 
 	gulp [-] s --synch | r --restore | p --purge | l --list |
 	    	 c --check | f --fix [options ...] [ files ...]
+	gulp --version
 ```
 
 ##Main function mode

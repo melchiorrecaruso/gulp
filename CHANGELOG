@@ -1,3 +1,9 @@
+gulp-cli (0.5) unstable; urgency=medium
+
+  * Add "--version" to display the command-line program version.
+
+ -- melchiorre caruso <melchiorrecaruso@gmail.com>  Sun, 22 Nov 2026 21:17:24 +0100
+
 gulp-cli (0.4) unstable; urgency=medium
      	    
   * new "--verbose" switch. It's show more process info;

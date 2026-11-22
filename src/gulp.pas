@@ -42,6 +42,9 @@ uses
   gulpmessages,
   sysutils;
 
+const
+  GulpVersion = '0.5';
+
 type
   { gulp shell application }
 
@@ -166,7 +169,7 @@ type
       s := checkoptions('-s: -r: -p: -l: -c: -f: -u: -i: -e: -h        ',
         '--synch: --restore: --purge:   --list:    --check:    --fix:  ' +
         '--until: --include: --exclude: --help     --verbose   --only: ' +
-        '--excludeattr: --excludemode:  --nodelete --forcepath         ',
+        '--excludeattr: --excludemode:  --nodelete --forcepath --version',
         files);
 
       if s = '' then
@@ -178,9 +181,14 @@ type
           length(getoptionvalues('-f', '--fix')) +
           length(getoptionvalues('-l', '--list'));
         if hasoption('-h', '--help') then inc(operationcount);
+        if hasoption('', '--version') then inc(operationcount);
         if operationcount > 1 then
           raise exception.create('Specify only one main operation');
 
+        if hasoption('', '--version') then
+          writeln('gulp ', GulpVersion)
+        else
+        begin
         for i := 0 to files.count - 1 do
           app.include.add(normalizepath(files[i]));
 
@@ -239,6 +247,7 @@ type
           help
         else
           help;
+        end;
 
         exitcode := 0;
       end else
@@ -252,7 +261,8 @@ type
 
     files.destroy;
     app.destroy;
-    writeln(#13, #13: 80, 'Elapsed ',
+    if not ((exitcode = 0) and hasoption('', '--version')) then
+      writeln(#13, #13: 80, 'Elapsed ',
       format('%0.2f', [(now - start) * (24 * 60 * 60)]), ' sec');
   end;
 
@@ -270,6 +280,10 @@ type
     writeln('SYNOPSIS');
     writeln('       gulp [-] s --synch | r --restore | p --purge | l --list |');
     writeln('                c --check | f --fix | h --help [ options ...] [ files ...]');
+    writeln('       gulp --version');
+    writeln;
+    writeln('VERSION');
+    writeln('       --version prints the program version and exits.');
     writeln;
     writeln('DESCRIPTION');
     writeln('       gulp stores and extracts files from a disk archive. A GULP archive');

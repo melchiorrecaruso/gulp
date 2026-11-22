@@ -6,7 +6,7 @@ Priority: optional
 Standards-Version: 3.9.2
 
 Package: gulp-cli
-Version: 0.4
+Version: 0.5
 Maintainer: Melchorre Caruso <melchiorrecaruso@gmail.com>
 Homepage: https://github.com/melchiorrecaruso/gulp
 # Pre-Depends: <comma-separated list of packages>

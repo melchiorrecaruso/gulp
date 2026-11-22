@@ -28,6 +28,14 @@ begin
   Check(RunGulp(['-h'], output) = 0, '-h succeeds');
   Check(Pos('SYNOPSIS', output) > 0, '-h shows the help');
 
+  Check(RunGulp(['--version'], output) = 0, '--version succeeds');
+  Check(Trim(output) = 'gulp 0.5', '--version prints only the program version');
+  CheckError(['-V'], 'Invalid option', '-V is not a supported abbreviation');
+  CheckError(['--version=yes'], 'does not allow an argument', 'version rejects arguments');
+  CheckError(['--version', '-h'], 'only one main operation', 'version and help conflict');
+  CheckError(['--version', '-s', 'version.gulp'], 'only one main operation', 'version and synch conflict');
+  Check(not FileExists('version.gulp'), 'version conflict does not create an archive');
+
   // #10
   GulpOk(['-s', 'a']);
   GulpOk(['-s', 's', '-e', 'in']);
