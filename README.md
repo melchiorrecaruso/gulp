@@ -45,7 +45,7 @@ If you have problems with permissions don't forget to prefix with `sudo`
 To use the newly installed Gulp, quit and restart all running Gulp instances.
 
 ##Usage
-The first argument to gulp should be a function; either one of the letters or one of the long function names. A function letter need be prefixed with "-", and can't be combined with other single letter options. A long function name must be prefixed with "--".  Some options take a parameter; with the single-letter form these must be given as separate arguments. With the long form, they may be given by appending "=value to the option".
+The first argument to gulp should be a function; either one of the letters or one of the long function names. A function letter needs to be prefixed with "-", and can't be combined with other single letter options. A long function name must be prefixed with "--".  Some options take a parameter; with the single-letter form these must be given as separate arguments. With the long form, they must be given by appending "=value" to the option.
 
 ```sh
 SYNOPSIS
@@ -56,17 +56,17 @@ SYNOPSIS
 
 ##Main function mode
                                            
-####Synchronize archive (*-s*, *--sync*)
-Append changes in files  to archive, or create archive if it does not exist. "files" is a list of file and directory names separated by spaces. If a name is a directory, then it recursively includes all files and subdirectories within. In Windows, files may contain wildcards "\*" and "?" in the last component of the path (after the last slash). "\*" matches any string and "?" matches any character. 
+####Synchronize archive (*-s*, *--synch*)
+Append changes in files  to archive, or create archive if it does not exist. "files" is a list of file and directory names separated by spaces. If a name is a directory, then it recursively includes all files and subdirectories within. "files" may contain wildcards "\*" and "?" in the last component of the path (after the last slash). "\*" matches any string and "?" matches any character. 
 
-A change is an addition, update, or deletion of any file or directory in "files" or any of its subdirectories to any depth. A file or directory is considered changed if its size, last-modified date, or Windows attributes or Unix/Linux permissions differ between the internal and external versions. File contents are not compared.
+A change is an addition, update, or deletion of any file or directory in "files" or any of its subdirectories to any depth. A file or directory is considered changed if its type, size, last-modified date, Unix/Linux permissions or Windows attributes, or symbolic link target differ between the internal and external versions. File contents are not compared. Only files and directories within "files" are marked as deleted when they no longer exist.
 
-For each added or updated file or directory, the following information is saved in the archive: the contents, the file or directory name as it appears in "files" plus any trailing path, the last-modified date and the Unix/Linux permissions or Windows attributes. Other metadata such as owner name, group name, last access time, etc. are not saved. Symbolic links are saved. Hard links are followed as if they were ordinary files. Special file types such as devices, named pipes, and named sockets are not saved. If any file cannot be read (e.g. permission denied), exception is raised.
+For each added or updated file or directory, the following information is saved in the archive: the contents, the file or directory name as it appears in "files" plus any trailing path, the last-modified date (UTC) and the Unix/Linux permissions or Windows attributes. Other metadata such as owner name, group name, last access time, etc. are not saved. Symbolic links are saved. Hard links are followed as if they were ordinary files. Special file types such as devices, named pipes, and named sockets are not saved. If any file cannot be read (e.g. permission denied), then it is skipped with a warning and retried at the next synch. However, other files are still added and the update is still valid. The archive itself is never added.
 
 ###
 > **Note** :
 >
-> - Updates are transacted. If GULP is interrupted before completing the update, then the archive can be repair with fix function.
+> - Updates are transacted. If an update fails, it is removed from the archive. If GULP is interrupted before completing the update, then the archive can be repaired with fix function.
 >
 
 ###
@@ -85,7 +85,9 @@ Restore "files" (including the contents of directories), or extract the whole ar
 >
 > - If there are multiple versions of a file stored, then only the latest version is extracted. 
 >
-> - If a stored file has been marked as deleted, then it is deleted. Existing files are overwritten if they are considered changed.
+> - If a stored file has been marked as deleted, then it is deleted. Existing files are overwritten if they are considered changed; a file is replaced only after its data has been verified.
+>
+> - Unless *--nodelete* is given, external files and directories within "files" that do not exist in the archive are deleted. Excluded items and the archive itself are never deleted.
 >
 
 ###
@@ -97,15 +99,17 @@ Restore "files" (including the contents of directories), or extract the whole ar
 >
 
 #### Purge archive (*-p*, *--purge*)
-Purge archive, remove old files archived.
+Purge archive, remove old files archived. The archive is replaced only when the purged copy has been completely written.
 
 #### List archive contents (*-l*, *--list*)
-List "files" within the archive, or list the entire archive contents if "files" is omitted. For each file or directory, show marker, last modified date, Windows attributes or Unix/Linux permissions, size and name. 
+List "files" within the archive, or list the entire archive contents if "files" is omitted. For each file or directory, show version number, marker, Unix/Linux permissions, attributes, last-modified date, size and name. 
 
 ###
 > **Note** : 
 >
-> - Attributes are listed as an octal number in Unix/Linux (as per chmod(1)) or with the letters D, A, S, H, R, I in Windows (as for the attrib command).
+> - Permissions are listed as an octal number (as per chmod(1)) and attributes with the letters R, H, S, V, D, A, L (read-only, hidden, system, volume, directory, archive, symbolic link).
+>
+> - The last line shows the last version of the archive.
 >
 
 ###
@@ -176,17 +180,17 @@ With synch command (***-s***) , do not mark files in the archive as deleted when
 >
 > - This makes **GULP** consistent with the behavior of most non-journaling archivers.
 
-#### Only option (--only==VERSION)
-Ignore any part of the archive without same version number VERSION. 
+#### Only option (*--only=VERSION*)
+With list, show only the changes made in version VERSION. 
 
 >**Example** :
 >
-> - show files added as version 20
+> - show files added or deleted in version 20
 >
-		gulp -l archive.gulp files --until 20
+		gulp -l archive.gulp --only=20
 > 
 
-#### Until option (-u, --until==VERSION)
+#### Until option (*-u*, *--until=VERSION*)
 Ignore any part of the archive updated after version number. 
 
 >**Example** :
@@ -197,13 +201,13 @@ Ignore any part of the archive updated after version number.
 
 > - show files added before version 21
 >
-		gulp -l archive.gulp files --until 20
+		gulp -l archive.gulp --until=20
 > 
 
 </br>
-##General file format version 0.3
+##General file format version 0.5
 
-A **GULP** archive is a sequence of timestamped updates, each listing the files and directories that have been deleted or added, since the previous transacted update, normally based on changes to the last-modified dates.
+A **GULP** archive is a sequence of timestamped updates, each listing the files and directories that have been deleted or added since the previous transacted update.
 
 #### Archive content:
 ``` sh
@@ -216,14 +220,11 @@ A **GULP** archive is a sequence of timestamped updates, each listing the files 
 ``` sh
 	- Marker          (20 bytes)
 	- Header      1
-	- Checksum    1   (20 bytes) 
 	- Marker          (20 bytes)
  	- Header      2
-	- Checksum    2   (20 bytes)
 	- ...
 	- Marker          (20 bytes)
 	- Header      N
-	- Checksum    N   (20 bytes)
 	- Stored data 1
 	- Stored data 2
 	- ...
@@ -232,12 +233,12 @@ A **GULP** archive is a sequence of timestamped updates, each listing the files 
 
 #### Header content:
 ``` sh
-	- Flags        longword        ( 4 bytes)
-	- Name         rawbytestring 
- 	- sTime (UTC)  double          ( 8 bytes)
+	- Name         rawbytestring
+	- Flags        set             ( 4 bytes)
  	- mTime (UTC)  double          ( 8 bytes)
-	- Attributes   longint         ( 4 bytes)
-	- Mode         longint         ( 4 bytes)
+ 	- sTime (UTC)  double          ( 8 bytes)
+	- Attributes   set             ( 4 bytes)
+	- Mode         set             ( 4 bytes)
 	- Size         int64           ( 8 bytes)
 	- Link Name    rawbytestring
 	- User ID      longint         ( 4 bytes)
@@ -247,12 +248,18 @@ A **GULP** archive is a sequence of timestamped updates, each listing the files 
 	- Comment      rawbytestring
 	- Offset1      int64           ( 8 bytes)
 	- Offset2      int64           ( 8 bytes)
-	- Checksum     array of bytes  (20 bytes)
+	- Checksum1    array of bytes  (20 bytes)
+	- Checksum2    array of bytes  (20 bytes)
 ```
 
 >
 > **Note:** 
 > 
+> - rawbytestring is stored as its length (longint, 4 bytes) followed by its bytes;
+> - mTime and sTime are TDateTime values (days since 1899-12-30) in UTC;
+> - Offset1 and Offset2 are the start and end positions of the stored data in the archive;
+> - Checksum1 is the SHA-1 digest of the header fields from Name to Offset2;
+> - Checksum2 is the SHA-1 digest of the stored data;
 > - bit 1 in Flags is used to mark header added to archive;
 > - bit 2 in Flags is used to mark header deleted from archive;
 > - bit 3 in Flags is used to mark last header in current slice.
@@ -262,4 +269,4 @@ A **GULP** archive is a sequence of timestamped updates, each listing the files 
 
 ##Credits
 
-**GULP** is copyright (c) 2014-2016, Melchiorre Caruso. It is  licensed under The GNU General Public License v2. For information on the license, see [GPLv2](http://www.gnu.org/copyleft/gpl.html) . Program was written by Melchiorre Caruso,  melchiorrecaruso (at) gmail (dot) com
+**GULP** is copyright (c) 2014-2022, Melchiorre Caruso. It is  licensed under The GNU General Public License v2. For information on the license, see [GPLv2](http://www.gnu.org/copyleft/gpl.html) . Program was written by Melchiorre Caruso,  melchiorrecaruso (at) gmail (dot) com
