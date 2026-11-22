@@ -95,9 +95,15 @@ var
     else
     if (k = 1) and (s[2] = '-') then
     begin
-      s := paramstr(i);
-      if pos('=' ,s ) = length(s) then
-        result := format('Option at position %d does not allow an argument: "%s"', [i, s]);
+      // long options take their argument only in the form --option=value
+      if pos('=', paramstr(i)) = 0 then
+        result := format('Option at position %d needs an argument in the form %s=value: "%s"', [i, s, s])
+      else
+      begin
+        s := paramstr(i);
+        if pos('=' ,s ) = length(s) then
+          result := format('Option at position %d does not allow an argument: "%s"', [i, s]);
+      end;
     end else
     if (k = 1) then
     begin
