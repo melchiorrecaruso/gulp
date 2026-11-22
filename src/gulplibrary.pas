@@ -63,6 +63,7 @@ type
     procedure libappend (list: tgulplist; p: pgulpitem);
     function  libfind   (list: tgulplist; const filename: rawbytestring): longint;
     procedure libclear  (list: tgulplist);
+    function  libchanged(const filename: rawbytestring; p: pgulpitem): boolean;
   end;
 
   { gulp application }
@@ -717,6 +718,34 @@ begin
   dispose(p);
 end;
 
+// True if the item on disk differs from the archived one: type,
+// last-modified date, size, permissions or symbolic link target.
+function tgulplibrary.libchanged(const filename: rawbytestring; p: pgulpitem): boolean;
+var
+  attr: longint;
+begin
+  attr   := getattr(filename);
+  result := (issymlink(attr)   <> issymlink(p^.attr))   or
+            (isdirectory(attr) <> isdirectory(p^.attr)) or
+            (comparedatetime(gettimeutc(filename), p^.mtime) <> 0);
+
+  if (result = false) and isregular(attr) then
+    result := getsize(filename) <> p^.size;
+  {$IFDEF LINUX}
+  if (result = false) then
+    result := s2lmode(getmode(filename)) <> p^.mode;
+  if (result = false) and issymlink(attr) then
+    result := getsymlink(filename) <> p^.linkname;
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
+  if (result = false) then
+    result := s2lattr(attr) <> p^.attr;
+  {$ELSE}
+  ...
+  {$ENDIF}
+  {$ENDIF}
+end;
+
 procedure tgulplibrary.libclear(list: tgulplist);
 begin
   while list.count > 0 do
@@ -834,7 +863,7 @@ begin
       showmessage2(format(gmsyncitem, [scan[i]]));
       libappend(list2, libnew2(scan[i], fstimeutc));
     end else
-    if comparedatetime(gettimeutc(scan[i]), list1[j]^.mtime) <> 0 then
+    if libchanged(scan[i], list1[j]) then
     begin
       showmessage2(format(gmsyncitem, [scan[i]]));
       libappend(list2, libnew1(scan[i], fstimeutc));
@@ -925,7 +954,7 @@ begin
     if isincluded(p) and (isexcluded(p) = false) then
     begin
       j := scan.find(p^.name);
-      if (j = -1) or (comparedatetime(gettimeutc(scan[j]), p^.mtime) <> 0) then
+      if (j = -1) or libchanged(scan[j], p) then
       begin
         showmessage2(format(gmrestoreitem, [p^.name]));
         // apply metadata only to items that have been actually restored
