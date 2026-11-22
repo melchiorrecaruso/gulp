@@ -329,14 +329,19 @@ var
   outpath: rawbytestring;
   outsize: int64;
 
+  // The data is written to a temporary file in the same directory, which
+  // replaces the existing item only when the checksum matches: on failure
+  // the existing item is left untouched and no partial file remains.
   function librestorefile(instrm: tstream; p: pgulpitem): boolean; inline;
   var
     outstrm: tstream;
+    tmpname: rawbytestring;
   begin
     result := false;
     instrm.seek(p^.offset1, sobeginning);
+    tmpname := gettempfilename(extractfiledir(expandfilename(p^.name)), '');
     try
-      outstrm := tfilestream.create(p^.name, fmcreate);
+      outstrm := tfilestream.create(tmpname, fmcreate);
     except
       showwarning(format(geopenstream, [p^.name]));
       outstrm := nil;
@@ -344,11 +349,27 @@ var
 
     if assigned(outstrm) then
     begin
-      outsize := p^.offset2 - p^.offset1;
-      if not sha1match(p^.checksum2, libmove(instrm, outstrm, outsize)) then
-        raiseexception(gechecksum, '003016');
-      outstrm.destroy;
-      result := true;
+      try
+        try
+          outsize := p^.offset2 - p^.offset1;
+          if not sha1match(p^.checksum2, libmove(instrm, outstrm, outsize)) then
+            raiseexception(gechecksum, '003016');
+        finally
+          outstrm.destroy;
+        end;
+      except
+        sysutils.deletefile(tmpname);
+        raise;
+      end;
+
+      gulpscanner.deleteany(p^.name);
+      if renamefile(tmpname, p^.name) then
+        result := true
+      else
+      begin
+        sysutils.deletefile(tmpname);
+        showwarning(format(geopenstream, [p^.name]));
+      end;
     end;
   end;
 
@@ -369,7 +390,6 @@ begin
     end;
     {$ELSE}
     {$IFDEF MSWINDOWS}
-    gulpscanner.deleteany(p^.name);
     result := librestorefile(instrm, p);
     {$ELSE}
     ...
@@ -406,7 +426,6 @@ begin
 
   end else
   begin
-    gulpscanner.deleteany(p^.name);
     result := librestorefile(instrm, p);
   end;
 end;
@@ -800,84 +819,92 @@ var
   archivepath: rawbytestring;
 begin
   fterminated := false;
-  showmessage1(gulpdescription);
-  showmessage1(format(gmsync, [filename]));
+  list1 := nil;
+  list2 := nil;
+  scan := nil;
+  strm := nil;
+  try
+    showmessage1(gulpdescription);
+    showmessage1(format(gmsync, [filename]));
 
-  if fileexists(filename) = TRUE then
-    strm := tfilestream.create(filename, fmopenreadwrite or fmsharedenywrite)
-  else
-    strm := tfilestream.create(filename, fmcreate);
-  list1 := tgulplist.create(@compare40);
-  libread(strm, list1, $ffffffff);
-  size := strm.seek(0, soend);
+    if fileexists(filename) = TRUE then
+      strm := tfilestream.create(filename, fmopenreadwrite or fmsharedenywrite)
+    else
+      strm := tfilestream.create(filename, fmcreate);
+    list1 := tgulplist.create(@compare40);
+    libread(strm, list1, $ffffffff);
+    size := strm.seek(0, soend);
 
-  scan := tscanner.create;
-  // a directory pattern includes its content, also when the directory
-  // exists only in the archive (so its deletion is fully recorded)
-  for i := finclude.count - 1 downto 0 do
-    if isarchiveddir(list1, finclude[i]) then
-      finclude.add(includetrailingpathdelimiter(finclude[i]) + '*');
-  if finclude.count = 0 then
-    finclude.add('*');
-  for i := finclude.count - 1 downto 0 do
-  begin
-    if (fforcepath = FALSE) and (isabsolutepath(finclude[i]) = TRUE) then
-      raiseexception(geabsolutepath, '003021');
-    scan.add(finclude[i]);
-  end;
+    scan := tscanner.create;
+    // a directory pattern includes its content, also when the directory
+    // exists only in the archive (so its deletion is fully recorded)
+    for i := finclude.count - 1 downto 0 do
+      if isarchiveddir(list1, finclude[i]) then
+        finclude.add(includetrailingpathdelimiter(finclude[i]) + '*');
+    if finclude.count = 0 then
+      finclude.add('*');
+    for i := finclude.count - 1 downto 0 do
+    begin
+      if (fforcepath = FALSE) and (isabsolutepath(finclude[i]) = TRUE) then
+        raiseexception(geabsolutepath, '003021');
+      scan.add(finclude[i]);
+    end;
 
-  for i := fexclude.count - 1 downto 0 do
-    if isarchiveddir(list1, fexclude[i]) then
-      fexclude.add(includetrailingpathdelimiter(fexclude[i]) + '*');
-  fexclude.add(filename);
-  // never archive the archive itself, whatever form its path was given in
-  archivepath := expandfilename(filename);
-  for i := scan.count - 1 downto 0 do
-    if isexcluded(scan[i]) or (expandfilename(scan[i]) = archivepath) then
-      scan.delete(i);
+    for i := fexclude.count - 1 downto 0 do
+      if isarchiveddir(list1, fexclude[i]) then
+        fexclude.add(includetrailingpathdelimiter(fexclude[i]) + '*');
+    fexclude.add(filename);
+    // never archive the archive itself, whatever form its path was given in
+    archivepath := expandfilename(filename);
+    for i := scan.count - 1 downto 0 do
+      if isexcluded(scan[i]) or (expandfilename(scan[i]) = archivepath) then
+        scan.delete(i);
 
-  list2 := tgulplist.create(@compare42);
-  if fnodelete = false then
-    for i := 0 to list1.count - 1 do
-      // only items within the include patterns and not excluded can be
-      // marked as deleted
-      if isincluded(list1[i]) and (isexcluded(list1[i]) = false) and
-         (scan.find(list1[i]^.name) = -1) then
+    list2 := tgulplist.create(@compare42);
+    if fnodelete = false then
+      for i := 0 to list1.count - 1 do
+        // only items within the include patterns and not excluded can be
+        // marked as deleted
+        if isincluded(list1[i]) and (isexcluded(list1[i]) = false) and
+           (scan.find(list1[i]^.name) = -1) then
+        begin
+          showmessage2(format(gmdeleteitem, [list1[i]^.name]));
+          libappend(list2, libnew1(list1[i]^.name, fstimeutc));
+        end;
+
+    for i := 0 to scan.count - 1 do
+    begin
+      // skip unreadable files: they will be retried at the next sync
+      if isreadable(scan[i]) = false then
       begin
-        showmessage2(format(gmdeleteitem, [list1[i]^.name]));
-        libappend(list2, libnew1(list1[i]^.name, fstimeutc));
+        showwarning(format(geopenstream, [scan[i]]));
+        continue;
       end;
 
-  for i := 0 to scan.count - 1 do
-  begin
-    // skip unreadable files: they will be retried at the next sync
-    if isreadable(scan[i]) = false then
-    begin
-      showwarning(format(geopenstream, [scan[i]]));
-      continue;
+      j := libfind(list1, scan[i]);
+      if j = -1 then
+      begin;
+        showmessage2(format(gmsyncitem, [scan[i]]));
+        libappend(list2, libnew2(scan[i], fstimeutc));
+      end else
+      if libchanged(scan[i], list1[j]) then
+      begin
+        showmessage2(format(gmsyncitem, [scan[i]]));
+        libappend(list2, libnew1(scan[i], fstimeutc));
+        libappend(list2, libnew2(scan[i], fstimeutc));
+      end;
     end;
+    libwrite(strm, list2);
 
-    j := libfind(list1, scan[i]);
-    if j = -1 then
-    begin;
-      showmessage2(format(gmsyncitem, [scan[i]]));
-      libappend(list2, libnew2(scan[i], fstimeutc));
-    end else
-    if libchanged(scan[i], list1[j]) then
-    begin
-      showmessage2(format(gmsyncitem, [scan[i]]));
-      libappend(list2, libnew1(scan[i], fstimeutc));
-      libappend(list2, libnew2(scan[i], fstimeutc));
-    end;
+  finally
+    if assigned(list1) then libclear(list1);
+    if assigned(list2) then libclear(list2);
+    freeandnil(list1);
+    freeandnil(list2);
+    freeandnil(scan);
+    freeandnil(strm);
+    fterminated := true;
   end;
-  libwrite(strm, list2);
-
-  libclear  (list1);
-  libclear  (list2);
-  freeandnil(list1);
-  freeandnil(list2);
-  freeandnil(scan);
-  freeandnil(strm);
 
   showmessage1(format(gmsyncfinish, [getsize(filename) - size]));
   fterminated := true;
@@ -896,88 +923,96 @@ var
   strm:  tstream;
 begin
   fterminated := false;
-  showmessage1(gulpdescription);
-  showmessage1(format(gmrestore, [filename]));
+  list1 := nil;
+  list2 := nil;
+  scan := nil;
+  strm := nil;
+  try
+    showmessage1(gulpdescription);
+    showmessage1(format(gmrestore, [filename]));
 
-  strm  := tfilestream.create(filename, fmopenread or fmsharedenywrite);
-  archivepath := expandfilename(filename);
-  list1 := tgulplist.create(@compare40);
-  list2 := tgulplist.create(@compare40);
-  if funtilversion = 0 then
-    funtilversion := $ffffffff;
-  libread(strm, list1, funtilversion);
+    strm  := tfilestream.create(filename, fmopenread or fmsharedenywrite);
+    archivepath := expandfilename(filename);
+    list1 := tgulplist.create(@compare40);
+    list2 := tgulplist.create(@compare40);
+    if funtilversion = 0 then
+      funtilversion := $ffffffff;
+    libread(strm, list1, funtilversion);
 
-  scan := tscanner.create;
-  scan.add('*');
-  for i := finclude.count - 1 downto 0 do
-  begin
-    j := libfind(list1, finclude[i]);
-    if j <> -1 then
-      if isdirectory(list1[j]^.attr) then
-        finclude.add(includetrailingpathdelimiter(finclude[i]) + '*');
-  end;
-  if finclude.count = 0 then
-    finclude.add('*');
-
-  for i := fexclude.count - 1 downto 0 do
-  begin
-    j := libfind(list1, fexclude[i]);
-    if j <> -1 then
-      if isdirectory(list1[j]^.attr) then
-        fexclude.add(includetrailingpathdelimiter(fexclude[i]) + '*');
-  end;
-  fexclude.add(filename);
-
-  if fnodelete = false then
-    for i := scan.count - 1 downto 0 do
+    scan := tscanner.create;
+    scan.add('*');
+    for i := finclude.count - 1 downto 0 do
     begin
-      // never delete the archive, a directory containing it, or excluded paths
-      itempath := expandfilename(scan[i]);
-      if (itempath = archivepath) or
-         (pos(includetrailingpathdelimiter(itempath), archivepath) = 1) or
-         filenamematch(scan[i], fexclude) then continue;
-
-      // only paths within the requested include patterns are candidates
-      if isincluded(scan[i]) = false then continue;
-
-      j := libfind(list1, scan[i]);
-      if (j = -1) then
-      begin
-        showmessage2(format(gmdeleteitem, [scan[i]]));
-        deleteany(scan[i]);
-      end;
+      j := libfind(list1, finclude[i]);
+      if j <> -1 then
+        if isdirectory(list1[j]^.attr) then
+          finclude.add(includetrailingpathdelimiter(finclude[i]) + '*');
     end;
+    if finclude.count = 0 then
+      finclude.add('*');
 
-  for i := 0 to list1.count - 1 do
-  begin
-    p := list1[i];
-    if isincluded(p) and (isexcluded(p) = false) then
+    for i := fexclude.count - 1 downto 0 do
     begin
-      j := scan.find(p^.name);
-      if (j = -1) or libchanged(scan[j], p) then
+      j := libfind(list1, fexclude[i]);
+      if j <> -1 then
+        if isdirectory(list1[j]^.attr) then
+          fexclude.add(includetrailingpathdelimiter(fexclude[i]) + '*');
+    end;
+    fexclude.add(filename);
+
+    if fnodelete = false then
+      for i := scan.count - 1 downto 0 do
       begin
-        showmessage2(format(gmrestoreitem, [p^.name]));
-        // apply metadata only to items that have been actually restored
-        if librestore(strm, p) then
+        // never delete the archive, a directory containing it, or excluded paths
+        itempath := expandfilename(scan[i]);
+        if (itempath = archivepath) or
+           (pos(includetrailingpathdelimiter(itempath), archivepath) = 1) or
+           filenamematch(scan[i], fexclude) then continue;
+
+        // only paths within the requested include patterns are candidates
+        if isincluded(scan[i]) = false then continue;
+
+        j := libfind(list1, scan[i]);
+        if (j = -1) then
         begin
-          inc(size, p^.offset2 - p^.offset1);
-          list2.add(p);
+          showmessage2(format(gmdeleteitem, [scan[i]]));
+          deleteany(scan[i]);
+        end;
+      end;
+
+    for i := 0 to list1.count - 1 do
+    begin
+      p := list1[i];
+      if isincluded(p) and (isexcluded(p) = false) then
+      begin
+        j := scan.find(p^.name);
+        if (j = -1) or libchanged(scan[j], p) then
+        begin
+          showmessage2(format(gmrestoreitem, [p^.name]));
+          // apply metadata only to items that have been actually restored
+          if librestore(strm, p) then
+          begin
+            inc(size, p^.offset2 - p^.offset1);
+            list2.add(p);
+          end;
         end;
       end;
     end;
-  end;
 
-  while list2.count > 0 do
-  begin
-    librestore(list2[0]);
-    list2.delete(0);
-  end;
+    while list2.count > 0 do
+    begin
+      librestore(list2[0]);
+      list2.delete(0);
+    end;
 
-  libclear  (list1);
-  freeandnil(list1);
-  freeandnil(list2);
-  freeandnil(scan);
-  freeandnil(strm);
+  finally
+    if assigned(list1) then libclear(list1);
+    freeandnil(list1);
+    freeandnil(list2);
+    freeandnil(scan);
+    freeandnil(strm);
+    fterminated := true;
+  end;
 
   showmessage1(format(gmrestorefinish, [size]));
   fterminated := true;
@@ -992,31 +1027,38 @@ var
   strmsize: int64;
 begin
   fterminated := false;
-  showmessage1(gulpdescription);
-  showmessage1(format(gmcheck, [filename]));
+  list1 := nil;
+  null := nil;
+  strm := nil;
+  try
+    showmessage1(gulpdescription);
+    showmessage1(format(gmcheck, [filename]));
 
-  strm  := tfilestream.create(filename, fmopenread or fmsharedenywrite);
-  list1 := tgulplist.create(@compare41);
-  libread(strm, list1);
+    strm  := tfilestream.create(filename, fmopenread or fmsharedenywrite);
+    list1 := tgulplist.create(@compare41);
+    libread(strm, list1);
 
-  null := tnullstream.create;
-  for i := 0 to list1.count - 1 do
-  begin
-    showmessage2(format(gmcheckitem, [list1[i]^.name]));
-    if (list1[i]^.offset2 > list1[i]^.offset1) then
+    null := tnullstream.create;
+    for i := 0 to list1.count - 1 do
     begin
-      strm.seek  (list1[i]^.offset1, sobeginning);
-      strmsize := list1[i]^.offset2 - list1[i]^.offset1;
+      showmessage2(format(gmcheckitem, [list1[i]^.name]));
+      if (list1[i]^.offset2 > list1[i]^.offset1) then
+      begin
+        strm.seek  (list1[i]^.offset1, sobeginning);
+        strmsize := list1[i]^.offset2 - list1[i]^.offset1;
 
-      if not sha1match(list1[i]^.checksum2, libmove(strm, null, strmsize)) then
-        raiseexception(gechecksum, '004050');
+        if not sha1match(list1[i]^.checksum2, libmove(strm, null, strmsize)) then
+          raiseexception(gechecksum, '004050');
+      end;
     end;
-  end;
 
-  libclear  (list1);
-  freeandnil(list1);
-  freeandnil(null);
-  freeandnil(strm);
+  finally
+    if assigned(list1) then libclear(list1);
+    freeandnil(list1);
+    freeandnil(null);
+    freeandnil(strm);
+    fterminated := true;
+  end;
 
   showmessage1(format(gmcheckfinish, [getsize(filename)]));
   fterminated := true;
@@ -1030,37 +1072,42 @@ var
   strm:   tstream;
 begin
   fterminated := false;
-  showmessage1(gulpdescription);
-  showmessage1(format(gmfix, [filename]));
-
-  strm := tfilestream.create(filename, fmopenreadwrite or fmsharedenywrite);
-  p := new(pgulpitem);
+  strm := nil;
   try
-    while true do
-    begin
-      libread(strm, p);
-      inc(offset, itemgetsize(p));
-      inc(offset, p^.offset2 - p^.offset1);
+    showmessage1(gulpdescription);
+    showmessage1(format(gmfix, [filename]));
 
-      showmessage2(format(gmfixitem, [p^.name]));
-      if gfclose in p^.flags then
+    strm := tfilestream.create(filename, fmopenreadwrite or fmsharedenywrite);
+    p := new(pgulpitem);
+    try
+      while true do
       begin
-        if strm.seek(offset, sobeginning) <> offset then
-          raiseexception(gereadarchive, '003020');
-        size := offset;
-      end;
-    end;
-  except
-  end;
-  dispose(p);
-  strm.seek(0, soend);
-  offset := strm.size - size;
+        libread(strm, p);
+        inc(offset, itemgetsize(p));
+        inc(offset, p^.offset2 - p^.offset1);
 
-  if size > 0 then
-    strm.size := size
-  else
-    raise exception.createfmt(gereadarchive, ['003015']);
-  freeandnil(strm);
+        showmessage2(format(gmfixitem, [p^.name]));
+        if gfclose in p^.flags then
+        begin
+          if strm.seek(offset, sobeginning) <> offset then
+            raiseexception(gereadarchive, '003020');
+          size := offset;
+        end;
+      end;
+    except
+    end;
+    dispose(p);
+    strm.seek(0, soend);
+    offset := strm.size - size;
+
+    if size > 0 then
+      strm.size := size
+    else
+      raise exception.createfmt(gereadarchive, ['003015']);
+  finally
+    freeandnil(strm);
+    fterminated := true;
+  end;
 
   showmessage1(format(gmfixfinish, [offset]));
   fterminated := true;
@@ -1080,58 +1127,69 @@ begin
   showmessage1(gulpdescription);
   showmessage1(format(gmpurge, [filename]));
 
-  instrm := tfilestream.create(filename, fmopenread or fmsharedenywrite);
-  list1  := tgulplist.create(@compare40);
-  libread(instrm, list1, $ffffffff);
-
-  // the temporary file must be in the same directory as the archive, so it
-  // can be renamed over it (extractfiledir('') would select the system temp)
-  outname := gettempfilename(extractfiledir(expandfilename(filename)), '');
-  outstrm := tfilestream.create(outname, fmcreate);
+  instrm  := nil;
+  list1   := nil;
+  outstrm := nil;
   try
-  if list1.count > 0 then
-  begin
-    for i := 0 to list1.count - 1 do
-      libwrite(outstrm, list1[i]);
+    instrm := tfilestream.create(filename, fmopenread or fmsharedenywrite);
+    list1  := tgulplist.create(@compare40);
+    libread(instrm, list1, $ffffffff);
 
-    for i := 0 to list1.count - 1 do
+    // the temporary file must be in the same directory as the archive, so it
+    // can be renamed over it (extractfiledir('') would select the system temp)
+    outname := gettempfilename(extractfiledir(expandfilename(filename)), '');
+    outstrm := tfilestream.create(outname, fmcreate);
+    try
+    if list1.count > 0 then
     begin
-      p := list1[i];
-      system.exclude(p^.flags, gfclose);
-      if (p^.offset2 > p^.offset1) then
+      for i := 0 to list1.count - 1 do
+        libwrite(outstrm, list1[i]);
+
+      for i := 0 to list1.count - 1 do
       begin
-        showmessage2(format(gmmoveitem, [p^.name]));
-        instrm.seek(p^.offset1, sobeginning);
-        size := p^.offset2 - p^.offset1;
+        p := list1[i];
+        system.exclude(p^.flags, gfclose);
+        if (p^.offset2 > p^.offset1) then
+        begin
+          showmessage2(format(gmmoveitem, [p^.name]));
+          instrm.seek(p^.offset1, sobeginning);
+          size := p^.offset2 - p^.offset1;
 
-        p^.offset1 := outstrm.position;
-        outstrm.copyfrom(instrm, size);
-        p^.offset2 := outstrm.position;
+          p^.offset1 := outstrm.position;
+          outstrm.copyfrom(instrm, size);
+          p^.offset2 := outstrm.position;
+        end;
       end;
+
+      outstrm.seek(0, sobeginning);
+      system.include(list1[list1.count - 1]^.flags, gfclose);
+      for i := 0 to list1.count - 1 do
+      begin
+        list1[i]^.checksum1 := itemgetdigest(list1[i]);
+        libwrite(outstrm, list1[i]);
+      end;
+      outstrm.seek(0, soend);
+    end;
+    size := instrm.size - outstrm.size;
+    except
+      // keep the original archive untouched and remove the temporary file
+      freeandnil(outstrm);
+      sysutils.deletefile(outname);
+      raise;
     end;
 
-    outstrm.seek(0, sobeginning);
-    system.include(list1[list1.count - 1]^.flags, gfclose);
-    for i := 0 to list1.count - 1 do
-    begin
-      list1[i]^.checksum1 := itemgetdigest(list1[i]);
-      libwrite(outstrm, list1[i]);
-    end;
-    outstrm.seek(0, soend);
-  end;
-  size := instrm.size - outstrm.size;
-  except
-    // keep the original archive untouched and remove the temporary file
+    libclear  (list1);
+    freeandnil(list1);
+    freeandnil(instrm);
     freeandnil(outstrm);
-    sysutils.deletefile(outname);
-    raise;
+    replacefile(outname, filename);
+  finally
+    if assigned(list1) then libclear(list1);
+    freeandnil(list1);
+    freeandnil(instrm);
+    freeandnil(outstrm);
+    fterminated := true;
   end;
-
-  libclear  (list1);
-  freeandnil(list1);
-  freeandnil(instrm);
-  freeandnil(outstrm);
-  replacefile(outname, filename);
 
   showmessage1(format(gmpurgefinish, [size]));
   fterminated := true;
@@ -1146,64 +1204,70 @@ var
   strm:  tstream;
 begin
   fterminated := false;
-  showmessage1(gulpdescription);
-  showmessage1(format(gmlist, [filename]));
+  list1 := nil;
+  strm := nil;
+  try
+    showmessage1(gulpdescription);
+    showmessage1(format(gmlist, [filename]));
 
-  strm := tfilestream.create(filename, fmopenread or fmsharedenywrite);
-  if fonlyversion > 0 then
-  begin
-    list1 := tgulplist.create(@compare41);
-    libread(strm, list1);
-  end else
-    if funtilversion > 0 then
-    begin
-      list1 := tgulplist.create(@compare40);
-      libread(strm, list1, funtilversion);
-    end else
+    strm := tfilestream.create(filename, fmopenread or fmsharedenywrite);
+    if fonlyversion > 0 then
     begin
       list1 := tgulplist.create(@compare41);
       libread(strm, list1);
+    end else
+      if funtilversion > 0 then
+      begin
+        list1 := tgulplist.create(@compare40);
+        libread(strm, list1, funtilversion);
+      end else
+      begin
+        list1 := tgulplist.create(@compare41);
+        libread(strm, list1);
+      end;
+
+    for i := finclude.count - 1 downto 0 do
+    begin
+      j := libfind(list1, finclude[i]);
+      if j <> -1 then
+        if isdirectory(list1[j]^.attr) then
+          finclude.add(includetrailingpathdelimiter(finclude[i]) + '*');
+    end;
+    if finclude.count = 0 then
+      finclude.add('*');
+
+    for i := fexclude.count - 1 downto 0 do
+    begin
+      j := libfind(list1, fexclude[i]);
+      if j <> -1 then
+        if isdirectory(list1[j]^.attr) then
+          fexclude.add(includetrailingpathdelimiter(fexclude[i]) + '*');
     end;
 
-  for i := finclude.count - 1 downto 0 do
-  begin
-    j := libfind(list1, finclude[i]);
-    if j <> -1 then
-      if isdirectory(list1[j]^.attr) then
-        finclude.add(includetrailingpathdelimiter(finclude[i]) + '*');
-  end;
-  if finclude.count = 0 then
-    finclude.add('*');
-
-  for i := fexclude.count - 1 downto 0 do
-  begin
-    j := libfind(list1, fexclude[i]);
-    if j <> -1 then
-      if isdirectory(list1[j]^.attr) then
-        fexclude.add(includetrailingpathdelimiter(fexclude[i]) + '*');
-  end;
-
-  c := 0;
-  j := 0;
-  for i := 0 to list1.count - 1 do
-  begin
-    p := list1[i];
-    if isincluded(p) and (isexcluded(p) = false) then
-      if fonlyversion = 0 then
-      begin
-        showitem(tobject(p));
-        inc(c);
-      end else
-        if p^.version = fonlyversion then
+    c := 0;
+    j := 0;
+    for i := 0 to list1.count - 1 do
+    begin
+      p := list1[i];
+      if isincluded(p) and (isexcluded(p) = false) then
+        if fonlyversion = 0 then
         begin
-          showitem(p);
+          showitem(tobject(p));
           inc(c);
-        end;
-  end;
+        end else
+          if p^.version = fonlyversion then
+          begin
+            showitem(p);
+            inc(c);
+          end;
+    end;
 
-  libclear  (list1);
-  freeandnil(list1);
-  freeandnil(strm);
+  finally
+    if assigned(list1) then libclear(list1);
+    freeandnil(list1);
+    freeandnil(strm);
+    fterminated := true;
+  end;
 
   showmessage1(format(gmlistfinish, [c]));
   showmessage1(format(gmlistlastversion, [flastversion]));
@@ -1219,72 +1283,78 @@ var
   strm:  tstream;
 begin
   fterminated := false;
-  showmessage1(gulpdescription);
-  showmessage1(format(gmview, [filename]));
+  list1 := nil;
+  strm := nil;
+  try
+    showmessage1(gulpdescription);
+    showmessage1(format(gmview, [filename]));
 
-  strm := tfilestream.create(filename, fmopenread or fmsharedenywrite);
-  if fonlyversion > 0 then
-  begin
-    list1 := tgulplist.create(@compare41);
-    libread(strm, list1);
-  end else
-    if funtilversion > 0 then
-    begin
-      list1 := tgulplist.create(@compare40);
-      libread(strm, list1, funtilversion);
-    end else
+    strm := tfilestream.create(filename, fmopenread or fmsharedenywrite);
+    if fonlyversion > 0 then
     begin
       list1 := tgulplist.create(@compare41);
       libread(strm, list1);
+    end else
+      if funtilversion > 0 then
+      begin
+        list1 := tgulplist.create(@compare40);
+        libread(strm, list1, funtilversion);
+      end else
+      begin
+        list1 := tgulplist.create(@compare41);
+        libread(strm, list1);
+      end;
+
+    for i := finclude.count - 1 downto 0 do
+    begin
+      j := libfind(list1, finclude[i]);
+      if j <> -1 then
+        if isdirectory(list1[j]^.attr) then
+          finclude.add(includetrailingpathdelimiter(finclude[i]) + '*');
+    end;
+    if finclude.count = 0 then
+      finclude.add('*');
+
+    for i := fexclude.count - 1 downto 0 do
+    begin
+      j := libfind(list1, fexclude[i]);
+      if j <> -1 then
+        if isdirectory(list1[j]^.attr) then
+          fexclude.add(includetrailingpathdelimiter(fexclude[i]) + '*');
     end;
 
-  for i := finclude.count - 1 downto 0 do
-  begin
-    j := libfind(list1, finclude[i]);
-    if j <> -1 then
-      if isdirectory(list1[j]^.attr) then
-        finclude.add(includetrailingpathdelimiter(finclude[i]) + '*');
-  end;
-  if finclude.count = 0 then
-    finclude.add('*');
-
-  for i := fexclude.count - 1 downto 0 do
-  begin
-    j := libfind(list1, fexclude[i]);
-    if j <> -1 then
-      if isdirectory(list1[j]^.attr) then
-        fexclude.add(includetrailingpathdelimiter(fexclude[i]) + '*');
-  end;
-
-  c := 0;
-  j := 0;
-  for i := 0 to list1.count - 1 do
-  begin
-    p := list1[i];
-    if isincluded(p) and (isexcluded(p) = false) then
-      if fonlyversion = 0 then
-      begin
-
-        strm.seek(p^.offset1, sobeginning);
-        if assigned(fpipe) then
-          fpipe.copyfrom(strm, p^.offset2 - p^.offset1);
-
-        inc(c);
-      end else
-        if p^.version = fonlyversion then
+    c := 0;
+    j := 0;
+    for i := 0 to list1.count - 1 do
+    begin
+      p := list1[i];
+      if isincluded(p) and (isexcluded(p) = false) then
+        if fonlyversion = 0 then
         begin
 
-         strm.seek(p^.offset1, sobeginning);
-         if assigned(fpipe) then
-           fpipe.copyfrom(strm, p^.offset2 - p^.offset1);
+          strm.seek(p^.offset1, sobeginning);
+          if assigned(fpipe) then
+            fpipe.copyfrom(strm, p^.offset2 - p^.offset1);
 
           inc(c);
-        end;
-  end;
+        end else
+          if p^.version = fonlyversion then
+          begin
 
-  libclear  (list1);
-  freeandnil(list1);
-  freeandnil(strm);
+           strm.seek(p^.offset1, sobeginning);
+           if assigned(fpipe) then
+             fpipe.copyfrom(strm, p^.offset2 - p^.offset1);
+
+            inc(c);
+          end;
+    end;
+
+  finally
+    if assigned(list1) then libclear(list1);
+    freeandnil(list1);
+    freeandnil(strm);
+    fterminated := true;
+  end;
 
   showmessage1(format(gmlistfinish, [c]));
   showmessage1(format(gmlistlastversion, [flastversion]));
