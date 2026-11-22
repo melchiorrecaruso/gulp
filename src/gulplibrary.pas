@@ -254,6 +254,20 @@ begin
       result := 1;
 end;
 
+function isreadable(const filename: rawbytestring): boolean;
+var
+  strm: tstream;
+begin
+  result := true;
+  if isregular(filename) then
+    try
+      strm := tfilestream.create(filename, fmopenread or fmsharedenywrite);
+      strm.destroy;
+    except
+      result := false;
+    end;
+end;
+
 { gulp library class }
 
 function tgulplibrary.libmove(instrm, outstrm: tstream; size: int64): tsha1digest;
@@ -417,6 +431,7 @@ begin
   if list.count > 0 then
   begin
     size := outstrm.seek(0, soend);
+    try
     for i := 0 to list.count - 1 do
       libwrite(outstrm, list[i]);
 
@@ -438,13 +453,11 @@ begin
           try
             instrm := tfilestream.create(list[i]^.name, fmopenread or fmsharedenywrite);
           except
-            showwarning(format(geopenstream, [list[i]^.name]));
-            instrm := nil;
+            raiseexception(geopenstream, list[i]^.name);
           end;
-
-          if assigned(instrm) then
-          begin
+          try
             list[i]^.checksum2 := libmove(instrm, outstrm, list[i]^.size);
+          finally
             instrm.destroy;
           end;
           list[i]^.offset2 := outstrm.position;
@@ -459,6 +472,12 @@ begin
       libwrite(outstrm, list[i]);
     end;
     outstrm.seek(0, soend);
+    except
+      // rollback: drop the incomplete update
+      outstrm.size := size;
+      outstrm.seek(size, sobeginning);
+      raise;
+    end;
   end;
 end;
 
@@ -745,6 +764,13 @@ begin
 
   for i := 0 to scan.count - 1 do
   begin
+    // skip unreadable files: they will be retried at the next sync
+    if isreadable(scan[i]) = false then
+    begin
+      showwarning(format(geopenstream, [scan[i]]));
+      continue;
+    end;
+
     j := libfind(list1, scan[i]);
     if j = -1 then
     begin;
