@@ -32,7 +32,11 @@ uses
 function checkoptions(const shortopts, longopts: rawbytestring;
   filemasks: trawbytestringlist): rawbytestring;
 function hasoption(const shortopt, longopt: rawbytestring): boolean;
+type
+  trawbytestringarray = array of rawbytestring;
+
 function getoptionvalue(const shortopt, longopt: rawbytestring): rawbytestring;
+function getoptionvalues(const shortopt, longopt: rawbytestring): trawbytestringarray;
 
 implementation
 
@@ -171,6 +175,39 @@ begin
       begin
         result := paramstr(i);
         delete(result, 1, length(s) + 1);
+      end;
+    end;
+    inc(i);
+  end;
+end;
+
+// Returns the values of all the occurrences of an option, in command line order.
+function getoptionvalues(const shortopt, longopt: rawbytestring): trawbytestringarray;
+var
+  i: longint = 1;
+  s: rawbytestring;
+  v: rawbytestring;
+begin
+  result := nil;
+  while i <= paramcount do
+  begin
+    s := paramstr(i);
+    if (shortopt <> '') and (s = shortopt) then
+    begin
+      inc(i);
+      v := paramstr(i);
+      setlength(result, length(result) + 1);
+      result[high(result)] := v;
+    end else
+    begin
+      v := s;
+      if pos('=', s) > 0 then
+        setlength(s, pos('=', s) - 1);
+      if (longopt <> '') and (s = longopt) then
+      begin
+        delete(v, 1, length(s) + 1);
+        setlength(result, length(result) + 1);
+        result[high(result)] := v;
       end;
     end;
     inc(i);

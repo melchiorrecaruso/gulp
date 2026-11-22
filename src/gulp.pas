@@ -126,14 +126,14 @@ type
 
       if s = '' then
       begin
-        if hasoption('-e', '--exclude') = true then
-        begin
-          s := getoptionvalue('-e', '--exclude');
-          if s[length(s)] = pathdelim then
-            app.exclude.add(s + '*')
-          else
-            app.exclude.add(s);
-        end;
+        for s in getoptionvalues('-e', '--exclude') do
+          if s <> '' then
+          begin
+            if s[length(s)] = pathdelim then
+              app.exclude.add(s + '*')
+            else
+              app.exclude.add(s);
+          end;
         if hasoption('', '--excludeattr') = true then
         begin
           app.excludeattr := str2attr(getoptionvalue('', '--excludeattr'));
@@ -142,14 +142,14 @@ type
         begin
           app.excludemode := str2mode(getoptionvalue('', '--excludemode'));
         end;
-        if hasoption('-i', '--include') = true then
-        begin
-          s := getoptionvalue('-i', '--include');
-          if s[length(s)] = pathdelim then
-            app.include.add(s + '*')
-          else
-            app.include.add(s);
-        end;
+        for s in getoptionvalues('-i', '--include') do
+          if s <> '' then
+          begin
+            if s[length(s)] = pathdelim then
+              app.include.add(s + '*')
+            else
+              app.include.add(s);
+          end;
         if hasoption('', '--only') = true then
         begin
           app.onlyversion := strtoint(getoptionvalue('', '--only'));
