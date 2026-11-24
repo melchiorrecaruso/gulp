@@ -1010,20 +1010,17 @@ var
   Root: String;
   SubItem: String;
 begin
+  if (SyncRoot.Text = '') and (SyncRoot.Items.Count > 0) then
+    SyncRoot.ItemIndex := 0;
+
   Root := SyncRoot.Text;
   for I := 0 to SyncListView.Items.Count - 1 do
   begin
     SubItem := SyncListView.Items[I].SubItems[0];
-    if Pos(Root, SubItem) > 0 then
+    if (Root <> '') and (Pos(Root, SubItem) > 0) then
       SyncListView.Items[I].Caption := Copy(SubItem, Length(Root) + 1, Length(SubItem) - Length(Root))
     else
       SyncListView.Items[i].Caption := SubItem;
-  end;
-
-  if SyncRoot.Text = '' then
-  begin
-    SyncRoot.ItemIndex := 0;
-    SyncRootChangeBounds(Sender);
   end;
 end;
 
