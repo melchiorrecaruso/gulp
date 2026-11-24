@@ -221,6 +221,7 @@ type
 
   private
     { private declarations }
+    FRestoreWorkingDirectory: String;
     procedure Clear;
     procedure Launch;
     procedure WorkerTerminated(Sender: TObject);
@@ -470,6 +471,12 @@ begin
   App.OnShowItem := nil;
   App.OnShowMessage1 := nil;
   App.OnShowMessage2 := nil;
+  if FRestoreWorkingDirectory <> '' then
+  begin
+    if not SetCurrentDir(FRestoreWorkingDirectory) then
+      LogMemo.Lines.Add('Warning: cannot return to directory ' + FRestoreWorkingDirectory);
+    FRestoreWorkingDirectory := '';
+  end;
   if Assigned(TThread(Sender).FatalException) then
   begin
     if TThread(Sender).FatalException is Exception then
@@ -576,7 +583,7 @@ begin
     updatecaption('Gulp UX shows - ' + app.include[0]);
     updatebuttons([fchomebtn, fclogmemo]);
   end else
-  if appcommand = accheck then
+  if appcommand in [accheck, acrestore] then
   begin
     updatebuttons([fchomebtn, fclogmemo]);
   end;
@@ -670,12 +677,42 @@ begin
 end;
 
 procedure tmainform.restoreokclick(Sender: TObject);
+var
+  Destination: String;
 begin
-  if sender = SyncOk then
-    showmessage('sync not implemented')
-  else
-  if sender = restoreok then
-    showmessage('rest not implemented');
+  if Assigned(AppThread) then Exit;
+  if (RestoreRevision.ItemIndex < 0) or
+     (RestoreMode.ItemIndex < 0) or (RestoreMode.ItemIndex > 1) then
+  begin
+    ShowMessage('Select a revision and a restore mode.');
+    Exit;
+  end;
+  if (RestorePath.Text = '') or not DirectoryExists(RestorePath.Text) then
+  begin
+    ShowMessage('Select an existing destination directory.');
+    Exit;
+  end;
+  Destination := ExpandFileName(RestorePath.Text);
+  if RestoreMode.ItemIndex = 0 then
+    if MessageDlg('Restore archive',
+      'This mode can delete files not present in the selected revision from ' +
+      Destination + '. Continue?', mtWarning, [mbYes, mbNo], 0, mbNo) <> mrYes then
+      Exit;
+
+  AppFileName := ExpandFileName(AppFileName);
+  FRestoreWorkingDirectory := GetCurrentDir;
+  if not SetCurrentDir(Destination) then
+  begin
+    FRestoreWorkingDirectory := '';
+    ShowMessage('Cannot access destination directory: ' + Destination);
+    Exit;
+  end;
+  LogMemo.Clear;
+  App.Reset;
+  App.NoDelete := RestoreMode.ItemIndex = 1;
+  App.UntilVersion := RestoreRevision.ItemIndex + 1;
+  AppCommand := acRestore;
+  Launch;
 end;
 
 // filter panel routines
