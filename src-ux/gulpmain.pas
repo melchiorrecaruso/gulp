@@ -972,6 +972,17 @@ begin
     ShowMessage('Add at least one file or directory to synchronize.');
     Exit;
   end;
+  if (SyncRoot.Text = '') or not DirectoryExists(SyncRoot.Text) then
+  begin
+    ShowMessage('Select an existing synchronization root directory.');
+    Exit;
+  end;
+  AppFileName := ExpandFileName(AppFileName);
+  if not SetCurrentDir(SyncRoot.Text) then
+  begin
+    ShowMessage('Cannot access synchronization root: ' + SyncRoot.Text);
+    Exit;
+  end;
 
   Clear;
   App.Reset;
@@ -988,7 +999,6 @@ begin
       1: App.Exclude.Add(SyncListView.Items[I].Caption);
     end;
   end;
-  SetCurrentDir(SyncRoot.Text);
   AppThread := TAppThread.Create(False);
 end;
 
