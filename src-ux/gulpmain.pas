@@ -904,6 +904,8 @@ procedure TMainForm.SyncAddFileClick(Sender: TObject);
 var
   Item: TListItem;
 begin
+  OpenDialog.Filter := 'All files (*)|*';
+  OpenDialog.FilterIndex := 1;
   if OpenDialog.Execute then
   begin
     Item := SyncListView.Items.Add;
@@ -919,6 +921,8 @@ procedure TMainForm.SyncExcludeFileClick(Sender: TObject);
 var
   Item: TListItem;
 begin
+  OpenDialog.Filter := 'All files (*)|*';
+  OpenDialog.FilterIndex := 1;
   if OpenDialog.Execute then
   begin
     Item := SyncListView.Items.Add;
