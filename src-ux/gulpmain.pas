@@ -661,10 +661,9 @@ begin
     begin
       app.reset;
       appcommand   := acview;
-      appfilename  := appfilename;
       app.nodelete := true;
       app.include.add(t.path + t.name);
-      app.untilversion := $ffffffff;
+      app.untilversion := revisionbox.itemindex + 1;
       Launch;
     end;
   end;
