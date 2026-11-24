@@ -165,6 +165,7 @@ type
 
 
     procedure openfindKeyPress(Sender: TObject; var Key: char);
+    procedure openfindChange(Sender: TObject);
     procedure openpathEditingDone(Sender: TObject);
 
     procedure restorecancelClick(Sender: TObject);
@@ -693,9 +694,19 @@ begin
     mainform.top  + MoreBtn.top  + MoreBtn.height + 25);
 end;
 
+procedure TMainForm.openfindChange(Sender: TObject);
+begin
+  if not Assigned(AppThread) and (Notebook.PageIndex = 1) then
+    openpathEditingDone(Sender);
+end;
+
 procedure tmainform.openfindkeypress(sender: tobject; var key: char);
 begin
-  if key = #13 then openpath.editingdone;
+  if key = #13 then
+  begin
+    openfindChange(Sender);
+    key := #0;
+  end;
 end;
 
 procedure tmainform.openpatheditingdone(sender: tobject);
