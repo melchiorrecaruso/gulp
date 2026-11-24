@@ -357,7 +357,7 @@ begin
   openlview.columns[4].width := ini.readinteger('listview', 'columns[4].width', 100);
   openlview.columns[5].width := ini.readinteger('listview', 'columns[5].width', 100);
 
-  SaveDialog .initialdir := ini.readstring('savedialog', ' initialdir', '');
+  SaveDialog .initialdir := ini.readstring('savedialog', 'initialdir', '');
   OpenDialog .initialdir := ini.readstring('opendialog',  'initialdir', '');
   restorepath.rootdir    := ini.readstring('restorepath', 'rootdir',    '');
 
