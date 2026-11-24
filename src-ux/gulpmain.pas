@@ -958,7 +958,21 @@ end;
 procedure TMainForm.SyncOkClick(Sender: TObject);
 var
   I: LongInt;
+  HasInclude: Boolean;
 begin
+  HasInclude := False;
+  for I := 0 to SyncListView.Items.Count - 1 do
+    if SyncListView.Items[I].ImageIndex = 0 then
+    begin
+      HasInclude := True;
+      Break;
+    end;
+  if not HasInclude then
+  begin
+    ShowMessage('Add at least one file or directory to synchronize.');
+    Exit;
+  end;
+
   Clear;
   App.Reset;
   AppCommand := acSync;
