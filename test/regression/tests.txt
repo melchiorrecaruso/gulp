@@ -10,6 +10,7 @@ selfarchive/test_selfarchive.lpr|core
 purge/test_purge.lpr|core
 commandline/test_commandline.lpr|core
 lastversion/test_lastversion.lpr|core
+lastversion/test_lastversion_api.lpr|core
 symlink/test_symlink.lpr|unix
 changedetect/test_changedetect.lpr|unix
 atomicrestore/test_atomicrestore.lpr|core

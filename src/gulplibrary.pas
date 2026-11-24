@@ -102,6 +102,7 @@ type
     property excludeattr: longword read fexcludeattr write fexcludeattr;
     property excludemode: longword read fexcludemode write fexcludemode;
     property include: trawbytestringlist read finclude;
+    property lastversion: longword read flastversion;
     property forcepath: boolean read fforcepath write fforcepath;
     property nodelete: boolean read fnodelete write fnodelete;
     property onlyversion: longword read fonlyversion write fonlyversion;

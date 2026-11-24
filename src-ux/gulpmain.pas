@@ -536,8 +536,7 @@ begin
     if app.untilversion = $ffffffff then
     begin
       appfolder := '';
-      for i := 0 to applist1.count - 1 do
-        v := max(v, applist1[i].version);
+      v := app.lastversion;
       revisionbox.items.clear;
       for i := 0 to v - 1 do
       begin
