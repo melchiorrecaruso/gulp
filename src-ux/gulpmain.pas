@@ -464,8 +464,25 @@ end;
 
 procedure TMainForm.WorkerTerminated(Sender: TObject);
 begin
-  // OnTerminate runs on the main thread after Execute has finished.
+  // OnTerminate runs on the main thread, including after an unhandled exception.
   AppThread := nil;
+  App.OnShowItem := nil;
+  App.OnShowMessage1 := nil;
+  App.OnShowMessage2 := nil;
+  if Assigned(TThread(Sender).FatalException) then
+  begin
+    if TThread(Sender).FatalException is Exception then
+      LogMemo.Lines.Add('Error: ' + Exception(TThread(Sender).FatalException).Message)
+    else
+      LogMemo.Lines.Add('Error: archive operation failed.');
+    // Do not run success actions (such as reloading after a failed sync).
+    AppCommand := acWelcome;
+    Notebook.PageIndex := 4;
+    ProgressBar.Style := pbstNormal;
+    ProgressBar.Visible := False;
+    UpdateButtons([fcHomeBtn, fcLogMemo]);
+    Exit;
+  end;
   Stop;
 end;
 
