@@ -207,6 +207,7 @@ type
 
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
+    procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 
     procedure SyncExcludeDirClick(Sender: TObject);
     procedure SyncExcludeFileClick(Sender: TObject);
@@ -220,6 +221,8 @@ type
   private
     { private declarations }
     procedure Clear;
+    procedure Launch;
+    procedure WorkerTerminated(Sender: TObject);
     procedure Start;
     procedure Stop;
 
@@ -275,8 +278,8 @@ end;
 
 constructor TAppThread.Create(CreateSuspended: boolean);
 begin
-  FreeOnTerminate := True;
   inherited Create(CreateSuspended);
+  FreeOnTerminate := True;
 end;
 
 procedure tappthread.showitem(p: pointer);
@@ -322,7 +325,6 @@ begin
   App.OnShowMessage1 := @showmessage;
   App.OnShowMessage2 := @showmessage;
 
-  Synchronize(@MainForm.Start);
   case appcommand of
     acwelcome: ;
     acsync   : App.sync   (AppFileName);
@@ -333,7 +335,6 @@ begin
     aclist   : App.list   (AppFileName);
     acview   : App.view   (AppFileName);
   end;
-  Synchronize(@MainForm.Stop);
 end;
 
 { Tmainform }
@@ -446,6 +447,28 @@ begin
   openlview.clear;
 end;
 
+procedure TMainForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
+begin
+  // The library has no safe cancellation API: wait for completion before closing.
+  CanClose := not Assigned(AppThread);
+end;
+
+procedure TMainForm.Launch;
+begin
+  if Assigned(AppThread) then Exit;
+  AppThread := TAppThread.Create(True);
+  AppThread.OnTerminate := @WorkerTerminated;
+  Start;
+  AppThread.Start;
+end;
+
+procedure TMainForm.WorkerTerminated(Sender: TObject);
+begin
+  // OnTerminate runs on the main thread after Execute has finished.
+  AppThread := nil;
+  Stop;
+end;
+
 procedure tmainform.start;
 begin
   updatebuttons([]);
@@ -488,7 +511,8 @@ begin
     App.Reset;
     AppCommand := acList;
     App.UntilVersion := $ffffffff;
-    AppThread := TAppThread.Create(False);
+    Launch;
+    Exit;
   end else
   if appcommand = aclist then
   begin
@@ -624,7 +648,7 @@ begin
       app.nodelete := true;
       app.include.add(t.path + t.name);
       app.untilversion := $ffffffff;
-      appthread        := tappthread.create(false);
+      Launch;
     end;
   end;
 end;
@@ -773,7 +797,7 @@ begin
   app.reset;
   appcommand := aclist;
   app.untilversion := revisionbox.itemindex + 1;
-  appthread  := tappthread.create(false);
+  Launch;
 end;
 
 // welcome panel routines
@@ -807,7 +831,7 @@ begin
       appcommand := aclist;
       appfilename := OpenDialog.filename;
       app.untilversion := $ffffffff;
-      appthread := tappthread.create(false);
+      Launch;
     end;
   end;
 end;
@@ -824,7 +848,7 @@ begin
       app.reset;
       appcommand  := accheck;
       appfilename := OpenDialog.filename;
-      appthread   := tappthread.create(false);
+      Launch;
     end;
   end;
 end;
@@ -841,7 +865,7 @@ begin
       app.reset;
       appcommand  := acfix;
       appfilename := OpenDialog.filename;
-      appthread   := tappthread.create(false);
+      Launch;
     end;
   end;
 end;
@@ -858,7 +882,7 @@ begin
       app.reset;
       appcommand  := acpurge;
       appfilename := OpenDialog.filename;
-      appthread   := tappthread.create(false);
+      Launch;
     end;
   end;
 end;
@@ -999,7 +1023,7 @@ begin
       1: App.Exclude.Add(SyncListView.Items[I].Caption);
     end;
   end;
-  AppThread := TAppThread.Create(False);
+  Launch;
 end;
 
 procedure tmainform.synclistviewupdate;

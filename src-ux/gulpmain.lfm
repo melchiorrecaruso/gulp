@@ -9,6 +9,7 @@ object mainform: Tmainform
   Color = clNone
   Constraints.MinHeight = 540
   Constraints.MinWidth = 625
+  OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   ParentFont = True
