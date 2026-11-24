@@ -1336,7 +1336,8 @@ begin
         begin
 
           strm.seek(p^.offset1, sobeginning);
-          if assigned(fpipe) then
+          // CopyFrom with a zero count copies the entire source stream.
+          if assigned(fpipe) and (p^.offset2 > p^.offset1) then
             fpipe.copyfrom(strm, p^.offset2 - p^.offset1);
 
           inc(c);
@@ -1345,7 +1346,7 @@ begin
           begin
 
            strm.seek(p^.offset1, sobeginning);
-           if assigned(fpipe) then
+           if assigned(fpipe) and (p^.offset2 > p^.offset1) then
              fpipe.copyfrom(strm, p^.offset2 - p^.offset1);
 
             inc(c);

@@ -1,5 +1,6 @@
 # Source relative to test/regression | execution mode | optional target (default: gulp)
 # core: all systems; unix: Unix only (explicitly skipped elsewhere)
+emptyview/test_emptyview.lpr|core
 restorearchive/test_restorearchive.lpr|core
 restoreinclude/test_restoreinclude.lpr|core
 unreadable/test_unreadable.lpr|unix
