@@ -524,7 +524,7 @@ begin
     openpath.text := appfolder;
     openpath.editingdone;
 
-    updatecaption('Gulp UX shows - ' + OpenDialog.filename);
+    updatecaption('Gulp UX shows - ' + appfilename);
     updatebuttons([fchomebtn, fcsyncbtn, fcrestbtn, fcfindbtn,
                    fcrevcbox, fcopenpnl, fclogmemo, fcopenlview]);
   end else
@@ -1192,7 +1192,7 @@ begin
   begin
     appcommand := aclist;
     notebook.pageindex := 1;
-    updatecaption('Gulp UX shows - ' + OpenDialog.filename);
+    updatecaption('Gulp UX shows - ' + appfilename);
     updatebuttons([fchomebtn, fcsyncbtn, fcrestbtn, fcfindbtn,
                    fcrevcbox, fcopenpnl, fclogmemo, fcopenlview]);
   end else
@@ -1200,7 +1200,7 @@ begin
   begin
     appcommand := aclist;
     notebook.pageindex := 1;
-    updatecaption('Gulp UX shows - ' + OpenDialog.filename);
+    updatecaption('Gulp UX shows - ' + appfilename);
     updatebuttons([fchomebtn, fcsyncbtn, fcrestbtn, fcfindbtn,
                    fcrevcbox, fcopenpnl, fclogmemo, fcopenlview]);
   end else
@@ -1228,7 +1228,7 @@ begin
   begin
     appcommand := aclist;
     notebook.pageindex := 1;
-    updatecaption('Gulp UX shows - ' + OpenDialog.filename);
+    updatecaption('Gulp UX shows - ' + appfilename);
     updatebuttons([fchomebtn, fcsyncbtn, fcrestbtn, fcfindbtn,
                    fcrevcbox, fcopenpnl, fclogmemo, fcopenlview]);
   end;
